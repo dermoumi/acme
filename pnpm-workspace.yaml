@@ -10,7 +10,7 @@ catalog:
   husky: "9.1.7"
   oxfmt: "0.59.0"
   oxlint: "1.74.0"
-  oxlint-tsgolint: "0.25.0"
+  oxlint-tsgolint: "7.0.2001"
   turbo: "2.10.5"
   typescript: "7.0.2"
   vite: "8.1.5"
