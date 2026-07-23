@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "labels": ["dependencies"],
+  "assigneesFromCodeOwners": true,
+  "rangeStrategy": "bump",
+  "minimumReleaseAge": "2 days",
+  "packageRules": [
+    {
+      "description": "Widen peerDependencies",
+      "matchDepTypes": ["peerDependencies"],
+      "rangeStrategy": "widen",
+      "automerge": true
+    },
+    {
+      "description": "Node engine: major updates only",
+      "matchDepTypes": ["engines"],
+      "matchPackageNames": ["node"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "enabled": false
+    },
+    {
+      "description": "Allow automerge for minor and patch updates",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true
+    }
+  ]
+}
