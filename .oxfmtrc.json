@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": ["**/.turbo/", "**/node_modules/"],
+  "printWidth": 80,
+  "trailingComma": "none",
+  "overrides": [
+    { "files": ["**/*.{ts,tsx}"], "options": { "trailingComma": "all" } }
+  ]
+}

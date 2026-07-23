@@ -1,0 +1,37 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/javascript-node
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "acme",
+  "dockerComposeFile": ["compose.yaml"],
+  "remoteUser": "dev",
+  "containerUser": "dev",
+  "service": "dev",
+  "workspaceFolder": "${localWorkspaceFolder}",
+  "mounts": [
+    {
+      "source": "${localWorkspaceFolder}",
+      "target": "${localWorkspaceFolder}",
+      "type": "bind"
+    }
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "oxc.oxc-vscode",
+        "ryanluker.vscode-coverage-gutters",
+        "tamasfe.even-better-toml",
+        "vunguyentuan.vscode-postcss"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "oxc.oxc-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.oxc": "explicit"
+        },
+        "editor.formatOnSave": true,
+        "editor.rulers": [80],
+        "search.useIgnoreFiles": true
+      }
+    }
+  }
+}

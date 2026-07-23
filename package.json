@@ -1,0 +1,26 @@
+{
+  "name": "@acme/workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "husky",
+    "lint": "oxfmt -c .oxfmtrc.json --check *.* && turbo lint",
+    "lint:fix": "oxlint -c .oxlintrc.json --fix && oxfmt -c .oxfmtrc.json",
+    "build": "turbo build",
+    "test": "turbo test",
+    "test:cov": "turbo test:cov",
+    "dev": "turbo dev"
+  },
+  "devDependencies": {
+    "husky": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "oxlint-tsgolint": "catalog:",
+    "turbo": "catalog:"
+  },
+  "engines": {
+    "node": "^24.0.0"
+  },
+  "packageManager": "pnpm@11.15.1"
+}

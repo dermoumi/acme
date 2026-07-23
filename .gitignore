@@ -1,0 +1,20 @@
+node_modules
+.pnpm-store
+.turbo
+
+# build artifacts
+dist/
+.output/
+coverage/
+
+# env
+.env
+.env.*.local
+
+# runtime files
+run/
+*.db
+data/
+
+# OS
+.DS_Store

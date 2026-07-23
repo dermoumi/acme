@@ -1,0 +1,13 @@
+{
+  "name": "@acme/tsconfig",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "lint": "oxfmt -c ../../.oxfmtrc.json --check"
+  },
+  "peerDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}
