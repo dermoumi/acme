@@ -9,7 +9,7 @@ catalog:
   "@types/node": "24.13.3"
   husky: "9.1.7"
   oxfmt: "0.60.0"
-  oxlint: "1.74.0"
+  oxlint: "1.75.0"
   oxlint-tsgolint: "7.0.2001"
   turbo: "2.10.5"
   typescript: "7.0.2"
