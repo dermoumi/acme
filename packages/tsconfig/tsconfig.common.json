@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "tsBuildInfoFile": "node_modules/.tmp/tsbuildinfo",
+    "incremental": true,
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
