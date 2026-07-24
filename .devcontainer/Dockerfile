@@ -12,7 +12,7 @@ RUN apt update -y \
 
 # Create the dev user and have him sudo without password
 ENV USER=dev
-RUN userdel node \
+RUN userdel -r node \
   && useradd -mG sudo -s /bin/bash $USER \
   && echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER
 
