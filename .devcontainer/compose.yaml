@@ -3,6 +3,7 @@ name: "acme"
 services:
   dev:
     hostname: container
+    init: true
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
