@@ -1,0 +1,28 @@
+{
+  "name": "@acme/posy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc --noEmit",
+    "lint:fix": "oxlint -c ../../.oxlintrc.json --fix . && oxfmt -c ../../.oxfmtrc.json .",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "hono": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@acme/tsconfig": "workspace:*",
+    "@cloudflare/vite-plugin": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

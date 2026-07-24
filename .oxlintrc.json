@@ -46,6 +46,7 @@
       "error",
       { "extensions": [".tsx"] }
     ],
+    "react/jsx-no-literals": "off",
 
     // Typescript
     "typescript/no-deprecated": "error",

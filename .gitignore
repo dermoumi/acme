@@ -8,6 +8,10 @@ dist/
 coverage/
 *.tsbuildinfo
 
+# wrangler
+.wrangler/
+worker-configuration.d.ts
+
 # env
 .env
 .env.*.local
