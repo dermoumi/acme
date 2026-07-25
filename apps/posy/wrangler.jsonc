@@ -14,7 +14,7 @@
       "name": "staging"
     },
     "production": {
-      "name": "posy"
+      "name": "play"
     }
   }
 }
