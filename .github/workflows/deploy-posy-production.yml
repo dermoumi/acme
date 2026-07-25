@@ -12,5 +12,5 @@ jobs:
     with:
       app: posy
       environment: production
-      health-url: https://play.posy.workers.dev/health
+      url: https://play.posy.workers.dev
     secrets: inherit

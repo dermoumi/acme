@@ -16,18 +16,18 @@ on:
         required: false
         type: string
         default: ""
-      health-url:
-        description: URL to probe after deploy (skipped when empty)
+      url:
+        description: Public base URL; shown on the GitHub environment and health-checked
         required: false
         type: string
         default: ""
       workers-subdomain:
-        description: Account workers.dev subdomain; enables preview health checks
+        description: Account workers.dev subdomain; enables preview URLs + health checks
         required: false
         type: string
         default: ""
       health-path:
-        description: Path probed on computed preview URLs
+        description: Path probed after deploy (empty disables the check)
         required: false
         type: string
         default: "/health"
@@ -43,7 +43,9 @@ jobs:
   deploy:
     name: Deploy ${{ inputs.app }} (${{ inputs.environment }})
     runs-on: ubuntu-latest
-    environment: ${{ inputs.app }}-${{ inputs.environment == 'production' && 'production' || 'staging' }}
+    environment:
+      name: ${{ inputs.app }}-${{ inputs.environment == 'production' && 'production' || 'staging' }}
+      url: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
     concurrency:
       group: deploy-${{ inputs.app }}-${{ inputs.environment }}${{ inputs.branch && '-' || '' }}${{ inputs.branch }}
     permissions:
@@ -75,7 +77,6 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           WORKERS_SUBDOMAIN: ${{ inputs.workers-subdomain }}
-          HEALTH_PATH: ${{ inputs.health-path }}
         run: |
           if [ "$DEPLOY_ENV" = "preview" ]; then
             slug=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-40)
@@ -83,15 +84,15 @@ jobs:
             case "$slug" in staging | "") slug="branch-$slug" ;; esac
             pnpm exec wrangler deploy --name "$slug"
             if [ -n "$WORKERS_SUBDOMAIN" ]; then
-              echo "preview-url=https://$slug.$WORKERS_SUBDOMAIN.workers.dev$HEALTH_PATH" >> "$GITHUB_OUTPUT"
+              echo "url=https://$slug.$WORKERS_SUBDOMAIN.workers.dev" >> "$GITHUB_OUTPUT"
             fi
           else
             pnpm exec wrangler deploy
           fi
 
       - name: Health check
-        if: inputs.health-url != '' || steps.deploy.outputs.preview-url != ''
+        if: inputs.health-path != '' && (inputs.url != '' || steps.deploy.outputs.url != '')
         env:
-          HEALTH_URL: ${{ inputs.health-url }}
-          PREVIEW_URL: ${{ steps.deploy.outputs.preview-url }}
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "${HEALTH_URL:-$PREVIEW_URL}"
+          BASE_URL: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
+          HEALTH_PATH: ${{ inputs.health-path }}
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "$BASE_URL$HEALTH_PATH"

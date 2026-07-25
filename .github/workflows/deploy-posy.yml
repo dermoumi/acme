@@ -70,5 +70,5 @@ jobs:
     with:
       app: posy
       environment: staging
-      health-url: https://staging.posy-stg.workers.dev/health
+      url: https://staging.posy-stg.workers.dev
     secrets: inherit
