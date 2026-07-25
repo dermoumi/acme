@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": [".turbo", "node_modules"],
+  "ignorePatterns": [".turbo", "node_modules", ".w"],
   "env": {
     "node": true,
     "browser": true
