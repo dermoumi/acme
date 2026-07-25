@@ -15,10 +15,12 @@
   ],
   "packages": {
     ".": {
-      "component": "workspace"
+      "component": "workspace",
+      "initial-version": "0.1.0"
     },
     "apps/posy": {
-      "component": "posy"
+      "component": "posy",
+      "initial-version": "0.1.0"
     }
   }
 }
