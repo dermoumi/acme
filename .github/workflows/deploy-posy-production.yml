@@ -1,0 +1,15 @@
+name: Deploy Posy (production)
+
+on:
+  push:
+    tags: ["posy-v*"]
+
+jobs:
+  production:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/app-deploy.yml # zizmor: ignore[secrets-inherit]
+    with:
+      app: posy
+      environment: production
+    secrets: inherit

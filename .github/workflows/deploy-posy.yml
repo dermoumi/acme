@@ -1,0 +1,72 @@
+name: Deploy Posy
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    paths:
+      - apps/posy/**
+      - packages/**
+      - pnpm-lock.yaml
+      - .github/workflows/app-deploy.yml
+      - .github/workflows/deploy-posy.yml
+      - .github/actions/setup/**
+  push:
+    branches: [main]
+    paths:
+      - apps/posy/**
+      - packages/**
+      - pnpm-lock.yaml
+      - .github/workflows/app-deploy.yml
+      - .github/workflows/deploy-posy.yml
+      - .github/actions/setup/**
+
+jobs:
+  preview:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/app-deploy.yml # zizmor: ignore[secrets-inherit]
+    with:
+      app: posy
+      environment: preview
+      branch: ${{ github.head_ref }}
+    secrets: inherit
+
+  preview-cleanup:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    name: Delete preview worker
+    runs-on: ubuntu-latest
+    environment: posy-staging
+    permissions:
+      contents: read
+    env:
+      BRANCH: ${{ github.head_ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Delete worker
+        working-directory: apps/posy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          slug=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-40)
+          case "$slug" in staging | "") slug="branch-$slug" ;; esac
+          pnpm exec wrangler delete --name "$slug" || true
+
+  staging:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/app-deploy.yml # zizmor: ignore[secrets-inherit]
+    with:
+      app: posy
+      environment: staging
+    secrets: inherit

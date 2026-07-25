@@ -51,6 +51,7 @@
     },
     "build": {
       "dependsOn": ["^build"],
+      "env": ["CLOUDFLARE_ENV"],
       "outputLogs": "errors-only",
       "inputs": [
         "$TURBO_DEFAULT$",

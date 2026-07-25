@@ -16,6 +16,9 @@
   "packages": {
     ".": {
       "component": "workspace"
+    },
+    "apps/posy": {
+      "component": "posy"
     }
   }
 }
