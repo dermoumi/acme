@@ -29,7 +29,7 @@ catalog:
   vitest: "4.1.10"
   workbox-window: "7.4.1"
   wouter: "3.10.0"
-  wrangler: "4.113.0"
+  wrangler: "4.114.0"
 
 allowBuilds:
   better-sqlite3: true
