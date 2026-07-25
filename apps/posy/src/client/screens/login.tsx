@@ -1,4 +1,11 @@
+import { Redirect } from "wouter";
+import { useAuth } from "../lib/auth";
+
 export function LoginScreen() {
+  const { status, login } = useAuth();
+
+  if (status === "authed") return <Redirect replace to="/" />;
+
   return (
     <main>
       <h1>Posy</h1>
@@ -6,6 +13,7 @@ export function LoginScreen() {
       <form
         onSubmit={(event) => {
           event.preventDefault();
+          login();
         }}
       >
         <input
