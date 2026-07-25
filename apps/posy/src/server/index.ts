@@ -1,14 +1,10 @@
-import { Hono } from "hono";
-import { gate, type GateBindings } from "./gate";
+import { D1Dialect } from "kysely-d1";
+import { createApp } from "./app";
 
-const app = new Hono<{ Bindings: GateBindings }>();
-
-app.use(gate());
-
-app.get("/health", (ctx) => ctx.json({ status: "ok", app: "posy" }));
-
-// Under run_worker_first the worker fronts every request; the assets binding
-// applies the configured SPA not_found_handling itself.
-app.all("*", (ctx) => ctx.env.ASSETS.fetch(ctx.req.raw));
+const app = createApp((env) => {
+  if (!env.DB)
+    throw new Error("no D1 binding: cloud D1 pending follow-up task");
+  return new D1Dialect({ database: env.DB });
+});
 
 export default app;

@@ -15,6 +15,7 @@
   "dependencies": {
     "hono": "catalog:",
     "kysely": "catalog:",
+    "kysely-d1": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "workbox-window": "catalog:",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",
     "@cloudflare/vite-plugin": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
     "@types/better-sqlite3": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
