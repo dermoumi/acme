@@ -56,6 +56,8 @@ export function gate(): MiddlewareHandler<{ Bindings: GateBindings }> {
       res.headers.set("X-Robots-Tag", "noindex");
       return res;
     }
+    // Binding fetch responses (assets) have immutable headers; rewrap to stamp.
+    ctx.res = new Response(ctx.res.body, ctx.res);
     ctx.res.headers.set("X-Robots-Tag", "noindex");
   };
 }

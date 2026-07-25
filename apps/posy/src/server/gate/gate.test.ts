@@ -2,9 +2,19 @@ import { expect, test } from "vitest";
 import app from "../index";
 import type { GateBindings } from "./gate";
 
+// Binding fetch responses have immutable headers in workerd; mimic that so
+// header stamping on asset responses fails here like it would in production.
+function assetResponse(): Response {
+  const res = new Response("asset");
+  res.headers.set = () => {
+    throw new TypeError("Can't modify immutable headers.");
+  };
+  return res;
+}
+
 function env(overrides: Partial<GateBindings> = {}): GateBindings {
   return {
-    ASSETS: { fetch: () => Promise.resolve(new Response("asset")) },
+    ASSETS: { fetch: () => Promise.resolve(assetResponse()) },
     ...overrides,
   };
 }
