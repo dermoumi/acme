@@ -21,6 +21,16 @@ on:
         required: false
         type: string
         default: ""
+      workers-subdomain:
+        description: Account workers.dev subdomain; enables preview health checks
+        required: false
+        type: string
+        default: ""
+      health-path:
+        description: Path probed on computed preview URLs
+        required: false
+        type: string
+        default: "/health"
     secrets:
       CLOUDFLARE_API_TOKEN:
         description: Workers-edit token, from the target environment's CF account
@@ -59,22 +69,29 @@ jobs:
         run: pnpm exec turbo build --filter="@acme/$APP"
 
       - name: Deploy
+        id: deploy
         working-directory: apps/${{ inputs.app }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WORKERS_SUBDOMAIN: ${{ inputs.workers-subdomain }}
+          HEALTH_PATH: ${{ inputs.health-path }}
         run: |
           if [ "$DEPLOY_ENV" = "preview" ]; then
             slug=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-40)
             # "staging" shares the account with previews; "" would be an invalid name
             case "$slug" in staging | "") slug="branch-$slug" ;; esac
             pnpm exec wrangler deploy --name "$slug"
+            if [ -n "$WORKERS_SUBDOMAIN" ]; then
+              echo "preview-url=https://$slug.$WORKERS_SUBDOMAIN.workers.dev$HEALTH_PATH" >> "$GITHUB_OUTPUT"
+            fi
           else
             pnpm exec wrangler deploy
           fi
 
       - name: Health check
-        if: inputs.health-url != ''
+        if: inputs.health-url != '' || steps.deploy.outputs.preview-url != ''
         env:
           HEALTH_URL: ${{ inputs.health-url }}
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "$HEALTH_URL"
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview-url }}
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "${HEALTH_URL:-$PREVIEW_URL}"

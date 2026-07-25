@@ -23,7 +23,7 @@ on:
 
 jobs:
   preview:
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    if: github.event_name == 'pull_request' && github.event.action != 'closed' && !startsWith(github.head_ref, 'release-please--')
     permissions:
       contents: read
     uses: ./.github/workflows/app-deploy.yml # zizmor: ignore[secrets-inherit]
@@ -31,6 +31,7 @@ jobs:
       app: posy
       environment: preview
       branch: ${{ github.head_ref }}
+      workers-subdomain: posy-stg
     secrets: inherit
 
   preview-cleanup:
@@ -69,4 +70,5 @@ jobs:
     with:
       app: posy
       environment: staging
+      health-url: https://staging.posy-stg.workers.dev/health
     secrets: inherit
