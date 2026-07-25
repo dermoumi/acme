@@ -1,34 +1,18 @@
-import SQLite from "better-sqlite3";
-import { type Dialect, type Kysely, SqliteDialect } from "kysely";
+import type { Kysely } from "kysely";
 import { expect, test } from "vitest";
 import { createApp } from "../app";
-import type { AppBindings } from "../bindings";
-import { createDb, createMigrator, type Database } from "../db";
+import { createDb, type Database } from "../db";
 import { createSession, resolveSession, SESSION_COOKIE } from "./session";
+import { migratedDialect, seedUser, testEnv as env } from "./test-utils";
 import { hashToken } from "./tokens";
 
 const HOUR_MS = 60 * 60 * 1000;
 
-async function migratedDialect(): Promise<Dialect> {
-  const dialect = new SqliteDialect({ database: new SQLite(":memory:") });
-  const db = createDb(dialect);
-  const { error } = await createMigrator(db).migrateToLatest();
-  if (error) throw new Error("migration failed", { cause: error });
-  return dialect;
-}
-
 async function seededDb(): Promise<Kysely<Database>> {
   const db = createDb(await migratedDialect());
-  await db
-    .insertInto("users")
-    .values({ id: "u1", name: "Tester", created_at: 1000 })
-    .execute();
+  await seedUser(db, "u1");
   return db;
 }
-
-const env: AppBindings = {
-  ASSETS: { fetch: () => Promise.resolve(new Response("asset")) },
-};
 
 test("createSession stores only the token hash", async () => {
   const db = await seededDb();
@@ -84,10 +68,7 @@ test("GET /session without a cookie never touches the db", async () => {
 test("GET /session resolves the cookie to a user", async () => {
   const dialect = await migratedDialect();
   const db = createDb(dialect);
-  await db
-    .insertInto("users")
-    .values({ id: "u1", name: "Tester", created_at: 1000 })
-    .execute();
+  await seedUser(db, "u1");
   const token = await createSession(db, "u1", null, 1000);
   const app = createApp(() => dialect);
 
