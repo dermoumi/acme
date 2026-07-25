@@ -35,6 +35,7 @@
     // Import
     "eslint-plugin-import/no-default-export": "off",
     "eslint-plugin-import/no-relative-parent-imports": "off",
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
     "import/no-anonymous-default-export": "error",
 
     // React

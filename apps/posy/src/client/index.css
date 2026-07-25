@@ -1,0 +1,53 @@
+@font-face {
+  font-family: "Baloo 2";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/baloo2-latin.woff2") format("woff2");
+}
+
+:root {
+  --bg: #fdf6e8;
+  --surface: #fffdf5;
+  --text: #4a3540;
+  --muted: #7d6862;
+  --accent: #b34d74;
+  --border: #e5d3bb;
+  --sun: #f2b64b;
+  --sky: #aed9e6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Baloo 2", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  background: var(--accent);
+  color: #fff;
+}
+
+input {
+  font: inherit;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  color: inherit;
+}

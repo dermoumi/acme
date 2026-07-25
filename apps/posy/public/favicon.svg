@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <ellipse id="petal" cx="0" cy="-92" rx="58" ry="92" fill="#e087ab" />
+  </defs>
+  <g transform="translate(256 256)">
+    <use href="#petal" />
+    <use href="#petal" transform="rotate(72)" />
+    <use href="#petal" transform="rotate(144)" />
+    <use href="#petal" transform="rotate(216)" />
+    <use href="#petal" transform="rotate(288)" />
+    <circle r="52" fill="#f2b64b" />
+  </g>
+</svg>

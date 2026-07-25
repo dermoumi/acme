@@ -16,7 +16,9 @@
     "hono": "catalog:",
     "kysely": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "workbox-window": "catalog:",
+    "wouter": "catalog:"
   },
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",
@@ -29,6 +31,7 @@
     "better-sqlite3": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
+    "vite-plugin-pwa": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"
   }
