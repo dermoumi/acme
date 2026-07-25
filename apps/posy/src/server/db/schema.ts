@@ -7,11 +7,21 @@ export interface UsersTable {
   created_at: number;
 }
 
+// id is the sha-256 hex of the session token; raw tokens are never stored.
 export interface SessionsTable {
   id: string;
   user_id: string;
   created_at: number;
   last_seen_at: number;
+  client_version: string | null;
+}
+
+export interface PairingLinksTable {
+  token_hash: string;
+  user_id: string;
+  created_at: number;
+  expires_at: number;
+  used_at: number | null;
 }
 
 export interface ItemsTable {
@@ -50,6 +60,7 @@ export interface LedgerTable {
 export interface Database {
   users: UsersTable;
   sessions: SessionsTable;
+  pairing_links: PairingLinksTable;
   items: ItemsTable;
   discoveries: DiscoveriesTable;
   inventory: InventoryTable;

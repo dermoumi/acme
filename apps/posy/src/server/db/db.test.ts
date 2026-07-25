@@ -56,12 +56,16 @@ test("migrates up from zero", async () => {
   const db = freshDb();
   const { error, results } = await createMigrator(db).migrateToLatest();
   expect(error).toBeUndefined();
-  expect(results?.map((result) => result.status)).toEqual(["Success"]);
+  expect(results?.map((result) => result.status)).toEqual([
+    "Success",
+    "Success",
+  ]);
   expect(await tableNames(db)).toEqual([
     "discoveries",
     "inventory",
     "items",
     "ledger",
+    "pairing_links",
     "sessions",
     "users",
   ]);
@@ -103,7 +107,47 @@ test("sessions round-trip", async () => {
     user_id: "u1",
     created_at: 1000,
     last_seen_at: 2000,
+    client_version: null,
   });
+  await db.destroy();
+});
+
+test("pairing links round-trip and reject unknown users", async () => {
+  const db = await migratedDb();
+  await seedUser(db, "u1");
+  await db
+    .insertInto("pairing_links")
+    .values({
+      token_hash: "hash1",
+      user_id: "u1",
+      created_at: 1000,
+      expires_at: 2000,
+      used_at: null,
+    })
+    .execute();
+  const row = await db
+    .selectFrom("pairing_links")
+    .selectAll()
+    .executeTakeFirstOrThrow();
+  expect(row).toEqual({
+    token_hash: "hash1",
+    user_id: "u1",
+    created_at: 1000,
+    expires_at: 2000,
+    used_at: null,
+  });
+  await expect(
+    db
+      .insertInto("pairing_links")
+      .values({
+        token_hash: "hash2",
+        user_id: "ghost",
+        created_at: 1000,
+        expires_at: 2000,
+        used_at: null,
+      })
+      .execute(),
+  ).rejects.toThrow();
   await db.destroy();
 });
 
