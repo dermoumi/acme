@@ -8,7 +8,7 @@ export function App() {
   const [status, setStatus] = useState("...");
 
   useEffect(() => {
-    fetch("/api/health")
+    fetch("/health")
       .then(async (res) => res.json() as Promise<HealthResponse>)
       .then((data) => {
         setStatus(data.status);
