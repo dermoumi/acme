@@ -5,14 +5,19 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  background: #fbeef3;
-  border: 1px solid #ecdce3;
+  border-radius: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
   box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
 }
 
 .banner span {
   flex: 1;
   font-size: 0.9rem;
-  color: #5c4a52;
+}
+
+.dismiss {
+  background: transparent;
+  color: var(--accent);
+  padding: 0.5rem;
 }

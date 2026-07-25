@@ -16,8 +16,8 @@ export default defineConfig({
         description: "A little flower every day",
         display: "standalone",
         orientation: "portrait",
-        theme_color: "#fbeef3",
-        background_color: "#fff8fa",
+        theme_color: "#fdf6e8",
+        background_color: "#fdf6e8",
         icons: [
           { src: "pwa-192x192.png", sizes: "192x192", type: "image/png" },
           { src: "pwa-512x512.png", sizes: "512x512", type: "image/png" },
@@ -30,7 +30,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,webmanifest}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
         navigateFallback: "/index.html",
         // Offline is read-only shell for now: never route server paths to the SPA.
         navigateFallbackDenylist: [/^\/api\//u, /^\/health$/u, /^\/session$/u],

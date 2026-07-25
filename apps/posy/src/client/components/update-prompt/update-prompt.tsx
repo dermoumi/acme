@@ -21,6 +21,7 @@ export function UpdatePrompt() {
         Refresh
       </button>
       <button
+        className={styles.dismiss}
         onClick={() => {
           setNeedRefresh(false);
         }}

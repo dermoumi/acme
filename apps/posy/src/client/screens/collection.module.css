@@ -1,0 +1,16 @@
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tab {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  color: var(--muted);
+}
+
+.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
