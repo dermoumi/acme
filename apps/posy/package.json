@@ -14,6 +14,7 @@
     "hono": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "workbox-window": "catalog:",
     "wouter": "catalog:"
   },
   "devDependencies": {
@@ -24,6 +25,7 @@
     "@vitejs/plugin-react": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
+    "vite-plugin-pwa": "catalog:",
     "wrangler": "catalog:"
   }
 }

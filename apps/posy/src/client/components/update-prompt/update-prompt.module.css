@@ -1,0 +1,18 @@
+.banner {
+  position: fixed;
+  inset: auto 1rem calc(4.5rem + env(safe-area-inset-bottom)) 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: #fbeef3;
+  border: 1px solid #ecdce3;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
+}
+
+.banner span {
+  flex: 1;
+  font-size: 0.9rem;
+  color: #5c4a52;
+}

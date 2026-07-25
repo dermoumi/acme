@@ -1,6 +1,6 @@
 import { Redirect, Route, Router, Switch } from "wouter";
 import styles from "./app.module.css";
-import { TabBar } from "./components/tab-bar";
+import { TabBar, UpdatePrompt } from "./components";
 import { AuthProvider, RequireAuth } from "./lib/auth";
 import { useGuardedLocation } from "./lib/use-guarded-location";
 import { CollectionScreen } from "./screens/collection";
@@ -34,6 +34,7 @@ export function App() {
           </Route>
         </Switch>
       </Router>
+      <UpdatePrompt />
     </AuthProvider>
   );
 }
