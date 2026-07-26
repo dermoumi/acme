@@ -15,7 +15,12 @@
 }
 
 .code {
-  width: 12ch;
+  width: min(18rem, 60vw);
   text-align: center;
-  letter-spacing: 0.25ch;
+}
+
+.error {
+  color: var(--danger, #a33);
+  max-width: 24rem;
+  text-align: center;
 }

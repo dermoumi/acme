@@ -5,6 +5,23 @@
   padding-block: 0.5rem;
 }
 
+.account {
+  margin-block: 1.5rem;
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+}
+
+.confirm {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .version {
   color: var(--muted);
   font-size: 0.85rem;
