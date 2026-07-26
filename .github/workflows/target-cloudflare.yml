@@ -223,4 +223,11 @@ jobs:
         env:
           BASE_URL: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
           HEALTH_PATH: ${{ inputs.health-path }}
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "$BASE_URL$HEALTH_PATH"
+        run: |
+          # a branch's first preview needs minutes for the route to go live, so the
+          # retry budget is wide; the timeouts are per attempt, bounding a hang
+          curl --fail --silent --show-error \
+            --connect-timeout 10 --max-time 30 \
+            --retry 30 --retry-delay 10 --retry-max-time 300 --retry-all-errors \
+            --user-agent "acme-ci-health-probe" \
+            "$BASE_URL$HEALTH_PATH"
