@@ -21,6 +21,9 @@ run/
 *.db
 data/
 
+# crash dumps (kernel writes core.<pid> into the crashed process's cwd)
+core.[0-9]*
+
 # OS
 .DS_Store
 
