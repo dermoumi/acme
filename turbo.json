@@ -6,6 +6,13 @@
       "cache": false,
       "persistent": true
     },
+    "//#lint:root": {
+      "outputLogs": "errors-only",
+      "inputs": ["$TURBO_DEFAULT$", "!apps/**", "!packages/**"]
+    },
+    "//#lint:fix:root": {
+      "cache": false
+    },
     "lint": {
       "dependsOn": ["^build"],
       "outputLogs": "errors-only",
@@ -19,6 +26,10 @@
         "$TURBO_ROOT$/.oxfmtrc.json",
         "$TURBO_ROOT$/.oxlintrc.json"
       ]
+    },
+    "lint:fix": {
+      "dependsOn": ["^build"],
+      "cache": false
     },
     "test": {
       "dependsOn": ["^build"],

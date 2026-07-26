@@ -1,0 +1,49 @@
+name: Delete D1 database
+description: >-
+  Delete a D1 database by name. A database that is already gone is not an error.
+  Requires the setup action to have run, and CLOUDFLARE_API_TOKEN/ACCOUNT_ID in the
+  job environment (step-level env does not reach composite action steps).
+
+inputs:
+  app:
+    description: App directory name under apps/; wrangler runs from there
+    required: true
+  name:
+    description: Exact database name to delete
+    required: true
+
+outputs:
+  deleted:
+    description: '"true" when a database was found and deleted'
+    value: ${{ steps.delete.outputs.deleted }}
+  id:
+    description: Id of the deleted database, empty when there was nothing to delete
+    value: ${{ steps.delete.outputs.id }}
+
+runs:
+  using: composite
+  steps:
+    - name: Delete
+      id: delete
+      shell: bash
+      working-directory: apps/${{ inputs.app }}
+      env:
+        DB_NAME: ${{ inputs.name }}
+      run: |
+        set -euo pipefail
+        if [ -z "$DB_NAME" ]; then
+          echo "::error::no database name given"
+          exit 1
+        fi
+        # look it up rather than tolerating a failed delete, so real API errors still fail
+        db_id=$(pnpm exec wrangler d1 list --json |
+          jq -r --arg n "$DB_NAME" '(if type == "object" then .result else . end)
+                                    | map(select(.name == $n)) | (first // {}) | .uuid // empty')
+        if [ -z "$db_id" ]; then
+          echo "no D1 database named $DB_NAME; nothing to delete"
+          echo "deleted=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        pnpm exec wrangler d1 delete "$DB_NAME" -y
+        echo "deleted=true" >> "$GITHUB_OUTPUT"
+        echo "id=$db_id" >> "$GITHUB_OUTPUT"

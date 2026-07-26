@@ -3,13 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#testing/runtime": {
+      "workerd": "./src/server/testing/runtime.workerd.ts",
+      "default": "./src/server/testing/runtime.node.ts"
+    }
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc --noEmit",
+    "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc -b",
     "lint:fix": "oxlint -c ../../.oxlintrc.json --fix . && oxfmt -c ../../.oxfmtrc.json .",
     "test": "vitest run",
     "migrate:local": "tsx scripts/migrate-local.ts",
+    "migrate:remote": "tsx scripts/migrate-remote.ts",
     "mint-link": "tsx scripts/mint-link.ts",
     "test:cov": "vitest run --coverage",
     "cf-typegen": "wrangler types"
@@ -26,13 +33,14 @@
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",
     "@cloudflare/vite-plugin": "catalog:",
+    "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@types/better-sqlite3": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
-    "@vitest/coverage-v8": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
     "better-sqlite3": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",

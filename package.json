@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "prepare": "husky",
-    "lint": "oxfmt -c .oxfmtrc.json --check *.* && turbo lint",
-    "lint:fix": "oxlint -c .oxlintrc.json --fix && oxfmt -c .oxfmtrc.json",
+    "lint": "turbo run lint lint:root",
+    "lint:root": "oxfmt -c .oxfmtrc.json --ignore-path .lintignore.root --check . && oxlint -c .oxlintrc.json --ignore-path .lintignore.root --no-error-on-unmatched-pattern .",
+    "lint:fix": "turbo run lint:fix lint:fix:root",
+    "lint:fix:root": "oxlint -c .oxlintrc.json --ignore-path .lintignore.root --no-error-on-unmatched-pattern --fix . && oxfmt -c .oxfmtrc.json --ignore-path .lintignore.root .",
     "build": "turbo build",
     "test": "turbo test",
     "test:cov": "turbo test:cov",
@@ -22,5 +24,5 @@
   "engines": {
     "node": "^24.0.0"
   },
-  "packageManager": "pnpm@11.16.0"
+  "packageManager": "pnpm@11.17.0"
 }
