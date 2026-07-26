@@ -1,0 +1,3 @@
+# Scope for //#lint:root: everything no workspace package lints itself.
+/apps/
+/packages/
