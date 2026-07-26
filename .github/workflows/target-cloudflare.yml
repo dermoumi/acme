@@ -44,8 +44,8 @@ on:
         default: false
       seed:
         description: >-
-          Run "seed:remote <database-id>" after migrations for non-production
-          environments. The app must expose the script.
+          Run "pnpm seed <database-id>" on first database creation for
+          non-production environments. The app must expose the script.
         required: false
         type: boolean
         default: false
