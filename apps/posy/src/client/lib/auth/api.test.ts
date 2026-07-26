@@ -50,11 +50,21 @@ test("loginWithPassword resolves null for bad credentials", async () => {
   expect(await loginWithPassword("u1", "wrong", "1.2.3")).toBeNull();
 });
 
+test("server errors on login throw instead of looking like bad credentials", async () => {
+  stubFetch(jsonResponse({ error: "internal" }, 500));
+  await expect(loginWithPassword("u1", "pass", "1.2.3")).rejects.toThrow("500");
+});
+
 test("network failures reject instead of looking like bad credentials", async () => {
   stubFetch(new TypeError("offline"));
   await expect(loginWithPassword("u1", "pass", "1.2.3")).rejects.toThrow(
     "offline",
   );
+});
+
+test("fetchSession throws on server error", async () => {
+  stubFetch(jsonResponse({ error: "internal" }, 500));
+  await expect(fetchSession()).rejects.toThrow("500");
 });
 
 test("endSession issues a DELETE", async () => {

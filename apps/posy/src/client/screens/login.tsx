@@ -4,6 +4,7 @@ import { useAuth } from "../lib/auth";
 import styles from "./login.module.css";
 
 const INVALID = "Wrong username or password.";
+const SERVER_ERROR = "Something went wrong. Try again in a moment.";
 const OFFLINE = "Could not reach Posy. Check your connection and try again.";
 
 function LoginForm({
@@ -63,8 +64,8 @@ export function LoginScreen() {
       setError("");
       try {
         if (!(await login(username, password))) setError(INVALID);
-      } catch {
-        setError(OFFLINE);
+      } catch (err) {
+        setError(err instanceof TypeError ? OFFLINE : SERVER_ERROR);
       } finally {
         setBusy(false);
       }
