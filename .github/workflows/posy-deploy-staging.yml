@@ -33,6 +33,7 @@ jobs:
       branch: ${{ github.head_ref }}
       workers-subdomain: posy-stg
       d1: true
+      seed: true
     secrets: inherit
 
   preview-cleanup:
@@ -86,4 +87,5 @@ jobs:
       environment: staging
       url: https://staging.posy-stg.workers.dev
       d1: true
+      seed: true
     secrets: inherit

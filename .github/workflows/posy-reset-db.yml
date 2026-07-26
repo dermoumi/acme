@@ -100,4 +100,5 @@ jobs:
       workers-subdomain: posy-stg
       url: ${{ inputs.environment == 'staging' && 'https://staging.posy-stg.workers.dev' || '' }}
       d1: true
+      seed: true
     secrets: inherit

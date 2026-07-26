@@ -42,6 +42,13 @@ on:
         required: false
         type: boolean
         default: false
+      seed:
+        description: >-
+          Run "seed:remote <database-id>" after migrations for non-production
+          environments. The app must expose the script.
+        required: false
+        type: boolean
+        default: false
     secrets:
       CLOUDFLARE_API_TOKEN:
         description: Workers-edit token, from the target environment's CF account
@@ -194,6 +201,13 @@ jobs:
         env:
           DB_ID: ${{ steps.d1.outputs.id }}
         run: pnpm migrate:remote "$DB_ID"
+
+      - name: Seed D1 database
+        if: inputs.seed && inputs.d1 && inputs.environment != 'production' && env.CLOUDFLARE_API_TOKEN != ''
+        working-directory: apps/${{ inputs.app }}
+        env:
+          DB_ID: ${{ steps.d1.outputs.id }}
+        run: pnpm seed "$DB_ID"
 
       - name: Deploy
         id: deploy
