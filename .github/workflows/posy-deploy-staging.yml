@@ -69,9 +69,8 @@ jobs:
           SLUG: ${{ steps.names.outputs.slug }}
         run: pnpm exec wrangler delete --name "$SLUG" || true
 
-      # runs even if the worker delete failed, so a stuck worker cannot leak the database
       - name: Delete database
-        if: always() && env.CLOUDFLARE_API_TOKEN != ''
+        if: env.CLOUDFLARE_API_TOKEN != ''
         uses: ./.github/actions/delete-d1
         with:
           app: posy
