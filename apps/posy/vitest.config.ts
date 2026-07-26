@@ -24,16 +24,11 @@ export default defineConfig({
                 binding: "ASSETS",
                 directory: "./test/fixtures/assets",
               },
+              d1Databases: ["DB"],
             },
           }),
         ],
-        test: {
-          name: "workers",
-          include,
-          // better-sqlite3 is native and cannot load in workerd; these join the
-          // shared suite once a D1 dialect exists (posy-d1-deploy).
-          exclude: ["src/server/db/**"],
-        },
+        test: { name: "workerd", include },
       },
     ],
   },

@@ -5,7 +5,7 @@
   "type": "module",
   "imports": {
     "#testing/runtime": {
-      "workerd": "./src/server/testing/runtime.workers.ts",
+      "workerd": "./src/server/testing/runtime.workerd.ts",
       "default": "./src/server/testing/runtime.node.ts"
     }
   },
