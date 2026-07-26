@@ -1,6 +1,0 @@
-{
-  "extends": "@acme/tsconfig/tsconfig.workers.json",
-  "include": ["src/server"],
-  // Uses better-sqlite3 as a local D1 stand-in, so it belongs to the node project.
-  "exclude": ["src/server/db/db.test.ts"]
-}

@@ -1,16 +1,12 @@
-import SQLite from "better-sqlite3";
-import { type Kysely, sql, SqliteDialect } from "kysely";
+import { createEmptyDb } from "#testing/runtime";
+import { type Kysely, sql } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { expect, test } from "vitest";
-import { createDb, createMigrator, jsonText, parseJsonText } from "./index";
+import { createMigrator, jsonText, parseJsonText } from "./index";
 import type { Database } from "./schema";
 
-function freshDb(): Kysely<Database> {
-  return createDb(new SqliteDialect({ database: new SQLite(":memory:") }));
-}
-
 async function migratedDb(): Promise<Kysely<Database>> {
-  const db = freshDb();
+  const db = await createEmptyDb();
   const { error } = await createMigrator(db).migrateToLatest();
   if (error) throw new Error("migration failed", { cause: error });
   return db;
@@ -19,7 +15,8 @@ async function migratedDb(): Promise<Kysely<Database>> {
 async function tableNames(db: Kysely<Database>): Promise<string[]> {
   const rows = await sql<{ name: string }>`
     select name from sqlite_master
-    where type = 'table' and name not like 'sqlite_%' and name not like '%migration%'
+    where type = 'table' and name not like 'sqlite_%'
+      and name not like '%migration%' and name not glob '_cf_*'
   `.execute(db);
   return rows.rows.map((row) => row.name).toSorted();
 }
@@ -53,7 +50,7 @@ async function seedItem(
 }
 
 test("migrates up from zero", async () => {
-  const db = freshDb();
+  const db = await createEmptyDb();
   const { error, results } = await createMigrator(db).migrateToLatest();
   expect(error).toBeUndefined();
   expect(results?.map((result) => result.status)).toEqual(["Success"]);
