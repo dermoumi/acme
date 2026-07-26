@@ -183,6 +183,9 @@ importers:
 
   packages/tsconfig:
     dependencies:
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20260723.1
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
