@@ -17,7 +17,7 @@
     "test": "vitest run",
     "migrate:local": "tsx scripts/migrate-local.ts",
     "migrate:remote": "tsx scripts/migrate-remote.ts",
-    "mint-link": "tsx scripts/mint-link.ts",
+    "set-password": "tsx scripts/set-password.ts",
     "test:cov": "vitest run --coverage",
     "cf-typegen": "wrangler types"
   },

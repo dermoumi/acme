@@ -5,7 +5,7 @@ import { generateToken, hashToken } from "./tokens";
 export const SESSION_COOKIE = "posy_session";
 // 400 days: the browser cap on cookie lifetime. Sessions never expire
 // server-side; logout is the only revocation.
-export const SESSION_MAX_AGE_SECONDS = 34_560_000;
+export const SESSION_MAX_AGE_SECONDS = 400 * 24 * 60 * 60;
 
 const LAST_SEEN_REFRESH_MS = 60 * 60 * 1000;
 

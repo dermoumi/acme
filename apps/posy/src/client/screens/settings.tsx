@@ -13,7 +13,7 @@ function ConfirmLogout({
 }) {
   return (
     <div className={styles.confirm}>
-      <p>Log out? You will need a new pairing link to sign back in.</p>
+      <p>Log out? You can sign back in with your password.</p>
       <div className={styles.actions}>
         <button disabled={busy} onClick={onConfirm} type="button">
           Log out

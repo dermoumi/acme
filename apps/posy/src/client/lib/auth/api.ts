@@ -3,7 +3,6 @@ export interface SessionUser {
   name: string;
 }
 
-// Network failures throw; a rejected credential resolves to null.
 async function readUser(response: Response): Promise<SessionUser | null> {
   if (!response.ok) return null;
   const body = (await response.json()) as { user?: SessionUser | null };
@@ -14,14 +13,15 @@ export async function fetchSession(): Promise<SessionUser | null> {
   return readUser(await fetch("/session"));
 }
 
-export async function redeemCode(
-  code: string,
+export async function loginWithPassword(
+  username: string,
+  password: string,
   clientVersion: string,
 ): Promise<SessionUser | null> {
   const response = await fetch("/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code, clientVersion }),
+    body: JSON.stringify({ username, password, clientVersion }),
   });
   return readUser(response);
 }

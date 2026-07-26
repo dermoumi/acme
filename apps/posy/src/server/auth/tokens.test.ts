@@ -1,10 +1,12 @@
 import { expect, test } from "vitest";
 import { generateToken, hashToken } from "./tokens";
 
-test("tokens are 43-char base64url and unique", () => {
-  const token = generateToken();
-  expect(token).toMatch(/^[\w-]{43}$/u);
-  expect(generateToken()).not.toBe(token);
+test("tokens are 43-char base64url", () => {
+  expect(generateToken()).toMatch(/^[\w-]{43}$/u);
+});
+
+test("tokens are unique", () => {
+  expect(generateToken()).not.toBe(generateToken());
 });
 
 test("hashToken is sha-256 hex", async () => {

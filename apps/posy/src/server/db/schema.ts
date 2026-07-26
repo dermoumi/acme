@@ -4,6 +4,7 @@ import type { Generated } from "kysely";
 export interface UsersTable {
   id: string;
   name: string;
+  password_hash: string | null;
   created_at: number;
 }
 
@@ -14,14 +15,6 @@ export interface SessionsTable {
   created_at: number;
   last_seen_at: number;
   client_version: string | null;
-}
-
-export interface PairingLinksTable {
-  token_hash: string;
-  user_id: string;
-  created_at: number;
-  expires_at: number;
-  used_at: number | null;
 }
 
 export interface ItemsTable {
@@ -60,7 +53,6 @@ export interface LedgerTable {
 export interface Database {
   users: UsersTable;
   sessions: SessionsTable;
-  pairing_links: PairingLinksTable;
   items: ItemsTable;
   discoveries: DiscoveriesTable;
   inventory: InventoryTable;

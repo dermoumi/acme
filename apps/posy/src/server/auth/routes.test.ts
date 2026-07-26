@@ -4,39 +4,18 @@ import { expect, test } from "vitest";
 import { createApp } from "../app";
 import type { AppBindings } from "../bindings";
 import { createDb, type Database } from "../db";
-import { mintPairingLink, PAIRING_LINK_TTL_MS } from "./pairing";
 import { SESSION_COOKIE } from "./session";
 import { migratedDialect, seedUser, testEnv } from "./test-utils";
-import { generateToken, hashToken } from "./tokens";
 
 type App = Hono<{ Bindings: AppBindings }>;
 
-const HOUR_MS = 60 * 60 * 1000;
+const PASS = "test-dummy-pass";
 
 async function appWithUser(): Promise<{ app: App; db: Kysely<Database> }> {
   const dialect = await migratedDialect();
   const db = createDb(dialect);
-  await seedUser(db, "u1");
+  await seedUser(db, "u1", "Tester", PASS);
   return { app: createApp(() => dialect), db };
-}
-
-async function mintCode(
-  db: Kysely<Database>,
-  overrides: { expires_at?: number; used_at?: number | null } = {},
-): Promise<string> {
-  const code = generateToken();
-  await db
-    .insertInto("pairing_links")
-    .values({
-      token_hash: await hashToken(code),
-      user_id: "u1",
-      created_at: Date.now(),
-      expires_at: Date.now() + HOUR_MS,
-      used_at: null,
-      ...overrides,
-    })
-    .execute();
-  return code;
 }
 
 async function login(app: App, body: unknown): Promise<Response> {
@@ -66,11 +45,14 @@ async function getSession(app: App, cookie?: string): Promise<Response> {
   );
 }
 
-test("mint, redeem, authed: the happy path", async () => {
+test("correct password issues a session", async () => {
   const { app, db } = await appWithUser();
-  const code = await mintCode(db);
 
-  const res = await login(app, { code, clientVersion: "1.2.3" });
+  const res = await login(app, {
+    username: "u1",
+    password: PASS,
+    clientVersion: "1.2.3",
+  });
   expect(res.status).toBe(200);
   expect(await res.json()).toEqual({ user: { id: "u1", name: "Tester" } });
 
@@ -84,11 +66,6 @@ test("mint, redeem, authed: the happy path", async () => {
   const whoami = await getSession(app, cookieOf(res));
   expect(await whoami.json()).toEqual({ user: { id: "u1", name: "Tester" } });
 
-  const link = await db
-    .selectFrom("pairing_links")
-    .selectAll()
-    .executeTakeFirstOrThrow();
-  expect(link.used_at).not.toBeNull();
   const session = await db
     .selectFrom("sessions")
     .selectAll()
@@ -97,17 +74,15 @@ test("mint, redeem, authed: the happy path", async () => {
   await db.destroy();
 });
 
-test("missing, malformed, unknown, used, and expired codes get identical 401s", async () => {
+test("wrong password and unknown user are indistinguishable", async () => {
   const { app, db } = await appWithUser();
-  const used = await mintCode(db, { used_at: Date.now() });
-  const expired = await mintCode(db, { expires_at: Date.now() - 1 });
 
   const attempts = await Promise.all([
     login(app, {}),
     login(app, "not an object"),
-    login(app, { code: generateToken() }),
-    login(app, { code: used }),
-    login(app, { code: expired }),
+    login(app, { username: "u1", password: "wrong" }),
+    login(app, { username: "ghost", password: PASS }),
+    login(app, { username: "u1" }),
   ]);
   const bodies = await Promise.all(attempts.map((res) => res.json()));
   for (const res of attempts) {
@@ -115,60 +90,22 @@ test("missing, malformed, unknown, used, and expired codes get identical 401s", 
     expect(res.headers.get("set-cookie")).toBeNull();
   }
   for (const body of bodies) {
-    expect(body).toEqual({ error: "invalid_code" });
+    expect(body).toEqual({ error: "invalid_credentials" });
   }
-  await db.destroy();
-});
-
-test("mintPairingLink mints a redeemable 7-day link", async () => {
-  const { app, db } = await appWithUser();
-  const now = Date.now();
-  const code = await mintPairingLink(db, "u1", now);
-  const link = await db
-    .selectFrom("pairing_links")
-    .selectAll()
-    .executeTakeFirstOrThrow();
-  expect(link.expires_at).toBe(now + PAIRING_LINK_TTL_MS);
-  expect((await login(app, { code })).status).toBe(200);
-  await db.destroy();
-});
-
-test("minting purges expired links but keeps used and live ones", async () => {
-  const { app, db } = await appWithUser();
-  const now = Date.now();
-  await mintCode(db, { expires_at: now - 1 });
-  const used = await mintCode(db, { used_at: now });
-  const live = await mintCode(db);
-
-  await mintPairingLink(db, "u1", now);
-  const remaining = await db
-    .selectFrom("pairing_links")
-    .select("token_hash")
-    .execute();
-  const hashes = new Set(remaining.map((row) => row.token_hash));
-  expect(hashes.size).toBe(3);
-  expect(hashes).toContain(await hashToken(used));
-  expect(hashes).toContain(await hashToken(live));
-  expect((await login(app, { code: live })).status).toBe(200);
-  await db.destroy();
-});
-
-test("a code is single-use", async () => {
-  const { app, db } = await appWithUser();
-  const code = await mintCode(db);
-  expect((await login(app, { code })).status).toBe(200);
-  expect((await login(app, { code })).status).toBe(401);
   await db.destroy();
 });
 
 test("sessions survive a worker restart", async () => {
   const dialect = await migratedDialect();
   const db = createDb(dialect);
-  await seedUser(db, "u1");
+  await seedUser(db, "u1", "Tester", PASS);
   const cookie = cookieOf(
     await login(
       createApp(() => dialect),
-      { code: await mintCode(db) },
+      {
+        username: "u1",
+        password: PASS,
+      },
     ),
   );
 
@@ -180,8 +117,8 @@ test("sessions survive a worker restart", async () => {
 
 test("logout revokes only the current device's session", async () => {
   const { app, db } = await appWithUser();
-  const phone = cookieOf(await login(app, { code: await mintCode(db) }));
-  const tablet = cookieOf(await login(app, { code: await mintCode(db) }));
+  const phone = cookieOf(await login(app, { username: "u1", password: PASS }));
+  const tablet = cookieOf(await login(app, { username: "u1", password: PASS }));
 
   const res = await app.request(
     "/session",
@@ -205,21 +142,26 @@ test("logout without a session is a 204 no-op", async () => {
   await db.destroy();
 });
 
-test("the db only ever holds sha-256 hashes, never raw tokens", async () => {
+test("password_hash never stores the raw password and no endpoint returns it", async () => {
   const { app, db } = await appWithUser();
-  const code = await mintCode(db);
-  const cookie = cookieOf(await login(app, { code }));
-  const rawToken = cookie.split("=")[1];
+  const cookie = cookieOf(await login(app, { username: "u1", password: PASS }));
 
-  const links = await db.selectFrom("pairing_links").selectAll().execute();
+  const user = await db
+    .selectFrom("users")
+    .select("password_hash")
+    .where("id", "=", "u1")
+    .executeTakeFirstOrThrow();
+  expect(user.password_hash).not.toBe(PASS);
+  expect(user.password_hash).toMatch(/^pbkdf2\$/u);
+
   const sessions = await db.selectFrom("sessions").selectAll().execute();
-  for (const stored of [
-    ...links.map((row) => row.token_hash),
-    ...sessions.map((row) => row.id),
-  ]) {
-    expect(stored).toMatch(/^[0-9a-f]{64}$/u);
-    expect(stored).not.toBe(code);
-    expect(stored).not.toBe(rawToken);
+  for (const session of sessions) {
+    expect(session.id).toMatch(/^[0-9a-f]{64}$/u);
   }
+
+  const whoami = await getSession(app, cookie);
+  const body = await whoami.json();
+  expect(JSON.stringify(body)).not.toContain(PASS);
+  expect(JSON.stringify(body)).not.toContain("password");
   await db.destroy();
 });

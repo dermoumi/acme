@@ -10,13 +10,14 @@
 
 .form {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   margin-top: 1rem;
+  width: min(18rem, 80vw);
 }
 
 .code {
-  width: min(18rem, 60vw);
-  text-align: center;
+  width: 100%;
 }
 
 .error {

@@ -6,8 +6,7 @@ export type AuthStatus = "unknown" | "guest" | "authed";
 export interface AuthState {
   status: AuthStatus;
   user: SessionUser | null;
-  // Resolves false when the code was rejected; rejects on network failure.
-  login: (code: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 

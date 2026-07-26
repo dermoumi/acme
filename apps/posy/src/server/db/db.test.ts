@@ -24,7 +24,7 @@ async function tableNames(db: Kysely<Database>): Promise<string[]> {
 async function seedUser(db: Kysely<Database>, id: string): Promise<void> {
   await db
     .insertInto("users")
-    .values({ id, name: "Tester", created_at: 1000 })
+    .values({ id, name: "Tester", password_hash: null, created_at: 1000 })
     .execute();
 }
 
@@ -62,7 +62,6 @@ test("migrates up from zero", async () => {
     "inventory",
     "items",
     "ledger",
-    "pairing_links",
     "sessions",
     "users",
   ]);
@@ -84,7 +83,12 @@ test("users round-trip", async () => {
     .selectFrom("users")
     .selectAll()
     .executeTakeFirstOrThrow();
-  expect(row).toEqual({ id: "u1", name: "Tester", created_at: 1000 });
+  expect(row).toEqual({
+    id: "u1",
+    name: "Tester",
+    password_hash: null,
+    created_at: 1000,
+  });
   await db.destroy();
 });
 
@@ -109,42 +113,23 @@ test("sessions round-trip", async () => {
   await db.destroy();
 });
 
-test("pairing links round-trip and reject unknown users", async () => {
+test("users.password_hash round-trip", async () => {
   const db = await migratedDb();
-  await seedUser(db, "u1");
   await db
-    .insertInto("pairing_links")
+    .insertInto("users")
     .values({
-      token_hash: "hash1",
-      user_id: "u1",
+      id: "u2",
+      name: "Hashed",
+      password_hash: "pbkdf2$200000$salt$hash",
       created_at: 1000,
-      expires_at: 2000,
-      used_at: null,
     })
     .execute();
   const row = await db
-    .selectFrom("pairing_links")
-    .selectAll()
+    .selectFrom("users")
+    .select("password_hash")
+    .where("id", "=", "u2")
     .executeTakeFirstOrThrow();
-  expect(row).toEqual({
-    token_hash: "hash1",
-    user_id: "u1",
-    created_at: 1000,
-    expires_at: 2000,
-    used_at: null,
-  });
-  await expect(
-    db
-      .insertInto("pairing_links")
-      .values({
-        token_hash: "hash2",
-        user_id: "ghost",
-        created_at: 1000,
-        expires_at: 2000,
-        used_at: null,
-      })
-      .execute(),
-  ).rejects.toThrow();
+  expect(row.password_hash).toBe("pbkdf2$200000$salt$hash");
   await db.destroy();
 });
 
