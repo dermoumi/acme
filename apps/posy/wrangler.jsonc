@@ -20,10 +20,21 @@
         "binding": "ASSETS",
         "not_found_handling": "single-page-application",
         "run_worker_first": true
-      }
+      },
+      // CI resolves by name and patches the id in; see target-cloudflare.yml.
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "posy-staging",
+          "database_id": "set-by-ci"
+        }
+      ]
     },
     "production": {
-      "name": "play"
+      "name": "play",
+      "d1_databases": [
+        { "binding": "DB", "database_name": "posy", "database_id": "set-by-ci" }
+      ]
     }
   }
 }
