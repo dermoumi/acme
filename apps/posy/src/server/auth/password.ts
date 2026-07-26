@@ -47,7 +47,8 @@ async function verifyHash(password: string, stored: string): Promise<boolean> {
   const [algo, iterStr, saltB64, hashB64] = stored.split("$");
   if (algo !== "pbkdf2" || !iterStr || !saltB64 || !hashB64) return false;
   const iterations = Number(iterStr);
-  if (iterations > 200_000) return false;
+  if (!Number.isInteger(iterations) || iterations < 1 || iterations > 200_000)
+    return false;
   const salt = fromBase64(saltB64);
   const expected = fromBase64(hashB64);
   const actual = new Uint8Array(await deriveKey(password, salt, iterations));
