@@ -2,19 +2,13 @@ import type { Kysely } from "kysely";
 import type { Database } from "../src/server/db";
 import { withDb } from "./d1-util";
 
+// Throwaway staging credentials. Password for both accounts is "test".
+const HASH =
+  "pbkdf2$100000$NlNib9alMeDSscJHd7Ru7w==$wvUPPLzOovvQL+zgB+HuGVmUAHpK3gZGxL7//9o17gg=";
+
 const USERS = [
-  {
-    id: "sdrm",
-    name: "sdrm",
-    password_hash:
-      "pbkdf2$100000$fO3dPCH//A6SXy76wYqHmw==$YwxJ/nKo4LqnrQJLPTJlnWqKSGitZmiP2UVdOiRUC58=",
-  },
-  {
-    id: "sara",
-    name: "sara",
-    password_hash:
-      "pbkdf2$100000$IeZf3nbXcXUbzXUOMWBeFA==$0Vxtu56EzDSe4f3xVyajFlNlns0kLPBhprZtVkfVVfE=",
-  },
+  { id: "sdrm", name: "sdrm", password_hash: HASH },
+  { id: "sara", name: "sara", password_hash: HASH },
 ];
 
 async function seedUsers(db: Kysely<Database>): Promise<void> {
