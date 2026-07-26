@@ -20,7 +20,7 @@ if (username) {
   if (password) {
     const hash = await hashPassword(password);
     await withDb(async (db) => {
-      const result = await db
+      await db
         .insertInto("users")
         .values({
           id: username,
@@ -32,9 +32,6 @@ if (username) {
           oc.column("id").doUpdateSet({ password_hash: hash }),
         )
         .execute();
-      if (result.length === 0) {
-        throw new Error(`failed to set password for ${username}`);
-      }
       console.log(`password set for ${username}`);
     }, target);
   } else {
