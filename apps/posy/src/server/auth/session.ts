@@ -4,6 +4,7 @@ export const SESSION_COOKIE = "posy_session";
 // 400 days: the browser cap on cookie lifetime.
 export const SESSION_MAX_AGE_SECONDS = 400 * 24 * 60 * 60;
 
+const SESSION_MAX_AGE_MS = SESSION_MAX_AGE_SECONDS * 1000;
 const LAST_SEEN_REFRESH_MS = 60 * 60 * 1000;
 
 export interface SessionUser {
@@ -42,6 +43,7 @@ export async function resolveSession(
   const id = await hashToken(token);
   const session = await store.get(id);
   if (!session) return null;
+  if (now - session.lastSeenAt > SESSION_MAX_AGE_MS) return null;
   if (now - session.lastSeenAt > LAST_SEEN_REFRESH_MS) {
     await store.touch(id, now);
   }
