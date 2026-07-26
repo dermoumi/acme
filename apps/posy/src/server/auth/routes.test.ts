@@ -4,6 +4,7 @@ import { expect, test } from "vitest";
 import { createApp } from "../app";
 import type { AppBindings } from "../bindings";
 import { createDb, type Database } from "../db";
+import { mintPairingLink, PAIRING_LINK_TTL_MS } from "./pairing";
 import { SESSION_COOKIE } from "./session";
 import { migratedDialect, seedUser, testEnv } from "./test-utils";
 import { generateToken, hashToken } from "./tokens";
@@ -116,6 +117,39 @@ test("missing, malformed, unknown, used, and expired codes get identical 401s", 
   for (const body of bodies) {
     expect(body).toEqual({ error: "invalid_code" });
   }
+  await db.destroy();
+});
+
+test("mintPairingLink mints a redeemable 7-day link", async () => {
+  const { app, db } = await appWithUser();
+  const now = Date.now();
+  const code = await mintPairingLink(db, "u1", now);
+  const link = await db
+    .selectFrom("pairing_links")
+    .selectAll()
+    .executeTakeFirstOrThrow();
+  expect(link.expires_at).toBe(now + PAIRING_LINK_TTL_MS);
+  expect((await login(app, { code })).status).toBe(200);
+  await db.destroy();
+});
+
+test("minting purges expired links but keeps used and live ones", async () => {
+  const { app, db } = await appWithUser();
+  const now = Date.now();
+  await mintCode(db, { expires_at: now - 1 });
+  const used = await mintCode(db, { used_at: now });
+  const live = await mintCode(db);
+
+  await mintPairingLink(db, "u1", now);
+  const remaining = await db
+    .selectFrom("pairing_links")
+    .select("token_hash")
+    .execute();
+  const hashes = new Set(remaining.map((row) => row.token_hash));
+  expect(hashes.size).toBe(3);
+  expect(hashes).toContain(await hashToken(used));
+  expect(hashes).toContain(await hashToken(live));
+  expect((await login(app, { code: live })).status).toBe(200);
   await db.destroy();
 });
 

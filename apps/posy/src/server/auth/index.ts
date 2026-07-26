@@ -1,3 +1,4 @@
+export { mintPairingLink, PAIRING_LINK_TTL_MS } from "./pairing";
 export { authRoutes } from "./routes";
 export {
   createSession,

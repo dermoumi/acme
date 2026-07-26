@@ -1,14 +1,13 @@
 import { Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import type { Dialect, Kysely } from "kysely";
+import type { Dialect } from "kysely";
 import type { AppBindings } from "../bindings";
-import { createDb, type Database } from "../db";
+import { createDb } from "../db";
+import { redeemLink } from "./pairing";
 import {
-  createSession,
   resolveSession,
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
-  type SessionUser,
 } from "./session";
 import { hashToken } from "./tokens";
 
@@ -27,33 +26,6 @@ function parseLoginBody(body: unknown): LoginBody {
     clientVersion:
       typeof record.clientVersion === "string" ? record.clientVersion : null,
   };
-}
-
-// Conditional update + returning makes redemption atomic: missing, used,
-// and expired codes all fall through to the same null.
-async function redeemLink(
-  db: Kysely<Database>,
-  code: string,
-  clientVersion: string | null,
-  now: number,
-): Promise<(SessionUser & { token: string }) | null> {
-  const link = await db
-    .updateTable("pairing_links")
-    .set({ used_at: now })
-    .where("token_hash", "=", await hashToken(code))
-    .where("used_at", "is", null)
-    .where("expires_at", ">", now)
-    .returning("user_id")
-    .executeTakeFirst();
-  if (!link) return null;
-
-  const token = await createSession(db, link.user_id, clientVersion, now);
-  const user = await db
-    .selectFrom("users")
-    .select(["id", "name"])
-    .where("id", "=", link.user_id)
-    .executeTakeFirstOrThrow();
-  return { ...user, token };
 }
 
 export function authRoutes(
