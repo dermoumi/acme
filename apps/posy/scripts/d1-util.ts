@@ -1,5 +1,9 @@
 import type { D1Database } from "@cloudflare/workers-types";
-import { createDb, createMigrator } from "../src/server/db";
+import type { Kysely } from "kysely";
+import { D1Dialect } from "kysely-d1";
+import { getPlatformProxy } from "wrangler";
+import type { AppBindings } from "../src/server/bindings";
+import { createDb, type Database } from "../src/server/db";
 import { d1MigrationDialect } from "./d1-migration-dialect";
 
 interface QueryResponse {
@@ -13,8 +17,7 @@ interface QueryResponse {
 
 const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
 
-// Stand-in for the D1 binding backed by the REST API: kysely-d1 only calls
-// prepare().bind().all(), so this is the whole surface it needs.
+// kysely-d1 only calls prepare().bind().all(), so this shim is the whole surface it needs.
 function restD1(
   accountId: string,
   apiToken: string,
@@ -54,24 +57,36 @@ function restD1(
   return shim as unknown as D1Database;
 }
 
-const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-const databaseId = process.argv[2];
-if (!accountId || !apiToken) {
-  throw new Error("CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN must be set");
+function requireEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) throw new Error(`${key} must be set`);
+  return value;
 }
-if (!databaseId) throw new Error("usage: migrate-remote.ts <database-id>");
 
-const db = createDb(
-  d1MigrationDialect(restD1(accountId, apiToken, databaseId)),
-);
-const { error, results } = await createMigrator(db).migrateToLatest();
-for (const result of results ?? []) {
-  console.log(`${result.status}: ${result.migrationName}`);
+export function remoteDialect(databaseId: string) {
+  return d1MigrationDialect(
+    restD1(
+      requireEnv("CLOUDFLARE_ACCOUNT_ID"),
+      requireEnv("CLOUDFLARE_API_TOKEN"),
+      databaseId,
+    ),
+  );
 }
-await db.destroy();
 
-if (error) {
-  console.error(error);
-  process.exitCode = 1;
+export async function withDb(
+  fn: (db: Kysely<Database>) => Promise<void>,
+  databaseId?: string,
+): Promise<void> {
+  if (databaseId) {
+    const db = createDb(remoteDialect(databaseId));
+    await fn(db);
+    await db.destroy();
+  } else {
+    const { env, dispose } = await getPlatformProxy<AppBindings>();
+    if (!env.DB) throw new Error("no DB binding in wrangler config");
+    const db = createDb(new D1Dialect({ database: env.DB }));
+    await fn(db);
+    await db.destroy();
+    await dispose();
+  }
 }

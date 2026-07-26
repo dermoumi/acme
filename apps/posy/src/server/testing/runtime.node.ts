@@ -3,7 +3,11 @@ import { SqliteDialect } from "kysely";
 import indexHtml from "../../../test/fixtures/assets/index.html?raw";
 import { createDb } from "../db";
 import type { GateBindings } from "../gate";
-import type { CreateBindings, CreateEmptyDb } from "./contract";
+import type {
+  CreateBindings,
+  CreateEmptyDb,
+  CreateEmptyDialect,
+} from "./contract";
 
 // workerd hands back binding responses with immutable headers; reproduce that
 // here so the node run holds the worker to the same contract.
@@ -40,7 +44,8 @@ export const createBindings: CreateBindings = (overrides = {}) => ({
 });
 
 // A private in-memory database is empty by construction.
-export const createEmptyDb: CreateEmptyDb = () =>
-  Promise.resolve(
-    createDb(new SqliteDialect({ database: new SQLite(":memory:") })),
-  );
+export const createEmptyDialect: CreateEmptyDialect = () =>
+  Promise.resolve(new SqliteDialect({ database: new SQLite(":memory:") }));
+
+export const createEmptyDb: CreateEmptyDb = async () =>
+  createDb(await createEmptyDialect());

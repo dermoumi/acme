@@ -4,7 +4,11 @@ import { NO_MIGRATIONS } from "kysely/migration";
 import { d1MigrationDialect } from "../../../scripts/d1-migration-dialect";
 import { createDb, createMigrator } from "../db";
 import type { GateBindings } from "../gate";
-import type { CreateBindings, CreateEmptyDb } from "./contract";
+import type {
+  CreateBindings,
+  CreateEmptyDb,
+  CreateEmptyDialect,
+} from "./contract";
 
 export const createBindings: CreateBindings = (overrides = {}) => ({
   ASSETS: env.ASSETS as GateBindings["ASSETS"],
@@ -13,9 +17,14 @@ export const createBindings: CreateBindings = (overrides = {}) => ({
 
 // The pool has no isolatedStorage, so every test shares one D1 instance;
 // reverting every migration is what makes the schema empty again.
-export const createEmptyDb: CreateEmptyDb = async () => {
-  const db = createDb(d1MigrationDialect(env.DB as D1Database));
-  const { error } = await createMigrator(db).migrateTo(NO_MIGRATIONS);
+export const createEmptyDialect: CreateEmptyDialect = async () => {
+  const dialect = d1MigrationDialect(env.DB as D1Database);
+  const { error } = await createMigrator(createDb(dialect)).migrateTo(
+    NO_MIGRATIONS,
+  );
   if (error) throw new Error("could not reset the D1 schema", { cause: error });
-  return db;
+  return dialect;
 };
+
+export const createEmptyDb: CreateEmptyDb = async () =>
+  createDb(await createEmptyDialect());

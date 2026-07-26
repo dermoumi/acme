@@ -4,14 +4,17 @@ import type { Generated } from "kysely";
 export interface UsersTable {
   id: string;
   name: string;
+  password_hash: string | null;
   created_at: number;
 }
 
+// id is the sha-256 hex of the session token; raw tokens are never stored.
 export interface SessionsTable {
   id: string;
   user_id: string;
   created_at: number;
   last_seen_at: number;
+  client_version: string | null;
 }
 
 export interface ItemsTable {

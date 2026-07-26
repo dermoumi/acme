@@ -1,4 +1,4 @@
-import type { Kysely } from "kysely";
+import type { Dialect, Kysely } from "kysely";
 import type { Database } from "../db";
 import type { GateBindings } from "../gate";
 
@@ -7,5 +7,7 @@ export type CreateBindings = (
   overrides?: Partial<GateBindings>,
 ) => GateBindings;
 
-// A database with no schema applied: the same starting point on either runtime.
+// Empty schema, either runtime. createApp() takes the dialect, not the Kysely.
+export type CreateEmptyDialect = () => Promise<Dialect>;
+
 export type CreateEmptyDb = () => Promise<Kysely<Database>>;

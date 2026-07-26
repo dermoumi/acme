@@ -10,12 +10,18 @@
 
 .form {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   margin-top: 1rem;
+  width: min(18rem, 80vw);
 }
 
 .code {
-  width: 12ch;
+  width: 100%;
+}
+
+.error {
+  color: var(--danger, #a33);
+  max-width: 24rem;
   text-align: center;
-  letter-spacing: 0.25ch;
 }

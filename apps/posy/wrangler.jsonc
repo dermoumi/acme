@@ -10,6 +10,14 @@
   "observability": {
     "enabled": true
   },
+  // Local dev only; the named envs below get their ids from CI.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "posy",
+      "database_id": "posy-local"
+    }
+  ],
   "env": {
     "staging": {
       "name": "staging",

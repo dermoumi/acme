@@ -1,0 +1,105 @@
+import type { Context } from "hono";
+import { Hono } from "hono";
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import type { Dialect } from "kysely";
+import type { AppBindings } from "../bindings";
+import { createDb } from "../db";
+import { verifyPassword } from "./password";
+import { DbSessionStore } from "./session-db";
+import {
+  createSession,
+  resolveSession,
+  revokeSession,
+  SESSION_COOKIE,
+  SESSION_MAX_AGE_SECONDS,
+} from "./session";
+
+interface LoginBody {
+  username: string | null;
+  password: string | null;
+  clientVersion: string | null;
+}
+
+function parseLoginBody(body: unknown): LoginBody {
+  if (typeof body !== "object" || body === null) {
+    return { username: null, password: null, clientVersion: null };
+  }
+  const record = body as Record<string, unknown>;
+  return {
+    username:
+      typeof record.username === "string" && record.username
+        ? record.username
+        : null,
+    password:
+      typeof record.password === "string" && record.password
+        ? record.password
+        : null,
+    clientVersion:
+      typeof record.clientVersion === "string" ? record.clientVersion : null,
+  };
+}
+
+type Ctx = Context<{ Bindings: AppBindings }>;
+
+async function handleLogin(
+  ctx: Ctx,
+  getDialect: (env: AppBindings) => Dialect,
+): Promise<Response> {
+  const { username, password, clientVersion } = parseLoginBody(
+    await ctx.req.json().catch(() => null),
+  );
+  if (!username || !password) {
+    return ctx.json({ error: "invalid_credentials" }, 401);
+  }
+
+  const db = createDb(getDialect(ctx.env));
+  const user = await verifyPassword(db, username, password);
+  if (!user) return ctx.json({ error: "invalid_credentials" }, 401);
+
+  const store = new DbSessionStore(db);
+  const token = await createSession(store, user.id, clientVersion, Date.now());
+
+  setCookie(ctx, SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  });
+  return ctx.json({ user: { id: user.id, name: user.name } });
+}
+
+export function authRoutes(
+  getDialect: (env: AppBindings) => Dialect,
+): Hono<{ Bindings: AppBindings }> {
+  const routes = new Hono<{ Bindings: AppBindings }>();
+
+  routes.get("/", async (ctx) => {
+    const token = getCookie(ctx, SESSION_COOKIE);
+    if (!token) return ctx.json({ user: null });
+    const db = createDb(getDialect(ctx.env));
+    const store = new DbSessionStore(db);
+    const userId = await resolveSession(store, token, Date.now());
+    if (!userId) return ctx.json({ user: null });
+    const user = await db
+      .selectFrom("users")
+      .select(["id", "name"])
+      .where("id", "=", userId)
+      .executeTakeFirst();
+    return ctx.json({ user: user ?? null });
+  });
+
+  routes.post("/", (ctx) => handleLogin(ctx, getDialect));
+
+  routes.delete("/", async (ctx) => {
+    const token = getCookie(ctx, SESSION_COOKIE);
+    if (token) {
+      const db = createDb(getDialect(ctx.env));
+      await revokeSession(new DbSessionStore(db), token);
+    }
+    deleteCookie(ctx, SESSION_COOKIE, { path: "/" });
+    return ctx.body(null, 204);
+  });
+
+  return routes;
+}
