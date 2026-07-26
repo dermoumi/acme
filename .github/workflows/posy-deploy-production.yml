@@ -8,9 +8,10 @@ jobs:
   production:
     permissions:
       contents: read
-    uses: ./.github/workflows/app-deploy.yml # zizmor: ignore[secrets-inherit]
+    uses: ./.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
     with:
       app: posy
       environment: production
       url: https://play.posy.workers.dev
+      d1: true
     secrets: inherit

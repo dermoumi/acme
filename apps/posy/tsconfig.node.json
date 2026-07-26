@@ -1,0 +1,9 @@
+{
+  "extends": "@acme/tsconfig/tsconfig.node.json",
+  "include": [
+    "scripts",
+    "src/server/db/db.test.ts",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ]
+}

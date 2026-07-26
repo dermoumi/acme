@@ -1,7 +1,8 @@
 {
-  "extends": "@acme/tsconfig/tsconfig.react.json",
-  "compilerOptions": {
-    "types": ["vite/client", "vite-plugin-pwa/react"]
-  },
-  "include": ["src", "vite.config.ts", "vitest.config.ts"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.react.json" },
+    { "path": "./tsconfig.workers.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }
