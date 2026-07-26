@@ -61,7 +61,9 @@ jobs:
           app: posy
           branch: ${{ github.head_ref }}
 
+      # env context (unlike secrets) is allowed in a step-level if
       - name: Delete worker
+        if: env.CLOUDFLARE_API_TOKEN != ''
         working-directory: apps/posy
         env:
           SLUG: ${{ steps.names.outputs.slug }}
@@ -69,7 +71,7 @@ jobs:
 
       # runs even if the worker delete failed, so a stuck worker cannot leak the database
       - name: Delete database
-        if: always()
+        if: always() && env.CLOUDFLARE_API_TOKEN != ''
         uses: ./.github/actions/delete-d1
         with:
           app: posy
