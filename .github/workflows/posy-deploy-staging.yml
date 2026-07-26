@@ -1,4 +1,4 @@
-name: Deploy Posy
+name: Deploy Posy (staging)
 
 on:
   workflow_dispatch:
@@ -8,8 +8,8 @@ on:
       - apps/posy/**
       - packages/**
       - pnpm-lock.yaml
-      - .github/workflows/app-deploy.yml
-      - .github/workflows/deploy-posy.yml
+      - .github/workflows/target-cloudflare.yml
+      - .github/workflows/posy-deploy-staging.yml
       - .github/actions/setup/**
   push:
     branches: [main]
@@ -17,8 +17,8 @@ on:
       - apps/posy/**
       - packages/**
       - pnpm-lock.yaml
-      - .github/workflows/app-deploy.yml
-      - .github/workflows/deploy-posy.yml
+      - .github/workflows/target-cloudflare.yml
+      - .github/workflows/posy-deploy-staging.yml
       - .github/actions/setup/**
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action != 'closed' && !startsWith(github.head_ref, 'release-please--')
     permissions:
       contents: read
-    uses: ./.github/workflows/app-deploy.yml # zizmor: ignore[secrets-inherit]
+    uses: ./.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
     with:
       app: posy
       environment: preview
@@ -66,7 +66,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
-    uses: ./.github/workflows/app-deploy.yml # zizmor: ignore[secrets-inherit]
+    uses: ./.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
     with:
       app: posy
       environment: staging

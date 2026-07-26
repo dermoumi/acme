@@ -1,4 +1,4 @@
-name: App Deploy
+name: Deploy to Cloudflare
 
 on:
   workflow_call:
