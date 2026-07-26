@@ -37,13 +37,14 @@ jobs:
 
   preview-cleanup:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    name: Delete preview worker
+    name: Delete preview worker and database
     runs-on: ubuntu-latest
     environment: posy-staging
     permissions:
       contents: read
     env:
-      BRANCH: ${{ github.head_ref }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,15 +54,26 @@ jobs:
       - name: Setup
         uses: ./.github/actions/setup
 
+      - name: Resolve names
+        id: names
+        uses: ./.github/actions/resolve-names
+        with:
+          app: posy
+          branch: ${{ github.head_ref }}
+
       - name: Delete worker
         working-directory: apps/posy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          slug=$(printf '%s' "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-40)
-          case "$slug" in staging | "") slug="branch-$slug" ;; esac
-          pnpm exec wrangler delete --name "$slug" || true
+          SLUG: ${{ steps.names.outputs.slug }}
+        run: pnpm exec wrangler delete --name "$SLUG" || true
+
+      # runs even if the worker delete failed, so a stuck worker cannot leak the database
+      - name: Delete database
+        if: always()
+        uses: ./.github/actions/delete-d1
+        with:
+          app: posy
+          name: ${{ steps.names.outputs.db }}
 
   staging:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
