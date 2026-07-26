@@ -37,8 +37,8 @@ on:
         description: >-
           Whether this app has a D1 database; false skips every D1 step. Staging and
           production take the name from the built config, previews use "<app>-<slug>".
-          Apps enabling this must expose a "migrate:remote" script taking the database
-          id. Production is never created automatically.
+          Apps enabling this must expose a "migrate" script that accepts an optional
+          database id. Production is never created automatically.
         required: false
         type: boolean
         default: false
@@ -200,7 +200,7 @@ jobs:
         working-directory: apps/${{ inputs.app }}
         env:
           DB_ID: ${{ steps.d1.outputs.id }}
-        run: pnpm migrate:remote "$DB_ID"
+        run: pnpm migrate "$DB_ID"
 
       - name: Seed D1 database
         if: inputs.seed && inputs.d1 && inputs.environment != 'production' && env.CLOUDFLARE_API_TOKEN != ''

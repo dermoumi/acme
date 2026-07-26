@@ -1,6 +1,6 @@
 import type { Kysely } from "kysely";
 import type { Database } from "../src/server/db";
-import { runSeed } from "./seed-util";
+import { withDb } from "./d1-util";
 
 const USERS = [
   {
@@ -34,7 +34,7 @@ async function seedUsers(db: Kysely<Database>): Promise<void> {
   );
 }
 
-await runSeed(async (db) => {
+await withDb(async (db) => {
   await seedUsers(db);
   console.log("seeded users");
 });
