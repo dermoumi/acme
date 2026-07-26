@@ -224,10 +224,10 @@ jobs:
           BASE_URL: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
           HEALTH_PATH: ${{ inputs.health-path }}
         run: |
-          # a branch's first preview needs minutes for the route to go live, so the
-          # retry budget is wide; the timeouts are per attempt, bounding a hang
+          # a branch's first preview needs time for its route to go live, so the probe
+          # retries; the timeouts are per attempt so a hang cannot run to the job limit
           curl --fail --silent --show-error \
             --connect-timeout 10 --max-time 30 \
-            --retry 30 --retry-delay 10 --retry-max-time 300 --retry-all-errors \
+            --retry 15 --retry-delay 10 --retry-max-time 120 --retry-all-errors \
             --user-agent "acme-ci-health-probe" \
             "$BASE_URL$HEALTH_PATH"
