@@ -37,4 +37,4 @@ async function seedUsers(db: Kysely<Database>): Promise<void> {
 await withDb(async (db) => {
   await seedUsers(db);
   console.log("seeded users");
-});
+}, process.argv[2]);

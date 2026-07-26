@@ -17,6 +17,7 @@ interface QueryResponse {
 
 const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
 
+// kysely-d1 only calls prepare().bind().all(), so this shim is the whole surface it needs.
 function restD1(
   accountId: string,
   apiToken: string,
@@ -56,22 +57,28 @@ function restD1(
   return shim as unknown as D1Database;
 }
 
+function requireEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) throw new Error(`${key} must be set`);
+  return value;
+}
+
+export function remoteDialect(databaseId: string) {
+  return d1MigrationDialect(
+    restD1(
+      requireEnv("CLOUDFLARE_ACCOUNT_ID"),
+      requireEnv("CLOUDFLARE_API_TOKEN"),
+      databaseId,
+    ),
+  );
+}
+
 export async function withDb(
   fn: (db: Kysely<Database>) => Promise<void>,
+  databaseId?: string,
 ): Promise<void> {
-  const databaseId = process.argv[2];
-
   if (databaseId) {
-    const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-    const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-    if (!accountId || !apiToken) {
-      throw new Error(
-        "CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN must be set",
-      );
-    }
-    const db = createDb(
-      d1MigrationDialect(restD1(accountId, apiToken, databaseId)),
-    );
+    const db = createDb(remoteDialect(databaseId));
     await fn(db);
     await db.destroy();
   } else {
