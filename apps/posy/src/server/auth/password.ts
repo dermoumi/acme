@@ -2,7 +2,7 @@ import type { Kysely } from "kysely";
 import type { Database } from "../db";
 import type { SessionUser } from "./session";
 
-const ITERATIONS = 200_000;
+const ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const HASH_BITS = 256;
 

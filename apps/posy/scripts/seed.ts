@@ -7,13 +7,13 @@ const USERS = [
     id: "sdrm",
     name: "sdrm",
     password_hash:
-      "pbkdf2$200000$5gnl46kyvz9azhMw51Nwrw==$qpwWdKShWLJl8WzZWi/PIG56KOPz4K6/2nxY2jnSxh0=",
+      "pbkdf2$100000$fO3dPCH//A6SXy76wYqHmw==$YwxJ/nKo4LqnrQJLPTJlnWqKSGitZmiP2UVdOiRUC58=",
   },
   {
     id: "sara",
     name: "sara",
     password_hash:
-      "pbkdf2$200000$woXrQpVJyAelSakNfiROhw==$MYpndpepflpuwsG/JhmoBVxqCpElzLepPR2zYvA5rpw=",
+      "pbkdf2$100000$IeZf3nbXcXUbzXUOMWBeFA==$0Vxtu56EzDSe4f3xVyajFlNlns0kLPBhprZtVkfVVfE=",
   },
 ];
 
