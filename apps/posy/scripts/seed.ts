@@ -22,7 +22,7 @@ async function seedUsers(db: Kysely<Database>): Promise<void> {
     USERS.map((user) =>
       db
         .insertInto("users")
-        .values({ ...user, created_at: 0 })
+        .values({ ...user, created_at: Date.now() })
         .onConflict((oc) =>
           oc.column("id").doUpdateSet({
             name: user.name,
