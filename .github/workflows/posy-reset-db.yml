@@ -1,0 +1,103 @@
+name: Reset Posy database
+
+# Redeploy is mandatory: the recreated database gets a new id and the live worker
+# would stay bound to the deleted one. Run this FROM the branch you want reset.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Tier to reset. Production is deliberately not offered.
+        type: choice
+        options: [preview, staging]
+        default: preview
+      confirm:
+        description: Type DELETE to confirm the database is destroyed.
+        type: string
+        required: true
+
+jobs:
+  delete:
+    name: Delete ${{ inputs.environment }} database
+    runs-on: ubuntu-latest
+    # staging CF account; production is a separate account and unreachable from here
+    environment: posy-staging
+    permissions:
+      contents: read
+    env:
+      APP: posy
+      DEPLOY_ENV: ${{ inputs.environment }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Check confirmation
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$CONFIRM" != "DELETE" ]; then
+            echo "::error::type DELETE in the confirm field to run this"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Resolve names
+        id: names
+        if: inputs.environment == 'preview'
+        uses: ./.github/actions/resolve-names
+        with:
+          app: posy
+          branch: ${{ github.ref_name }}
+
+      - name: Build
+        # staging's database name lives in the built config, same as the deploy path
+        if: inputs.environment == 'staging'
+        env:
+          CLOUDFLARE_ENV: staging
+        run: pnpm exec turbo build --filter="@acme/$APP"
+
+      - name: Resolve staging database name
+        id: staging-db
+        if: inputs.environment == 'staging'
+        working-directory: apps/posy
+        run: |
+          config=$(realpath ".wrangler/deploy/$(jq -r .configPath .wrangler/deploy/config.json)")
+          echo "name=$(jq -r '.d1_databases[0].database_name' "$config")" >> "$GITHUB_OUTPUT"
+
+      - name: Delete database
+        id: deleted
+        uses: ./.github/actions/delete-d1
+        with:
+          app: posy
+          name: ${{ inputs.environment == 'preview' && steps.names.outputs.db || steps.staging-db.outputs.name }}
+
+      - name: Summarise
+        env:
+          DB_NAME: ${{ inputs.environment == 'preview' && steps.names.outputs.db || steps.staging-db.outputs.name }}
+          DELETED: ${{ steps.deleted.outputs.deleted }}
+          OLD_ID: ${{ steps.deleted.outputs.id }}
+        run: |
+          if [ "$DELETED" = "true" ]; then
+            echo "Deleted \`$DB_NAME\` (was \`$OLD_ID\`); the redeploy recreates and migrates it." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "\`$DB_NAME\` did not exist; the redeploy will create it." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  redeploy:
+    needs: delete
+    permissions:
+      contents: read
+    uses: ./.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
+    with:
+      app: posy
+      environment: ${{ inputs.environment }}
+      branch: ${{ github.ref_name }}
+      workers-subdomain: posy-stg
+      url: ${{ inputs.environment == 'staging' && 'https://staging.posy-stg.workers.dev' || '' }}
+      d1: true
+    secrets: inherit
