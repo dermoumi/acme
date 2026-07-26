@@ -203,7 +203,7 @@ jobs:
         run: pnpm migrate "$DB_ID"
 
       - name: Seed D1 database
-        if: inputs.seed && inputs.d1 && inputs.environment != 'production' && env.CLOUDFLARE_API_TOKEN != ''
+        if: inputs.seed && steps.d1.outputs.created == 'true' && env.CLOUDFLARE_API_TOKEN != ''
         working-directory: apps/${{ inputs.app }}
         env:
           DB_ID: ${{ steps.d1.outputs.id }}
