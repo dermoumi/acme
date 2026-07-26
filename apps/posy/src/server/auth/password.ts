@@ -1,6 +1,6 @@
 import type { Kysely } from "kysely";
 import type { Database } from "../db";
-import { createSession, type SessionUser } from "./session";
+import type { SessionUser } from "./session";
 
 const ITERATIONS = 200_000;
 const SALT_BYTES = 16;
@@ -68,9 +68,7 @@ export async function verifyPassword(
   db: Kysely<Database>,
   username: string,
   password: string,
-  clientVersion: string | null,
-  now: number,
-): Promise<(SessionUser & { token: string }) | null> {
+): Promise<SessionUser | null> {
   const user = await db
     .selectFrom("users")
     .select(["id", "name", "password_hash"])
@@ -84,6 +82,5 @@ export async function verifyPassword(
 
   if (!(await verifyHash(password, user.password_hash))) return null;
 
-  const token = await createSession(db, user.id, clientVersion, now);
-  return { id: user.id, name: user.name, token };
+  return { id: user.id, name: user.name };
 }

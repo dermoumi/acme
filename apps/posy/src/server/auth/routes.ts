@@ -5,12 +5,14 @@ import type { Dialect } from "kysely";
 import type { AppBindings } from "../bindings";
 import { createDb } from "../db";
 import { verifyPassword } from "./password";
+import { DbSessionStore } from "./session-db";
 import {
+  createSession,
   resolveSession,
+  revokeSession,
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
 } from "./session";
-import { hashToken } from "./tokens";
 
 interface LoginBody {
   username: string | null;
@@ -51,16 +53,13 @@ async function handleLogin(
   }
 
   const db = createDb(getDialect(ctx.env));
-  const user = await verifyPassword(
-    db,
-    username,
-    password,
-    clientVersion,
-    Date.now(),
-  );
+  const user = await verifyPassword(db, username, password);
   if (!user) return ctx.json({ error: "invalid_credentials" }, 401);
 
-  setCookie(ctx, SESSION_COOKIE, user.token, {
+  const store = new DbSessionStore(db);
+  const token = await createSession(store, user.id, clientVersion, Date.now());
+
+  setCookie(ctx, SESSION_COOKIE, token, {
     httpOnly: true,
     secure: true,
     sameSite: "Strict",
@@ -79,8 +78,15 @@ export function authRoutes(
     const token = getCookie(ctx, SESSION_COOKIE);
     if (!token) return ctx.json({ user: null });
     const db = createDb(getDialect(ctx.env));
-    const user = await resolveSession(db, token, Date.now());
-    return ctx.json({ user });
+    const store = new DbSessionStore(db);
+    const userId = await resolveSession(store, token, Date.now());
+    if (!userId) return ctx.json({ user: null });
+    const user = await db
+      .selectFrom("users")
+      .select(["id", "name"])
+      .where("id", "=", userId)
+      .executeTakeFirst();
+    return ctx.json({ user: user ?? null });
   });
 
   routes.post("/", (ctx) => handleLogin(ctx, getDialect));
@@ -89,10 +95,7 @@ export function authRoutes(
     const token = getCookie(ctx, SESSION_COOKIE);
     if (token) {
       const db = createDb(getDialect(ctx.env));
-      await db
-        .deleteFrom("sessions")
-        .where("id", "=", await hashToken(token))
-        .execute();
+      await revokeSession(new DbSessionStore(db), token);
     }
     deleteCookie(ctx, SESSION_COOKIE, { path: "/" });
     return ctx.body(null, 204);
