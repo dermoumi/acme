@@ -1,0 +1,35 @@
+name: Resolve names
+description: Slugified branch name and the per-branch preview database name
+
+inputs:
+  app:
+    description: App directory name under apps/
+    required: true
+  branch:
+    description: Head branch to slugify
+    required: true
+
+outputs:
+  slug:
+    description: Slugified branch, used as the preview worker name
+    value: ${{ steps.compute.outputs.slug }}
+  db:
+    description: Preview database name, "<app>-<slug>"
+    value: ${{ steps.compute.outputs.db }}
+
+runs:
+  using: composite
+  steps:
+    - name: Compute
+      id: compute
+      shell: bash
+      env:
+        APP: ${{ inputs.app }}
+        BRANCH: ${{ inputs.branch }}
+      run: |
+        slugify() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-40; }
+        slug=$(slugify "$BRANCH")
+        # "staging" shares the account with previews; "" would be an invalid name
+        case "$slug" in staging | "") slug="branch-$slug" ;; esac
+        echo "slug=$slug" >> "$GITHUB_OUTPUT"
+        echo "db=$(slugify "$APP")-$slug" >> "$GITHUB_OUTPUT"
