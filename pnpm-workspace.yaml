@@ -14,7 +14,7 @@ catalog:
   "@vitejs/plugin-react": "6.0.4"
   "@vitest/coverage-v8": "4.1.10"
   better-sqlite3: "13.0.1"
-  hono: "4.12.31"
+  hono: "4.12.32"
   husky: "9.1.7"
   kysely: "0.29.4"
   oxfmt: "0.60.0"
