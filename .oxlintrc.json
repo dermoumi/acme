@@ -75,7 +75,9 @@
       "files": ["**/*.d.ts"],
       "rules": {
         // Declaration files can export {}
-        "unicorn/require-module-specifiers": "off"
+        "unicorn/require-module-specifiers": "off",
+        // An ambient `declare module` file must NOT be a module itself
+        "import/unambiguous": "off"
       }
     }
   ]
