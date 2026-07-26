@@ -11,6 +11,8 @@ interface QueryResponse {
   }[];
 }
 
+const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
+
 // Stand-in for the D1 binding backed by the REST API: kysely-d1 only calls
 // prepare().bind().all(), so this is the whole surface it needs.
 function restD1(
@@ -18,10 +20,7 @@ function restD1(
   apiToken: string,
   databaseId: string,
 ): D1Database {
-  const base =
-    process.env.CLOUDFLARE_API_BASE_URL ??
-    "https://api.cloudflare.com/client/v4";
-  const url = `${base}/accounts/${accountId}/d1/database/${databaseId}/query`;
+  const url = `${CLOUDFLARE_API}/accounts/${accountId}/d1/database/${databaseId}/query`;
   const shim = {
     prepare: (sql: string) => ({
       bind: (...params: unknown[]) => ({
