@@ -7,7 +7,7 @@ async function readPassword(): Promise<string> {
   return new Promise((resolve) => {
     rl.question("password: ", (answer) => {
       rl.close();
-      resolve(answer.trim());
+      resolve(answer);
     });
   });
 }
