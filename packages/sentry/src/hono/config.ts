@@ -1,14 +1,26 @@
 import type { Options } from "@sentry/core";
 
-/** none keeps values verbatim; light masks sensitive keys; full also drops db query data. */
+/**
+ * How much request data is masked before an event is sent.
+ *
+ * - `none`: body and query values kept verbatim
+ * - `light`: values masked when their key looks sensitive
+ * - `full`: also withholds database query data
+ *
+ * Cookies and authorization headers are stripped at every level, `none` included.
+ */
 export type MaskingLevel = "none" | "light" | "full";
 
+/** Pass the same object to `withSentry` and `sentryTunnel` so both apply one policy. */
 export interface SentryConfig {
-  /** Defaults to "full": a project opts down deliberately, never by omission. */
+  /** Defaults to `"full"`. */
   masking?: MaskingLevel;
-  /** Extra body, query and cookie keys to mask. Substring matched. */
+  /**
+   * Extra keys to mask. Case-insensitive substring match, so `"note"` also
+   * masks `userNote`. Unused when masking is `"none"`.
+   */
   redactKeys?: string[];
-  /** Escape hatch for tests and future composition. */
+  /** Merged into the Sentry client options last, overriding the rest. */
   options?: Partial<Options>;
 }
 

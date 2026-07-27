@@ -29,7 +29,19 @@ async function describe(
   }
 }
 
-// Built at startup: initialising inside a request binds the client to that request's scope.
+/**
+ * Wraps a Hono app into a fetch handler with Sentry attached, for node servers.
+ *
+ * ```ts
+ * serve({ fetch: (request) => withSentry(app).fetch(request, env), port: 3000 });
+ * ```
+ *
+ * Reads settings from `process.env` at startup: node has one client per process,
+ * and initialising inside a request would bind it to that request's scope.
+ * Installs `app.onError` as a side effect, as the Workers entry does.
+ *
+ * Passes requests through unwrapped when `SENTRY_DSN` is unset.
+ */
 export function withSentry<Bindings extends SentryBindings>(
   app: Hono<{ Bindings: Bindings }>,
   config: SentryConfig = {},

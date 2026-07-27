@@ -13,18 +13,36 @@ import { stopWhenUnconfigured } from "./transport";
 // The browser never holds the real dsn; the tunnel swaps it in server-side.
 const PLACEHOLDER_DSN = "https://reporter@errors.internal/0";
 
+/** Options for `initSentryClient`. */
 export interface ClientSentryConfig {
-  /** Path of the tunnel route mounted from @acme/sentry/hono. */
+  /** Path of the tunnel route mounted from `@acme/sentry/hono`. Defaults to `/sentry`. */
   tunnel?: string;
-  /** Supplied by the app: the package takes no view on build-time var names. */
+  /** Deploy tier to tag events with. Defaults to `development`. */
   environment?: string;
+  /** Version the events belong to. Typically the app's package version. */
   release?: string;
-  /** Escape hatch for tests and future composition. */
+  /** Merged into `Sentry.init` last, overriding the rest. */
   options?: Partial<Options>;
 }
 
-// No masking here: the tunnel scrubs on the way through, so one server setting
-// governs both halves and none of that code ships to the browser.
+/**
+ * Initialises the browser SDK. Call once, before rendering.
+ *
+ * ```ts
+ * initSentryClient({
+ *   environment: import.meta.env.VITE_APP_ENV,
+ *   release: import.meta.env.VITE_APP_VERSION,
+ * });
+ * ```
+ *
+ * Events post to the tunnel route, which adds the real DSN and applies masking,
+ * so neither the DSN nor any scrubbing code is in the bundle.
+ *
+ * Captures errors only; tracing and replay are not enabled.
+ *
+ * Safe to call when the server has no DSN: the tunnel answers 404 and the
+ * transport then stops sending, costing one request per session.
+ */
 export function initSentryClient(config: ClientSentryConfig = {}): void {
   init({
     dsn: PLACEHOLDER_DSN,
