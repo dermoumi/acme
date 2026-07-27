@@ -1,4 +1,3 @@
-import { sentryErrorHandler } from "@acme/sentry/hono";
 import { Hono } from "hono";
 import type { Dialect } from "kysely";
 import { authRoutes } from "./auth";
@@ -12,7 +11,6 @@ export function createApp(
 ): Hono<{ Bindings: AppBindings }> {
   const app = new Hono<{ Bindings: AppBindings }>();
 
-  app.onError(sentryErrorHandler());
   app.use(gate());
   app.route("/session", authRoutes(getDialect));
   app.get("/health", (ctx) => ctx.json({ status: "ok", app: "posy" }));

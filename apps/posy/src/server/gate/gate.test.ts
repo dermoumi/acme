@@ -1,6 +1,6 @@
 import { createBindings } from "#testing/runtime";
 import { expect, test } from "vitest";
-import app from "../index";
+import { app } from "../index";
 
 function creds(user: string, pass: string): { Authorization: string } {
   return { Authorization: `Basic ${btoa(`${user}:${pass}`)}` };

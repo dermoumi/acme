@@ -1,4 +1,4 @@
-import { captureException } from "@sentry/cloudflare";
+import { captureException } from "@sentry/core";
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 

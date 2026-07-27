@@ -2,23 +2,24 @@ import type {
   ExecutionContext,
   Request as CfRequest,
 } from "@cloudflare/workers-types";
-import { type CloudflareOptions, wrapRequestHandler } from "@sentry/cloudflare";
-import type { SentryBindings } from "./bindings";
-import { sentryOptions } from "./options";
+import { wrapRequestHandler } from "@sentry/cloudflare";
+import type { SentryBindings } from "../bindings";
+import type { SentryConfig } from "../config";
+import { sentryOptions } from "../options";
 
 // Establishes the per-request client that sentryErrorHandler() captures onto.
-export function withSentry(
+export function withRequestClient(
   env: SentryBindings,
   request: CfRequest,
   ctx: ExecutionContext | undefined,
   handler: () => Response | Promise<Response>,
-  overrides?: Partial<CloudflareOptions>,
+  config: SentryConfig = {},
 ): Response | Promise<Response> {
-  const options = sentryOptions(env);
+  const options = sentryOptions(env, config.redactKeys);
   if (!options || !ctx) return handler();
 
   return wrapRequestHandler(
-    { options: { ...options, ...overrides }, request, context: ctx },
+    { options: { ...options, ...config.options }, request, context: ctx },
     handler,
   );
 }

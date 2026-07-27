@@ -1,0 +1,27 @@
+import { flush } from "@sentry/node";
+import { withSentry } from "../node/with-sentry-node";
+import type { Bench } from "./contract";
+import { recordingConfig, throwingApp } from "./throwing-app";
+
+export const bench: Bench = {
+  // Node reads its settings from process.env at startup, so drive that here.
+  build: (env, config) => {
+    const sent: unknown[] = [];
+    const previous = process.env.SENTRY_DSN;
+    if (env.SENTRY_DSN) process.env.SENTRY_DSN = env.SENTRY_DSN;
+    else delete process.env.SENTRY_DSN;
+
+    const handler = withSentry(throwingApp(), recordingConfig(config, sent));
+    // Assigning undefined would store the string "undefined", which is truthy.
+    if (previous === undefined) delete process.env.SENTRY_DSN;
+    else process.env.SENTRY_DSN = previous;
+
+    return {
+      invoke: async (request) => handler.fetch(request, env),
+      sent,
+    };
+  },
+  settle: async () => {
+    await flush(2000);
+  },
+};

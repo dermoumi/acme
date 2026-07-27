@@ -1,0 +1,32 @@
+import type { ExecutionContext } from "@cloudflare/workers-types";
+import {
+  createExecutionContext,
+  waitOnExecutionContext,
+} from "cloudflare:test";
+import { withSentry } from "../workerd/handler";
+import type { Bench } from "./contract";
+import { recordingConfig, throwingApp } from "./throwing-app";
+
+let latest: ExecutionContext | undefined;
+
+export const bench: Bench = {
+  build: (env, config) => {
+    const sent: unknown[] = [];
+    const handler = withSentry(throwingApp(), recordingConfig(config, sent));
+
+    return {
+      invoke: async (request) => {
+        const ctx = createExecutionContext();
+        latest = ctx;
+        const fetch = handler.fetch;
+        if (!fetch) throw new Error("withSentry returned no fetch handler");
+        return fetch(request as never, env, ctx);
+      },
+      sent,
+    };
+  },
+  // Sentry sends through waitUntil; this is what makes the send observable.
+  settle: async () => {
+    if (latest) await waitOnExecutionContext(latest);
+  },
+};

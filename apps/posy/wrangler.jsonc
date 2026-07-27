@@ -1,9 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "posy-dev",
-  // ExportedHandler's workerd Request cannot meet Hono's global one under node types,
-  // so the entry carries the .workerd suffix that keeps it out of that tsconfig project.
-  "main": "src/server/worker.workerd.ts",
+  "main": "src/server/index.ts",
   "compatibility_date": "2026-07-01",
   // @sentry/cloudflare needs AsyncLocalStorage for its per-request client.
   "compatibility_flags": ["nodejs_als"],

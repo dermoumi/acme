@@ -15,7 +15,16 @@ catalogs:
     '@cloudflare/workers-types':
       specifier: 5.20260724.1
       version: 5.20260724.1
+    '@hono/node-server':
+      specifier: 2.0.11
+      version: 2.0.11
     '@sentry/cloudflare':
+      specifier: 10.67.0
+      version: 10.67.0
+    '@sentry/core':
+      specifier: 10.67.0
+      version: 10.67.0
+    '@sentry/node':
       specifier: 10.67.0
       version: 10.67.0
     '@types/better-sqlite3':
@@ -198,19 +207,43 @@ importers:
       '@sentry/cloudflare':
         specifier: 'catalog:'
         version: 10.67.0(@cloudflare/workers-types@5.20260724.1)(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@10.2.2)
+      '@sentry/core':
+        specifier: 'catalog:'
+        version: 10.67.0
+      '@sentry/node':
+        specifier: 'catalog:'
+        version: 10.67.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@10.2.2)
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@cloudflare/vitest-pool-workers':
+        specifier: 'catalog:'
+        version: 0.18.8(@cloudflare/workers-types@5.20260724.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260724.1
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 2.0.11(hono@4.12.32)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 4.1.10(supports-color@10.2.2)(vitest@4.1.10)
       hono:
         specifier: 'catalog:'
         version: 4.12.32
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
+      vite:
+        specifier: 'catalog:'
+        version: 8.1.5(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.1)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(vite@8.1.5(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.1))
 
   packages/tsconfig:
     dependencies:
@@ -979,6 +1012,12 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@hono/node-server@2.0.11':
+    resolution: {integrity: sha512-bjD221KPLoJTWUwso1J6fGKiTXEUFedG/s0visavY4zakFPkeGURMRNly+FhBHs7T8Dz4qHaZIMX9ZoJHSJtKA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      hono: ^4
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -4298,6 +4337,10 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.1':
     optional: true
+
+  '@hono/node-server@2.0.11(hono@4.12.32)':
+    dependencies:
+      hono: 4.12.32
 
   '@img/colour@1.1.0': {}
 

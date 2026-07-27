@@ -1,4 +1,8 @@
 {
   "extends": "@acme/tsconfig/tsconfig.workerd.json",
-  "include": ["src"]
+  "compilerOptions": {
+    "customConditions": ["workerd"]
+  },
+  "include": ["src"],
+  "exclude": ["**/*.node.ts", "src/hono/node"]
 }
