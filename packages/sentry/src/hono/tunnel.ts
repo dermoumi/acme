@@ -1,5 +1,13 @@
+import {
+  type Envelope,
+  type ErrorEvent,
+  parseEnvelope,
+  serializeEnvelope,
+} from "@sentry/core";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { MaskingLevel, SentryConfig } from "./config";
+import { DEFAULT_REDACT_KEYS, scrubEvent, stripCredentials } from "./scrub";
 import type { SentryBindings } from "./bindings";
 
 const MAX_ENVELOPE_BYTES = 1024 * 1024;
@@ -14,30 +22,45 @@ function upstreamUrl(dsn: string): string {
   return `${url.protocol}//${url.host}/api/${projectId}/envelope/`;
 }
 
-// Envelopes are newline delimited; only the header line carries the dsn.
-function rewriteEnvelope(body: Uint8Array, dsn: string): Uint8Array {
-  const newline = body.indexOf(0x0a);
-  if (newline === -1) throw new HTTPException(400);
+// Envelope items are a discriminated union of tuples, which does not survive a
+// map; only "event" payloads are touched, so bridge the shape once here.
+type LooseItem = [{ type?: string }, unknown];
 
-  let header: string;
+// Round-tripping through Sentry's own codec keeps binary items and length
+// headers correct, rather than hand-walking the envelope.
+function rewriteEnvelope(
+  body: Uint8Array,
+  dsn: string,
+  masking: MaskingLevel,
+  keys: string[],
+): string | Uint8Array {
+  let parsed: Envelope;
   try {
-    const parsed: unknown = JSON.parse(
-      new TextDecoder().decode(body.subarray(0, newline)),
-    );
-    if (typeof parsed !== "object" || parsed === null) {
-      throw new HTTPException(400);
-    }
-    header = JSON.stringify({ ...parsed, dsn });
+    parsed = parseEnvelope(body);
   } catch {
     throw new HTTPException(400);
   }
 
-  const encoded = new TextEncoder().encode(header);
-  const rest = body.subarray(newline);
-  const rewritten = new Uint8Array(encoded.length + rest.length);
-  rewritten.set(encoded, 0);
-  rewritten.set(rest, encoded.length);
-  return rewritten;
+  const [headers, items] = parsed as unknown as [
+    Record<string, unknown>,
+    LooseItem[],
+  ];
+
+  const scrubbed = items.map(([itemHeader, payload]): LooseItem => {
+    if (itemHeader.type !== "event" || typeof payload !== "object") {
+      return [itemHeader, payload];
+    }
+    const event = payload as ErrorEvent;
+    return [
+      itemHeader,
+      masking === "none" ? stripCredentials(event) : scrubEvent(event, keys),
+    ];
+  });
+
+  return serializeEnvelope([
+    { ...headers, dsn },
+    scrubbed,
+  ] as unknown as Envelope);
 }
 
 function sameOrigin(request: Request): boolean {
@@ -65,15 +88,26 @@ async function readEnvelope(request: Request): Promise<Uint8Array> {
   return body;
 }
 
-export function sentryTunnel(): Hono<{ Bindings: SentryBindings }> {
+// Client events are scrubbed here rather than in the browser, so one server
+// setting governs both halves and no masking code ships to the client.
+export function sentryTunnel(
+  config: SentryConfig = {},
+): Hono<{ Bindings: SentryBindings }> {
   const tunnel = new Hono<{ Bindings: SentryBindings }>();
+  const masking = config.masking ?? "full";
+  const keys = [...DEFAULT_REDACT_KEYS, ...(config.redactKeys ?? [])];
 
   return tunnel.post("/", async (ctx) => {
     const dsn = ctx.env.SENTRY_DSN;
     if (!dsn) throw new HTTPException(404);
     if (!sameOrigin(ctx.req.raw)) throw new HTTPException(403);
 
-    const envelope = rewriteEnvelope(await readEnvelope(ctx.req.raw), dsn);
+    const envelope = rewriteEnvelope(
+      await readEnvelope(ctx.req.raw),
+      dsn,
+      masking,
+      keys,
+    );
     const response = await fetch(upstreamUrl(dsn), {
       method: "POST",
       body: envelope,

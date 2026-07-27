@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { SentryBindings } from "../bindings";
-import type { SentryConfig } from "../../shared/config";
+import type { SentryConfig } from "../config";
 
 export const BOOM = "route exploded";
 

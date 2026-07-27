@@ -6,7 +6,7 @@ import {
 import { init, withIsolationScope } from "@sentry/node";
 import type { Hono } from "hono";
 import type { SentryBindings } from "../bindings";
-import type { SentryConfig, SentryHandler } from "../../shared/config";
+import type { SentryConfig, SentryHandler } from "../config";
 import { sentryErrorHandler } from "../error-handler";
 import { sentryOptions } from "../options";
 

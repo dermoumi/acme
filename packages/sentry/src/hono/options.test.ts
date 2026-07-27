@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import type { MaskingLevel } from "../shared/config";
+import type { MaskingLevel } from "./config";
 import { sentryOptions } from "./options";
 
 const DSN = "https://dummy@dummy.ingest.sentry.io/1";

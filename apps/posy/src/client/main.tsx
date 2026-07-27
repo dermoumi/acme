@@ -5,7 +5,6 @@ import { App } from "./app";
 import "./index.css";
 
 initSentryClient({
-  masking: "light",
   environment: import.meta.env.VITE_APP_ENV,
   release: import.meta.env.VITE_APP_VERSION,
 });

@@ -1,5 +1,5 @@
 import type { SentryBindings } from "../bindings";
-import type { SentryConfig } from "../../shared/config";
+import type { SentryConfig } from "../config";
 
 export const DSN = "https://dummy@dummy.ingest.sentry.io/1";
 export const SESSION = "DUMMY-QUERY-TOKEN";

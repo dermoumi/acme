@@ -4,7 +4,7 @@ import type {
 } from "@cloudflare/workers-types";
 import { wrapRequestHandler } from "@sentry/cloudflare";
 import type { SentryBindings } from "../bindings";
-import type { SentryConfig } from "../../shared/config";
+import type { SentryConfig } from "../config";
 import { sentryOptions } from "../options";
 
 // Establishes the per-request client that sentryErrorHandler() captures onto.

@@ -1,9 +1,13 @@
-import { sentryTunnel } from "@acme/sentry/hono";
+import { sentryTunnel, type SentryConfig } from "@acme/sentry/hono";
 import { Hono } from "hono";
 import type { Dialect } from "kysely";
 import { authRoutes } from "./auth";
 import type { AppBindings } from "./bindings";
 import { gate } from "./gate";
+
+// One policy for both halves: the tunnel scrubs client events, withSentry the
+// server's. Auth is the only sensitive thing posy handles.
+export const sentryConfig: SentryConfig = { masking: "light" };
 
 // The dialect is resolved lazily per request so environments without a DB
 // binding still serve assets and /health.
@@ -15,7 +19,7 @@ export function createApp(
   app.use(gate());
   app.route("/session", authRoutes(getDialect));
   // Inside the gate: staging's basic auth covers this like every other route.
-  app.route("/sentry", sentryTunnel());
+  app.route("/sentry", sentryTunnel(sentryConfig));
   // Whether a DSN is set, not whether Sentry is reachable; capture is fail-soft.
   app.get("/health", (ctx) =>
     ctx.json({

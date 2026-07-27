@@ -4,7 +4,7 @@ import type {
 } from "@cloudflare/workers-types";
 import type { Hono } from "hono";
 import type { SentryBindings } from "../bindings";
-import type { SentryConfig } from "../../shared/config";
+import type { SentryConfig } from "../config";
 import { sentryErrorHandler } from "../error-handler";
 import { withRequestClient } from "./with-request-client";
 

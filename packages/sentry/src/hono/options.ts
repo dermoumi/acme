@@ -1,12 +1,12 @@
 import type { Options } from "@sentry/core";
 import type { SentryBindings } from "./bindings";
-import type { MaskingLevel, SentryConfig } from "../shared/config";
+import type { MaskingLevel, SentryConfig } from "./config";
 import {
   DEFAULT_REDACT_KEYS,
   SENSITIVE_HEADERS,
   scrubEvent,
   stripCredentials,
-} from "../shared/scrub";
+} from "./scrub";
 
 type DataCollection = NonNullable<Options["dataCollection"]>;
 

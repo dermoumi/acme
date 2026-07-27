@@ -105,3 +105,91 @@ test("reports upstream failure as a bad gateway", async () => {
     vi.unstubAllGlobals();
   }
 });
+
+function eventEnvelope(): string {
+  return [
+    JSON.stringify({ dsn: "https://reporter@errors.internal/0" }),
+    JSON.stringify({ type: "event" }),
+    JSON.stringify({
+      message: "boom",
+      request: {
+        headers: { Authorization: "Bearer LEAK", "User-Agent": "probe" },
+        data: JSON.stringify({ username: "her", password: "PLAINPASS" }),
+      },
+    }),
+  ].join("\n");
+}
+
+async function forwardedBody(
+  tunnel: ReturnType<typeof sentryTunnel>,
+  body: string,
+): Promise<string> {
+  let sent = "";
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((...args: Parameters<typeof fetch>) => {
+      const payload = args[1]?.body;
+      sent =
+        typeof payload === "string"
+          ? payload
+          : new TextDecoder().decode(payload as Uint8Array);
+      return Promise.resolve(new Response(null, { status: 200 }));
+    }),
+  );
+  try {
+    await tunnel.fetch(post(body), { SENTRY_DSN: DSN });
+    return sent;
+  } finally {
+    vi.unstubAllGlobals();
+  }
+}
+
+test("masks client event bodies on their way through", async () => {
+  const sent = await forwardedBody(
+    sentryTunnel({ masking: "light" }),
+    eventEnvelope(),
+  );
+  expect(sent).toContain("her");
+  expect(sent).not.toContain("PLAINPASS");
+  expect(sent).not.toContain("LEAK");
+});
+
+test("masking none keeps values but still drops credentials", async () => {
+  const sent = await forwardedBody(
+    sentryTunnel({ masking: "none" }),
+    eventEnvelope(),
+  );
+  expect(sent).toContain("PLAINPASS");
+  expect(sent).not.toContain("LEAK");
+});
+
+test("redactKeys reaches client events too", async () => {
+  const tunnel = sentryTunnel({ masking: "light", redactKeys: ["username"] });
+  const sent = await forwardedBody(tunnel, eventEnvelope());
+  expect(sent).not.toContain("her");
+});
+
+// Only "event" items are ours to rewrite. The payload deliberately carries a
+// scrubbable request, so over-scrubbing would show up here.
+test("passes non-event items through untouched", async () => {
+  const body = [
+    JSON.stringify({ dsn: "https://reporter@errors.internal/0" }),
+    JSON.stringify({ type: "transaction" }),
+    JSON.stringify({
+      sid: "abc",
+      request: {
+        headers: { Authorization: "Bearer LEAK" },
+        data: JSON.stringify({ password: "PLAINPASS" }),
+      },
+    }),
+  ].join("\n");
+  const sent = await forwardedBody(sentryTunnel({ masking: "full" }), body);
+  expect(sent).toContain("PLAINPASS");
+  expect(sent).toContain("LEAK");
+  expect(sent).toContain('"sid":"abc"');
+});
+
+test("still swaps the dsn while scrubbing", async () => {
+  const sent = await forwardedBody(sentryTunnel(), eventEnvelope());
+  expect(JSON.parse(sent.split("\n")[0] ?? "{}")).toMatchObject({ dsn: DSN });
+});
