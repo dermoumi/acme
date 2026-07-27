@@ -20,7 +20,8 @@ export const DEFAULT_REDACT_KEYS = [
   "token",
 ];
 
-const REDACTED = "[redacted]";
+// Matches what Sentry's own scrubbing writes, so one event has one marker.
+const REDACTED = "[Filtered]";
 const DENIED_HEADERS = new Set(SENSITIVE_HEADERS);
 
 // Both sides are lowered: callers supply redactKeys in whatever case they like.
