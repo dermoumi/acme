@@ -238,17 +238,16 @@ jobs:
           if [ "$DEPLOY_ENV" != "production" ] && [ -n "$BASIC_AUTH" ]; then
             extra_args+=(--var "BASIC_AUTH:$BASIC_AUTH")
           fi
-          # deploy facts, not sentry's: the tier is authoritative here, and previews
-          # would otherwise inherit "staging" from the env block they build against
+          # previews build against the staging env block, so the tier comes from here
           extra_args+=(--var "APP_ENV:$DEPLOY_ENV")
           extra_args+=(--var "APP_REVISION:$APP_REVISION")
+          version=$(jq -r '.version // empty' package.json)
+          if [ -n "$version" ]; then
+            extra_args+=(--var "APP_VERSION:$version")
+          fi
           # injected, never committed; absent just means this deploy is unmonitored
           if [ -n "$SENTRY_DSN" ]; then
             extra_args+=(--var "SENTRY_DSN:$SENTRY_DSN")
-            version=$(jq -r '.version // empty' package.json)
-            if [ -n "$version" ]; then
-              extra_args+=(--var "SENTRY_RELEASE:$version")
-            fi
           fi
           if [ "$DEPLOY_ENV" = "preview" ]; then
             pnpm exec wrangler deploy --name "$SLUG" "${extra_args[@]}"

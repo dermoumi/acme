@@ -42,7 +42,7 @@ export function sentryOptions(
   return {
     dsn: env.SENTRY_DSN,
     environment: env.APP_ENV ?? "development",
-    release: env.SENTRY_RELEASE,
+    release: env.APP_VERSION,
     dist: env.APP_REVISION,
     dataCollection: dataCollection(masking),
     beforeSend:

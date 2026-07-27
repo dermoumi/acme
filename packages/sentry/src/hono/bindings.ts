@@ -12,8 +12,11 @@ export interface SentryBindings {
    * `development`. Not Sentry-specific; anything needing the tier can read it.
    */
   APP_ENV?: string;
-  /** Version the events belong to. Typically the package version. */
-  SENTRY_RELEASE?: string;
+  /**
+   * App version, typically from package.json. Reported as Sentry's `release`.
+   * Not Sentry-specific; anything needing the version can read it.
+   */
+  APP_VERSION?: string;
   /**
    * Build identifier, typically a short commit sha. Reported as Sentry's `dist`
    * to tell builds of one release apart. Not Sentry-specific; a health endpoint

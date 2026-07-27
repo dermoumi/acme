@@ -13,7 +13,7 @@ test("carries the dsn, environment and release through", () => {
   const options = sentryOptions({
     SENTRY_DSN: DSN,
     APP_ENV: "production",
-    SENTRY_RELEASE: "1.2.3",
+    APP_VERSION: "1.2.3",
     APP_REVISION: "abc1234",
   });
   expect(options?.dsn).toBe(DSN);
