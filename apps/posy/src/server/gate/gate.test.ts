@@ -116,6 +116,22 @@ test("multi-user secret: both lines work, colons in passwords survive", async ()
 test("gated: /health stays open without credentials but gets noindex", async () => {
   const res = await app.request("/health", {}, gated);
   expect(res.status).toBe(200);
-  expect(await res.json()).toEqual({ status: "ok", app: "posy" });
+  expect(await res.json()).toEqual({
+    status: "ok",
+    app: "posy",
+    sentry: "off",
+  });
   expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
+});
+
+test("/health reports sentry as configured once a DSN is bound", async () => {
+  const res = await app.request(
+    "/health",
+    {},
+    {
+      ...createBindings(),
+      SENTRY_DSN: "https://dummy@dummy.ingest.sentry.io/1",
+    },
+  );
+  expect(await res.json()).toMatchObject({ sentry: "configured" });
 });

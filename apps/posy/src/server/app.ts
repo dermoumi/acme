@@ -13,7 +13,14 @@ export function createApp(
 
   app.use(gate());
   app.route("/session", authRoutes(getDialect));
-  app.get("/health", (ctx) => ctx.json({ status: "ok", app: "posy" }));
+  // Whether a DSN is set, not whether Sentry is reachable; capture is fail-soft.
+  app.get("/health", (ctx) =>
+    ctx.json({
+      status: "ok",
+      app: "posy",
+      sentry: ctx.env.SENTRY_DSN ? "configured" : "off",
+    }),
+  );
 
   // Under run_worker_first the worker fronts every request; the assets binding
   // applies the configured SPA not_found_handling itself.

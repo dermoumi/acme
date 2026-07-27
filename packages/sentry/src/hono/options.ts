@@ -29,6 +29,7 @@ export function sentryOptions(
     dsn: env.SENTRY_DSN,
     environment: env.SENTRY_ENVIRONMENT ?? "development",
     release: env.SENTRY_RELEASE,
+    dist: env.SENTRY_DIST,
     dataCollection: DATA_COLLECTION,
     beforeSend: (event) => scrubEvent(event, keys),
   };

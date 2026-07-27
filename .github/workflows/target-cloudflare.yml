@@ -59,6 +59,9 @@ on:
       BASIC_AUTH:
         description: Basic-auth users ("user:pass" per line) gating preview/staging
         required: false
+      SENTRY_DSN:
+        description: Sentry ingestion key; absent means the deploy is unmonitored
+        required: false
 
 jobs:
   deploy:
@@ -216,12 +219,29 @@ jobs:
         env:
           WORKERS_SUBDOMAIN: ${{ inputs.workers-subdomain }}
           BASIC_AUTH: ${{ secrets.BASIC_AUTH }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          # on a PR, github.sha is the synthetic merge commit, not what was pushed
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           SLUG: ${{ steps.names.outputs.slug }}
         run: |
           extra_args=()
           # the worker fails closed (503) when staging deploys without this var
           if [ "$DEPLOY_ENV" != "production" ] && [ -n "$BASIC_AUTH" ]; then
             extra_args+=(--var "BASIC_AUTH:$BASIC_AUTH")
+          fi
+          # injected, never committed; absent just means this deploy is unmonitored
+          if [ -n "$SENTRY_DSN" ]; then
+            extra_args+=(--var "SENTRY_DSN:$SENTRY_DSN")
+            # release names the version, dist the build, which is what actually moves
+            extra_args+=(--var "SENTRY_DIST:$DEPLOY_ENV-${COMMIT_SHA::7}")
+            version=$(jq -r '.version // empty' package.json)
+            if [ -n "$version" ]; then
+              extra_args+=(--var "SENTRY_RELEASE:$version")
+            fi
+            # previews build from the staging env block, so relabel them here
+            if [ "$DEPLOY_ENV" = "preview" ]; then
+              extra_args+=(--var "SENTRY_ENVIRONMENT:preview")
+            fi
           fi
           if [ "$DEPLOY_ENV" = "preview" ]; then
             pnpm exec wrangler deploy --name "$SLUG" "${extra_args[@]}"
@@ -237,11 +257,21 @@ jobs:
         env:
           BASE_URL: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
           HEALTH_PATH: ${{ inputs.health-path }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
           # a branch's first preview needs time for its route to go live, so the probe
           # retries; the timeouts are per attempt so a hang cannot run to the job limit
-          curl --fail --silent --show-error \
+          body=$(curl --fail --silent --show-error \
             --connect-timeout 10 --max-time 30 \
             --retry 15 --retry-delay 10 --retry-max-time 120 --retry-all-errors \
             --user-agent "acme-ci-health-probe" \
-            "$BASE_URL$HEALTH_PATH"
+            "$BASE_URL$HEALTH_PATH")
+          echo "$body"
+
+          # Capture is fail-soft, so a dsn that never reached the worker is silent.
+          # Only assert when one was supplied: no secret stays a legitimate deploy.
+          if [ -n "$SENTRY_DSN" ] &&
+             ! printf '%s' "$body" | grep -qE '"sentry" *: *"configured"'; then
+            echo "::error::SENTRY_DSN is set but $HEALTH_PATH does not report sentry as configured"
+            exit 1
+          fi
