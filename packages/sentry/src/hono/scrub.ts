@@ -23,9 +23,10 @@ export const DEFAULT_REDACT_KEYS = [
 const REDACTED = "[redacted]";
 const DENIED_HEADERS = new Set(SENSITIVE_HEADERS);
 
-function isSensitive(name: string, keys: string[]): boolean {
+// Both sides are lowered: callers supply redactKeys in whatever case they like.
+function isSensitive(name: string, needles: string[]): boolean {
   const lower = name.toLowerCase();
-  return keys.some((needle) => lower.includes(needle));
+  return needles.some((needle) => lower.includes(needle));
 }
 
 function redactValue(value: unknown, keys: string[]): unknown {
@@ -77,11 +78,27 @@ function redactHeaders(
   );
 }
 
-// Bodies and query strings are kept for debugging; only sensitive keys are masked.
-export function scrubEvent(event: ErrorEvent, keys: string[]): ErrorEvent {
+// dataCollection's header denylist only reaches span attributes, not the event.
+export function stripCredentials(event: ErrorEvent): ErrorEvent {
   const { request } = event;
   if (!request) return event;
 
+  const { cookies, headers, ...rest } = request;
+  return {
+    ...event,
+    request: { ...rest, ...(headers && { headers: redactHeaders(headers) }) },
+  };
+}
+
+// Bodies and query strings are kept for debugging; only sensitive keys are masked.
+export function scrubEvent(
+  event: ErrorEvent,
+  redactKeys: string[],
+): ErrorEvent {
+  const { request } = event;
+  if (!request) return event;
+
+  const keys = redactKeys.map((key) => key.toLowerCase());
   const { cookies, data, headers, query_string, url, ...rest } = request;
   return {
     ...event,

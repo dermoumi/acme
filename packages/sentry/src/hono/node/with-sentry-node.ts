@@ -37,7 +37,7 @@ export function withSentry<Bindings extends SentryBindings>(
   app.onError(sentryErrorHandler());
 
   const settings: SentryBindings = process.env;
-  const options = sentryOptions(settings, config.redactKeys);
+  const options = sentryOptions(settings, config);
   if (!options) return { fetch: (request, env) => app.fetch(request, env) };
 
   init({ ...options, ...config.options });

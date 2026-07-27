@@ -93,6 +93,28 @@ test("masks a whole nested object when its own key is sensitive", () => {
   expect(scrub(event).request?.data).not.toContain(SESSION);
 });
 
+test("key matching ignores case on both sides", () => {
+  const body = (field: string, key: string) => {
+    const event: ErrorEvent = {
+      type: undefined,
+      request: { data: JSON.stringify({ [field]: NOTE, keep: "visible" }) },
+    };
+    return scrubEvent(event, [key]).request?.data as string;
+  };
+
+  const cases: [string, string][] = [
+    ["note", "NOTE"],
+    ["NOTE", "note"],
+    ["nOtE", "NoTe"],
+    ["userNote", "note"],
+  ];
+  for (const [field, key] of cases) {
+    expect(body(field, key), `field ${field} / key ${key}`).not.toContain(NOTE);
+  }
+  expect(body("unrelated", "note")).toContain(NOTE);
+  expect(body("note", "NOTE")).toContain("visible");
+});
+
 test("redactKeys marks project specific fields as sensitive", () => {
   const { request } = scrub(eventWithRequest(), ["note"]);
   expect(request?.data).toContain("tester");

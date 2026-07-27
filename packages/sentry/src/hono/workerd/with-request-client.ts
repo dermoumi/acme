@@ -15,7 +15,7 @@ export function withRequestClient(
   handler: () => Response | Promise<Response>,
   config: SentryConfig = {},
 ): Response | Promise<Response> {
-  const options = sentryOptions(env, config.redactKeys);
+  const options = sentryOptions(env, config);
   if (!options || !ctx) return handler();
 
   return wrapRequestHandler(

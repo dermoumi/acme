@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import type { MaskingLevel } from "./config";
 import { sentryOptions } from "./options";
 
 const DSN = "https://dummy@dummy.ingest.sentry.io/1";
@@ -33,7 +34,7 @@ test("scrubs every event before sending", () => {
 });
 
 // Guards the trap: any category left unlisted silently reverts to permissive.
-test("every data collection category is locked off", () => {
+test("every data collection category is named, defaulting to full masking", () => {
   expect(sentryOptions({ SENTRY_DSN: DSN })?.dataCollection).toEqual({
     userInfo: false,
     cookies: false,
@@ -45,8 +46,36 @@ test("every data collection category is locked off", () => {
     },
     httpBodies: ["incomingRequest"],
     urlQueryParams: true,
-    databaseQueryData: true,
+    databaseQueryData: false,
     genAI: { inputs: false, outputs: false },
     graphQL: { document: false, variables: false },
   });
+});
+
+test("only full withholds database query data", () => {
+  const dbData = (masking: MaskingLevel) =>
+    sentryOptions({ SENTRY_DSN: DSN }, { masking })?.dataCollection
+      ?.databaseQueryData;
+  expect(dbData("none")).toBe(true);
+  expect(dbData("light")).toBe(true);
+  expect(dbData("full")).toBe(false);
+});
+
+// Credentials are not part of the masking ladder; they go at every level.
+test("none keeps values but still strips credentials", () => {
+  const beforeSend = sentryOptions(
+    { SENTRY_DSN: DSN },
+    { masking: "none" },
+  )?.beforeSend;
+  const event = {
+    type: undefined,
+    request: {
+      headers: { Authorization: "Bearer LEAK", "User-Agent": "probe" },
+      data: JSON.stringify({ password: "PLAINPASS" }),
+    },
+  };
+  const sent = JSON.stringify(beforeSend?.(event, {}));
+  expect(sent).not.toContain("LEAK");
+  expect(sent).toContain("probe");
+  expect(sent).toContain("PLAINPASS");
 });

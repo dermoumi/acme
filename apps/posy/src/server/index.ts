@@ -7,4 +7,5 @@ export const app = createApp((env) => {
   return new D1Dialect({ database: env.DB });
 });
 
-export default withSentry(app);
+// Auth is the only sensitive thing here, so mask keys but keep query data.
+export default withSentry(app, { masking: "light" });
