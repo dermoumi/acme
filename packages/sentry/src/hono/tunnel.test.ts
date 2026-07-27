@@ -45,8 +45,9 @@ test("swaps the fake dsn for the real one before forwarding", async () => {
   const { status, forwarded } = await send(post(envelope()));
   expect(status).toBe(200);
 
-  const body = await forwarded?.text();
-  const header = JSON.parse(body?.split("\n")[0] ?? "{}") as { dsn: string };
+  const raw = await forwarded?.arrayBuffer();
+  const body = new TextDecoder().decode(raw);
+  const header = JSON.parse(body.split("\n")[0] ?? "{}") as { dsn: string };
   expect(header.dsn).toBe(DSN);
   expect(body).toContain('{"type":"event"}');
 });

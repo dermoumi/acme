@@ -9,6 +9,8 @@ const env = { SENTRY_DSN: "" };
 
 export default defineConfig({
   test: {
+    // Tests throw on purpose; keep their output for the runs that fail.
+    silent: "passed-only",
     // The workers pool rejects the v8 provider: it needs node:inspector.
     coverage: {
       provider: "istanbul",
