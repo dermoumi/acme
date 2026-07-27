@@ -27,5 +27,5 @@ core.[0-9]*
 # OS
 .DS_Store
 
-# worktrees
-.w/
+# editors
+*.code-workspace
