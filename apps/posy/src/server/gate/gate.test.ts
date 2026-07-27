@@ -119,6 +119,7 @@ test("gated: /health stays open without credentials but gets noindex", async () 
   expect(await res.json()).toEqual({
     status: "ok",
     app: "posy",
+    version: "dev",
     revision: "dev",
     sentry: "off",
   });
@@ -129,9 +130,12 @@ test("/health reports the build so a deploy check can wait for it", async () => 
   const res = await app.request(
     "/health",
     {},
-    { ...createBindings(), APP_REVISION: "abc1234" },
+    { ...createBindings(), APP_VERSION: "1.2.3", APP_REVISION: "abc1234" },
   );
-  expect(await res.json()).toMatchObject({ revision: "abc1234" });
+  expect(await res.json()).toMatchObject({
+    version: "1.2.3",
+    revision: "abc1234",
+  });
 });
 
 test("/health reports sentry as configured once a DSN is bound", async () => {

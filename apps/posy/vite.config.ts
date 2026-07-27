@@ -8,16 +8,17 @@ const { version } = JSON.parse(
   readFileSync(new URL("package.json", import.meta.url), "utf8"),
 ) as { version: string };
 
+// An empty var has to fall back too, which `??` would not do.
+function envOr(name: string, fallback: string): string {
+  const value = process.env[name];
+  return value === undefined || value === "" ? fallback : value;
+}
+
 // loadEnv picks VITE_-prefixed vars up from process.env, so this reaches
 // import.meta.env in both dev and build (plain `define` does not).
 process.env.VITE_APP_VERSION = version;
-// Only mirrored when actually set, so an empty tier falls back client-side.
-if (process.env.APP_ENV) {
-  process.env.VITE_APP_ENV = process.env.APP_ENV;
-}
-if (process.env.APP_REVISION) {
-  process.env.VITE_APP_REVISION = process.env.APP_REVISION;
-}
+process.env.VITE_APP_ENV = envOr("APP_ENV", "development");
+process.env.VITE_APP_REVISION = envOr("APP_REVISION", "dev");
 
 export default defineConfig({
   plugins: [

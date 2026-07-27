@@ -18,9 +18,9 @@ export interface SentryBindings {
    */
   APP_VERSION?: string;
   /**
-   * Build identifier, typically a short commit sha. Reported as Sentry's `dist`
-   * to tell builds of one release apart. Not Sentry-specific; a health endpoint
-   * can report it so a deploy check knows which build answered.
+   * Build identifier, typically a short commit sha. Defaults to `dev`. Reported
+   * as Sentry's `dist` to tell builds of one release apart. Not Sentry-specific;
+   * a health endpoint can report it so a deploy check knows which build answered.
    */
   APP_REVISION?: string;
 }

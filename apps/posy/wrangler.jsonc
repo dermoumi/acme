@@ -6,7 +6,9 @@
   // @sentry/cloudflare needs AsyncLocalStorage for its per-request client.
   "compatibility_flags": ["nodejs_als"],
   "vars": {
-    "APP_ENV": "development"
+    "APP_ENV": "development",
+    "APP_VERSION": "dev",
+    "APP_REVISION": "dev"
   },
   "assets": {
     "binding": "ASSETS",

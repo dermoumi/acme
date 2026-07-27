@@ -22,8 +22,11 @@ test("carries the dsn, environment and release through", () => {
   expect(options?.dist).toBe("abc1234");
 });
 
-test("falls back to a development environment", () => {
-  expect(sentryOptions({ SENTRY_DSN: DSN })?.environment).toBe("development");
+test("falls back to a development environment and a dev build", () => {
+  const options = sentryOptions({ SENTRY_DSN: DSN });
+  expect(options?.environment).toBe("development");
+  expect(options?.release).toBe("dev");
+  expect(options?.dist).toBe("dev");
 });
 
 test("scrubs every event before sending", () => {
