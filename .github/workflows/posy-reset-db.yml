@@ -5,19 +5,16 @@ name: Reset Posy database
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: Tier to reset. Production is deliberately not offered.
-        type: choice
-        options: [preview, staging]
-        default: preview
       confirm:
-        description: Type DELETE to confirm the database is destroyed.
+        description: >-
+          Type DELETE to confirm. Run from main to reset staging, from any other branch
+          to reset that branch's preview. Production is deliberately not offered.
         type: string
         required: true
 
 jobs:
   delete:
-    name: Delete ${{ inputs.environment }} database
+    name: Delete ${{ github.ref == 'refs/heads/main' && 'staging' || 'preview' }} database
     runs-on: ubuntu-latest
     # staging CF account; production is a separate account and unreachable from here
     environment: posy-staging
@@ -25,7 +22,6 @@ jobs:
       contents: read
     env:
       APP: posy
-      DEPLOY_ENV: ${{ inputs.environment }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
@@ -48,7 +44,7 @@ jobs:
 
       - name: Resolve names
         id: names
-        if: inputs.environment == 'preview'
+        if: github.ref != 'refs/heads/main'
         uses: ./.github/actions/resolve-names
         with:
           app: posy
@@ -56,14 +52,14 @@ jobs:
 
       - name: Build
         # staging's database name lives in the built config, same as the deploy path
-        if: inputs.environment == 'staging'
+        if: github.ref == 'refs/heads/main'
         env:
           CLOUDFLARE_ENV: staging
         run: pnpm exec turbo build --filter="@acme/$APP"
 
       - name: Resolve staging database name
         id: staging-db
-        if: inputs.environment == 'staging'
+        if: github.ref == 'refs/heads/main'
         working-directory: apps/posy
         run: |
           config=$(realpath ".wrangler/deploy/$(jq -r .configPath .wrangler/deploy/config.json)")
@@ -74,11 +70,11 @@ jobs:
         uses: ./.github/actions/delete-d1
         with:
           app: posy
-          name: ${{ inputs.environment == 'preview' && steps.names.outputs.db || steps.staging-db.outputs.name }}
+          name: ${{ steps.names.outputs.db || steps.staging-db.outputs.name }}
 
       - name: Summarise
         env:
-          DB_NAME: ${{ inputs.environment == 'preview' && steps.names.outputs.db || steps.staging-db.outputs.name }}
+          DB_NAME: ${{ steps.names.outputs.db || steps.staging-db.outputs.name }}
           DELETED: ${{ steps.deleted.outputs.deleted }}
           OLD_ID: ${{ steps.deleted.outputs.id }}
         run: |
@@ -95,10 +91,10 @@ jobs:
     uses: ./.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
     with:
       app: posy
-      environment: ${{ inputs.environment }}
+      environment: ${{ github.ref == 'refs/heads/main' && 'staging' || 'preview' }}
       branch: ${{ github.ref_name }}
       workers-subdomain: posy-stg
-      url: ${{ inputs.environment == 'staging' && 'https://staging.posy-stg.workers.dev' || '' }}
+      url: ${{ github.ref == 'refs/heads/main' && 'https://staging.posy-stg.workers.dev' || '' }}
       d1: true
       seed: true
     secrets: inherit
