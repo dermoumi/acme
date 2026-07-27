@@ -238,18 +238,16 @@ jobs:
           if [ "$DEPLOY_ENV" != "production" ] && [ -n "$BASIC_AUTH" ]; then
             extra_args+=(--var "BASIC_AUTH:$BASIC_AUTH")
           fi
-          # injected, never committed; absent just means this deploy is unmonitored
-          # the health check waits for this, so it ships whether or not sentry does
+          # deploy facts, not sentry's: the tier is authoritative here, and previews
+          # would otherwise inherit "staging" from the env block they build against
+          extra_args+=(--var "APP_ENV:$DEPLOY_ENV")
           extra_args+=(--var "APP_REVISION:$APP_REVISION")
+          # injected, never committed; absent just means this deploy is unmonitored
           if [ -n "$SENTRY_DSN" ]; then
             extra_args+=(--var "SENTRY_DSN:$SENTRY_DSN")
             version=$(jq -r '.version // empty' package.json)
             if [ -n "$version" ]; then
               extra_args+=(--var "SENTRY_RELEASE:$version")
-            fi
-            # previews build from the staging env block, so relabel them here
-            if [ "$DEPLOY_ENV" = "preview" ]; then
-              extra_args+=(--var "APP_ENV:preview")
             fi
           fi
           if [ "$DEPLOY_ENV" = "preview" ]; then
