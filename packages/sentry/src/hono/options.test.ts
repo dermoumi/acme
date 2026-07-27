@@ -1,18 +1,18 @@
 import { expect, test } from "vitest";
-import type { MaskingLevel } from "./config";
+import type { MaskingLevel } from "../shared/config";
 import { sentryOptions } from "./options";
 
 const DSN = "https://dummy@dummy.ingest.sentry.io/1";
 
 test("no DSN yields no options, so monitoring stays a silent no-op", () => {
   expect(sentryOptions({})).toBeUndefined();
-  expect(sentryOptions({ SENTRY_ENVIRONMENT: "staging" })).toBeUndefined();
+  expect(sentryOptions({ APP_ENV: "staging" })).toBeUndefined();
 });
 
 test("carries the dsn, environment and release through", () => {
   const options = sentryOptions({
     SENTRY_DSN: DSN,
-    SENTRY_ENVIRONMENT: "production",
+    APP_ENV: "production",
     SENTRY_RELEASE: "1.2.3",
   });
   expect(options?.dsn).toBe(DSN);

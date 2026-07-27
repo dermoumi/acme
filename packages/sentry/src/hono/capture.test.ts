@@ -1,7 +1,7 @@
 import { bench } from "#testing/bench";
 import { expect, test } from "vitest";
 import type { SentryBindings } from "./bindings";
-import type { SentryConfig } from "./config";
+import type { SentryConfig } from "../shared/config";
 import {
   BEARER,
   COOKIE,

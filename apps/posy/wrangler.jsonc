@@ -6,7 +6,7 @@
   // @sentry/cloudflare needs AsyncLocalStorage for its per-request client.
   "compatibility_flags": ["nodejs_als"],
   "vars": {
-    "SENTRY_ENVIRONMENT": "development"
+    "APP_ENV": "development"
   },
   "assets": {
     "binding": "ASSETS",
@@ -29,7 +29,7 @@
       // vars are replaced wholesale per env, never merged with the top-level block.
       "vars": {
         "REQUIRE_AUTH": "1",
-        "SENTRY_ENVIRONMENT": "staging"
+        "APP_ENV": "staging"
       },
       "assets": {
         "binding": "ASSETS",
@@ -48,7 +48,7 @@
     "production": {
       "name": "play",
       "vars": {
-        "SENTRY_ENVIRONMENT": "production"
+        "APP_ENV": "production"
       },
       "d1_databases": [
         { "binding": "DB", "database_name": "posy", "database_id": "set-by-ci" }

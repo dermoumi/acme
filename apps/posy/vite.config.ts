@@ -11,6 +11,10 @@ const { version } = JSON.parse(
 // loadEnv picks VITE_-prefixed vars up from process.env, so this reaches
 // import.meta.env in both dev and build (plain `define` does not).
 process.env.VITE_APP_VERSION = version;
+// Only mirrored when actually set, so an empty tier falls back client-side.
+if (process.env.APP_ENV) {
+  process.env.VITE_APP_ENV = process.env.APP_ENV;
+}
 
 export default defineConfig({
   plugins: [
@@ -42,7 +46,12 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
         navigateFallback: "/index.html",
         // Offline is read-only shell for now: never route server paths to the SPA.
-        navigateFallbackDenylist: [/^\/api\//u, /^\/health$/u, /^\/session$/u],
+        navigateFallbackDenylist: [
+          /^\/api\//u,
+          /^\/health$/u,
+          /^\/session$/u,
+          /^\/sentry$/u,
+        ],
       },
     }),
   ],

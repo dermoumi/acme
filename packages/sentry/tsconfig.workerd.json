@@ -4,5 +4,5 @@
     "customConditions": ["workerd"]
   },
   "include": ["src"],
-  "exclude": ["**/*.node.ts", "src/hono/node"]
+  "exclude": ["**/*.node.ts", "src/hono/node", "src/react"]
 }

@@ -1,12 +1,12 @@
 import type { Options } from "@sentry/core";
 import type { SentryBindings } from "./bindings";
-import type { MaskingLevel, SentryConfig } from "./config";
+import type { MaskingLevel, SentryConfig } from "../shared/config";
 import {
   DEFAULT_REDACT_KEYS,
   SENSITIVE_HEADERS,
   scrubEvent,
   stripCredentials,
-} from "./scrub";
+} from "../shared/scrub";
 
 type DataCollection = NonNullable<Options["dataCollection"]>;
 
@@ -41,7 +41,7 @@ export function sentryOptions(
 
   return {
     dsn: env.SENTRY_DSN,
-    environment: env.SENTRY_ENVIRONMENT ?? "development",
+    environment: env.APP_ENV ?? "development",
     release: env.SENTRY_RELEASE,
     dist: env.SENTRY_DIST,
     dataCollection: dataCollection(masking),

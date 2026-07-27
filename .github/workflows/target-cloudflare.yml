@@ -115,6 +115,8 @@ jobs:
         env:
           # preview builds use the staging env config under a per-branch worker name
           CLOUDFLARE_ENV: ${{ inputs.environment == 'production' && 'production' || 'staging' }}
+          # the client SDK bakes its tier in, so previews stay out of staging's events
+          APP_ENV: ${{ inputs.environment }}
         run: pnpm exec turbo build --filter="@acme/$APP"
 
       - name: Provision D1 database
@@ -240,7 +242,7 @@ jobs:
             fi
             # previews build from the staging env block, so relabel them here
             if [ "$DEPLOY_ENV" = "preview" ]; then
-              extra_args+=(--var "SENTRY_ENVIRONMENT:preview")
+              extra_args+=(--var "APP_ENV:preview")
             fi
           fi
           if [ "$DEPLOY_ENV" = "preview" ]; then

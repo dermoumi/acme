@@ -1,3 +1,4 @@
+import { sentryTunnel } from "@acme/sentry/hono";
 import { Hono } from "hono";
 import type { Dialect } from "kysely";
 import { authRoutes } from "./auth";
@@ -13,6 +14,8 @@ export function createApp(
 
   app.use(gate());
   app.route("/session", authRoutes(getDialect));
+  // Inside the gate: staging's basic auth covers this like every other route.
+  app.route("/sentry", sentryTunnel());
   // Whether a DSN is set, not whether Sentry is reachable; capture is fail-soft.
   app.get("/health", (ctx) =>
     ctx.json({

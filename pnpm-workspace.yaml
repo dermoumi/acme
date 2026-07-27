@@ -13,6 +13,7 @@ catalog:
   "@sentry/cloudflare": "10.67.0"
   "@sentry/core": "10.67.0"
   "@sentry/node": "10.67.0"
+  "@sentry/react": "10.67.0"
   "@types/better-sqlite3": "7.6.13"
   "@types/node": "24.13.3"
   "@types/react": "19.2.17"
