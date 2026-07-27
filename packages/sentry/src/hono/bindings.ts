@@ -14,6 +14,10 @@ export interface SentryBindings {
   APP_ENV?: string;
   /** Version the events belong to. Typically the package version. */
   SENTRY_RELEASE?: string;
-  /** Distinguishes builds within one release. */
-  SENTRY_DIST?: string;
+  /**
+   * Build identifier, typically a short commit sha. Reported as Sentry's `dist`
+   * to tell builds of one release apart. Not Sentry-specific; a health endpoint
+   * can report it so a deploy check knows which build answered.
+   */
+  APP_REVISION?: string;
 }

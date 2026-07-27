@@ -25,6 +25,8 @@ export function createApp(
     ctx.json({
       status: "ok",
       app: "posy",
+      // The deploy check waits for this, so a stale version cannot pass it.
+      revision: ctx.env.APP_REVISION ?? "dev",
       sentry: ctx.env.SENTRY_DSN ? "configured" : "off",
     }),
   );

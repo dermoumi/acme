@@ -21,6 +21,8 @@ export interface ClientSentryConfig {
   environment?: string;
   /** Version the events belong to. Typically the app's package version. */
   release?: string;
+  /** Build identifier, typically a short commit sha. Matches the server's. */
+  dist?: string;
   /** Merged into `Sentry.init` last, overriding the rest. */
   options?: Partial<Options>;
 }
@@ -49,6 +51,7 @@ export function initSentryClient(config: ClientSentryConfig = {}): void {
     tunnel: config.tunnel ?? "/sentry",
     environment: config.environment ?? "development",
     release: config.release,
+    dist: config.dist,
     transport: stopWhenUnconfigured(makeFetchTransport),
     integrations: [
       breadcrumbsIntegration(),

@@ -7,6 +7,7 @@ import "./index.css";
 initSentryClient({
   environment: import.meta.env.VITE_APP_ENV,
   release: import.meta.env.VITE_APP_VERSION,
+  dist: import.meta.env.VITE_APP_REVISION,
 });
 
 const root = document.querySelector("#root");

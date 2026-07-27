@@ -111,12 +111,20 @@ jobs:
           app: ${{ inputs.app }}
           branch: ${{ inputs.branch }}
 
+      - name: Resolve revision
+        id: revision
+        env:
+          # on a PR, github.sha is the synthetic merge commit, not what was pushed
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: echo "short=${COMMIT_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Build
         env:
           # preview builds use the staging env config under a per-branch worker name
           CLOUDFLARE_ENV: ${{ inputs.environment == 'production' && 'production' || 'staging' }}
           # the client SDK bakes its tier in, so previews stay out of staging's events
           APP_ENV: ${{ inputs.environment }}
+          APP_REVISION: ${{ steps.revision.outputs.short }}
         run: pnpm exec turbo build --filter="@acme/$APP"
 
       - name: Provision D1 database
@@ -222,8 +230,7 @@ jobs:
           WORKERS_SUBDOMAIN: ${{ inputs.workers-subdomain }}
           BASIC_AUTH: ${{ secrets.BASIC_AUTH }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          # on a PR, github.sha is the synthetic merge commit, not what was pushed
-          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          APP_REVISION: ${{ steps.revision.outputs.short }}
           SLUG: ${{ steps.names.outputs.slug }}
         run: |
           extra_args=()
@@ -232,10 +239,10 @@ jobs:
             extra_args+=(--var "BASIC_AUTH:$BASIC_AUTH")
           fi
           # injected, never committed; absent just means this deploy is unmonitored
+          # the health check waits for this, so it ships whether or not sentry does
+          extra_args+=(--var "APP_REVISION:$APP_REVISION")
           if [ -n "$SENTRY_DSN" ]; then
             extra_args+=(--var "SENTRY_DSN:$SENTRY_DSN")
-            # release names the version, dist the build, which is what actually moves
-            extra_args+=(--var "SENTRY_DIST:$DEPLOY_ENV-${COMMIT_SHA::7}")
             version=$(jq -r '.version // empty' package.json)
             if [ -n "$version" ]; then
               extra_args+=(--var "SENTRY_RELEASE:$version")
@@ -260,14 +267,27 @@ jobs:
           BASE_URL: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
           HEALTH_PATH: ${{ inputs.health-path }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          APP_REVISION: ${{ steps.revision.outputs.short }}
         run: |
-          # a branch's first preview needs time for its route to go live, so the probe
-          # retries; the timeouts are per attempt so a hang cannot run to the job limit
-          body=$(curl --fail --silent --show-error \
-            --connect-timeout 10 --max-time 30 \
-            --retry 15 --retry-delay 10 --retry-max-time 120 --retry-all-errors \
-            --user-agent "acme-ci-health-probe" \
-            "$BASE_URL$HEALTH_PATH")
+          # curl --retry only retries failures, and the PREVIOUS deployment answering
+          # 200 is not a failure, so waiting on the revision is what makes this check
+          # about the build we just shipped. Also covers a cold preview route 404ing.
+          deadline=$((SECONDS + 120))
+          while :; do
+            body=$(curl --fail --silent --show-error \
+              --connect-timeout 10 --max-time 30 \
+              --user-agent "acme-ci-health-probe" \
+              "$BASE_URL$HEALTH_PATH" || true)
+            served=$(printf '%s' "$body" | jq -r '.revision // empty' 2>/dev/null || true)
+            if [ "$served" = "$APP_REVISION" ]; then
+              break
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::$HEALTH_PATH never served revision $APP_REVISION (last: ${served:-no response})"
+              exit 1
+            fi
+            sleep 5
+          done
           echo "$body"
 
           # Capture is fail-soft, so a dsn that never reached the worker is silent.

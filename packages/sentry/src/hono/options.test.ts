@@ -14,10 +14,12 @@ test("carries the dsn, environment and release through", () => {
     SENTRY_DSN: DSN,
     APP_ENV: "production",
     SENTRY_RELEASE: "1.2.3",
+    APP_REVISION: "abc1234",
   });
   expect(options?.dsn).toBe(DSN);
   expect(options?.environment).toBe("production");
   expect(options?.release).toBe("1.2.3");
+  expect(options?.dist).toBe("abc1234");
 });
 
 test("falls back to a development environment", () => {

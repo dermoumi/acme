@@ -15,6 +15,9 @@ process.env.VITE_APP_VERSION = version;
 if (process.env.APP_ENV) {
   process.env.VITE_APP_ENV = process.env.APP_ENV;
 }
+if (process.env.APP_REVISION) {
+  process.env.VITE_APP_REVISION = process.env.APP_REVISION;
+}
 
 export default defineConfig({
   plugins: [
