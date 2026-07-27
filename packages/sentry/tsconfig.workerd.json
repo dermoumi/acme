@@ -1,0 +1,4 @@
+{
+  "extends": "@acme/tsconfig/tsconfig.workerd.json",
+  "include": ["src"]
+}

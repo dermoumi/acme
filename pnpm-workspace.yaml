@@ -9,6 +9,7 @@ catalog:
   "@cloudflare/vite-plugin": "1.47.0"
   "@cloudflare/vitest-pool-workers": "0.18.8"
   "@cloudflare/workers-types": "5.20260724.1"
+  "@sentry/cloudflare": "10.67.0"
   "@types/better-sqlite3": "7.6.13"
   "@types/node": "24.13.3"
   "@types/react": "19.2.17"
