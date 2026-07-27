@@ -29,7 +29,9 @@ on:
         type: string
         default: ""
       health-path:
-        description: Path probed after deploy (empty disables the check)
+        description: >-
+          Path probed after deploy; empty disables the check. When set, the job fails
+          unless a url resolves from "url" or, for previews, "workers-subdomain".
         required: false
         type: string
         default: "/health"
@@ -259,13 +261,18 @@ jobs:
           fi
 
       - name: Health check
-        if: env.CLOUDFLARE_API_TOKEN != '' && inputs.health-path != '' && (inputs.url != '' || steps.deploy.outputs.url != '')
+        if: env.CLOUDFLARE_API_TOKEN != '' && inputs.health-path != ''
         env:
           BASE_URL: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
           HEALTH_PATH: ${{ inputs.health-path }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           APP_REVISION: ${{ steps.revision.outputs.short }}
         run: |
+          # asking for a probe that cannot run is a config bug, so fail rather than skip
+          if [ -z "$BASE_URL" ]; then
+            echo "::error::health-path is set but no url resolved; pass url, or workers-subdomain for previews"
+            exit 1
+          fi
           # curl --retry only retries failures, and the PREVIOUS deployment answering
           # 200 is not a failure, so waiting on the revision is what makes this check
           # about the build we just shipped. Also covers a cold preview route 404ing.
