@@ -55,6 +55,7 @@ export default defineConfig({
           /^\/health$/u,
           /^\/session$/u,
           /^\/sentry$/u,
+          /^\/debug\//u,
         ],
       },
     }),

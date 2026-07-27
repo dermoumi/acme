@@ -2,6 +2,7 @@ import { sentryTunnel, type SentryConfig } from "@acme/sentry/hono";
 import { Hono } from "hono";
 import type { Dialect } from "kysely";
 import { authRoutes } from "./auth";
+import { debugRoutes, isDebugEnabled } from "./debug";
 import type { AppBindings } from "./bindings";
 import { gate } from "./gate";
 
@@ -20,6 +21,12 @@ export function createApp(
   app.route("/session", authRoutes(getDialect));
   // Inside the gate: staging's basic auth covers this like every other route.
   app.route("/sentry", sentryTunnel(sentryConfig));
+  // Mounted everywhere but answered only off production, so the tier decides at
+  // request time rather than at build time.
+  app.use("/debug/*", async (ctx, next) =>
+    isDebugEnabled(ctx.env) ? next() : ctx.notFound(),
+  );
+  app.route("/debug", debugRoutes());
   // Whether a DSN is set, not whether Sentry is reachable; capture is fail-soft.
   app.get("/health", (ctx) =>
     ctx.json({
