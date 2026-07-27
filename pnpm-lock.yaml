@@ -116,6 +116,9 @@ importers:
 
   apps/posy:
     dependencies:
+      '@acme/sentry':
+        specifier: workspace:*
+        version: link:../../packages/sentry
       hono:
         specifier: 'catalog:'
         version: 4.12.32

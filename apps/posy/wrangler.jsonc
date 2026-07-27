@@ -1,8 +1,15 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "posy-dev",
-  "main": "src/server/index.ts",
+  // ExportedHandler's workerd Request cannot meet Hono's global one under node types,
+  // so the entry carries the .workerd suffix that keeps it out of that tsconfig project.
+  "main": "src/server/worker.workerd.ts",
   "compatibility_date": "2026-07-01",
+  // @sentry/cloudflare needs AsyncLocalStorage for its per-request client.
+  "compatibility_flags": ["nodejs_als"],
+  "vars": {
+    "SENTRY_ENVIRONMENT": "development"
+  },
   "assets": {
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
@@ -21,8 +28,10 @@
   "env": {
     "staging": {
       "name": "staging",
+      // vars are replaced wholesale per env, never merged with the top-level block.
       "vars": {
-        "REQUIRE_AUTH": "1"
+        "REQUIRE_AUTH": "1",
+        "SENTRY_ENVIRONMENT": "staging"
       },
       "assets": {
         "binding": "ASSETS",
@@ -40,6 +49,9 @@
     },
     "production": {
       "name": "play",
+      "vars": {
+        "SENTRY_ENVIRONMENT": "production"
+      },
       "d1_databases": [
         { "binding": "DB", "database_name": "posy", "database_id": "set-by-ci" }
       ]
