@@ -64,3 +64,11 @@ test("masking none sends values verbatim but never credentials", async () => {
   expect(body).not.toContain(BEARER);
   expect(body).not.toContain(COOKIE);
 });
+
+// Delivery must not depend on waitUntil, which races isolate teardown once the
+// client has its response. No settle() here on purpose.
+test("the event is sent before the response resolves", async () => {
+  const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, {});
+  await invoke(loginRequest());
+  expect(JSON.stringify(sent)).toContain(BOOM);
+});
