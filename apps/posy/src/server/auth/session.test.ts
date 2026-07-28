@@ -71,8 +71,10 @@ test("resolveSession rejects expired sessions", async () => {
 });
 
 test("GET /session without a cookie never touches the db", async () => {
-  const app = createApp(() => {
-    throw new Error("getDialect must not be called");
+  const app = createApp({
+    getDialect: () => {
+      throw new Error("getDialect must not be called");
+    },
   });
   const res = await app.request("/session", {}, env);
   expect(res.status).toBe(200);
@@ -85,7 +87,7 @@ test("GET /session resolves the cookie to a user", async () => {
   await seedUser(db, "u1");
   const store = new DbSessionStore(db);
   const token = await createSession(store, "u1", null, Date.now());
-  const app = createApp(() => dialect);
+  const app = createApp({ getDialect: () => dialect });
 
   const authed = await app.request(
     "/session",

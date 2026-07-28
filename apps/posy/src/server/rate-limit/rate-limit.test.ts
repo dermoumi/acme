@@ -2,14 +2,25 @@ import { createBindings } from "#testing/runtime";
 import { expect, test } from "vitest";
 import { createApp } from "../app";
 import type { AppBindings } from "../bindings";
-import { LOGIN_LIMIT, SENTRY_LIMIT } from "./contract";
+import { LOGIN_LIMIT, PERIOD_SECONDS, SENTRY_LIMIT } from "./contract";
 
 // The limiter answers before the handler, and an empty body is rejected before
 // handleLogin opens a connection, so nothing here may reach a database.
+function noDatabase(): never {
+  throw new Error("these tests must not reach the database");
+}
+
 function testApp() {
-  return createApp(() => {
-    throw new Error("these tests must not reach the database");
+  return createApp({
+    getDialect: noDatabase,
+    rateLimitPeriodSeconds: PERIOD_SECONDS,
   });
+}
+
+// Separate helper rather than testApp(undefined): passing undefined to an
+// optional parameter would just fall back to the default and limit anyway.
+function unlimitedApp() {
+  return createApp({ getDialect: noDatabase });
 }
 
 // Unique per test: workerd shares one limiter namespace across the whole file,
@@ -113,6 +124,21 @@ test("a missing binding disables limiting instead of refusing requests", async (
     post(app, env, "/session", headers),
   );
   for (const response of responses) expect(response.status).toBe(401);
+});
+
+test("an app built without a period does not limit, bindings or not", async () => {
+  const app = unlimitedApp();
+  const env = createBindings();
+  const headers = client();
+
+  const responses = await sequence(LOGIN_LIMIT * 2, () =>
+    post(app, env, "/session", headers),
+  );
+  for (const response of responses) expect(response.status).toBe(401);
+
+  // Bindings are present here, but nothing enforces them, so "off" is the truth.
+  const health = await app.request("/health", {}, env);
+  expect(await health.json()).toMatchObject({ rateLimit: "off" });
 });
 
 test("the sentry tunnel has its own budget", async () => {
