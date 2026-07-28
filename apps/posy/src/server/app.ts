@@ -5,7 +5,7 @@ import { authRoutes } from "./auth";
 import { debugRoutes, isDebugEnabled } from "./debug";
 import type { AppBindings } from "./bindings";
 import { gate } from "./gate";
-import { PERIOD_SECONDS, rateLimit } from "./rate-limit";
+import { limiterStatus, PERIOD_SECONDS, rateLimit } from "./rate-limit";
 
 // One policy for both halves: the tunnel scrubs client events, withSentry the
 // server's. Auth is the only sensitive thing posy handles.
@@ -54,6 +54,8 @@ export function createApp(
       // The deploy check waits for this, so a stale version cannot pass it.
       revision: ctx.env.APP_REVISION ?? "dev",
       sentry: ctx.env.SENTRY_DSN ? "configured" : "off",
+      // Limiting fails open, so a lost binding is silent without this.
+      rateLimit: limiterStatus(ctx.env),
     }),
   );
 

@@ -122,6 +122,7 @@ test("gated: /health stays open without credentials but gets noindex", async () 
     version: "dev",
     revision: "dev",
     sentry: "off",
+    rateLimit: "configured",
   });
   expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
 });
@@ -148,4 +149,25 @@ test("/health reports sentry as configured once a DSN is bound", async () => {
     },
   );
   expect(await res.json()).toMatchObject({ sentry: "configured" });
+});
+
+test("/health tells a deploy check when a rate limiter went missing", async () => {
+  const off = await app.request(
+    "/health",
+    {},
+    {
+      ...createBindings(),
+      RATE_LIMIT_LOGIN: undefined,
+      RATE_LIMIT_SENTRY: undefined,
+    },
+  );
+  expect(await off.json()).toMatchObject({ rateLimit: "off" });
+
+  // The dangerous one: half-configured looks healthy from the outside.
+  const partial = await app.request(
+    "/health",
+    {},
+    { ...createBindings(), RATE_LIMIT_SENTRY: undefined },
+  );
+  expect(await partial.json()).toMatchObject({ rateLimit: "partial" });
 });

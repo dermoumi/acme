@@ -7,6 +7,21 @@ const PERMIT_ALL: Limiter = {
   limit: () => Promise.resolve({ success: true }),
 };
 
+const LIMITER_BINDINGS = ["RATE_LIMIT_LOGIN", "RATE_LIMIT_SENTRY"] as const;
+
+/**
+ * Whether every limiter this app expects is bound. Reported on `/health` because
+ * limiting fails open, so a binding lost in configuration is otherwise invisible
+ * until the bill arrives. `partial` catches forgetting one `ratelimits` entry.
+ */
+export function limiterStatus(
+  env: RateLimitBindings,
+): "configured" | "partial" | "off" {
+  const bound = LIMITER_BINDINGS.filter((name) => env[name]).length;
+  if (bound === 0) return "off";
+  return bound === LIMITER_BINDINGS.length ? "configured" : "partial";
+}
+
 /**
  * Caps how often one client may call a route, keyed on its IP address.
  *
