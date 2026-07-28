@@ -20,6 +20,11 @@ export interface SentryConfig {
    * masks `userNote`. Unused when masking is `"none"`.
    */
   redactKeys?: string[];
+  /**
+   * User-Agent whose errors are never captured, matched exactly. For a caller
+   * whose failures are expected and already handled, such as a CI health probe.
+   */
+  ignoreUserAgent?: string;
   /** Merged into the Sentry client options last, overriding the rest. */
   options?: Partial<Options>;
 }

@@ -25,7 +25,7 @@ export function withSentry<Bindings extends SentryBindings>(
   app: Hono<{ Bindings: Bindings }>,
   config: SentryConfig = {},
 ): ExportedHandler<Bindings> {
-  app.onError(sentryErrorHandler());
+  app.onError(sentryErrorHandler(config));
 
   return {
     fetch: (request, env, ctx: ExecutionContext) =>

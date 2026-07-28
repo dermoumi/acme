@@ -8,7 +8,11 @@ import { gate } from "./gate";
 
 // One policy for both halves: the tunnel scrubs client events, withSentry the
 // server's. Auth is the only sensitive thing posy handles.
-export const sentryConfig: SentryConfig = { masking: "light" };
+export const sentryConfig: SentryConfig = {
+  masking: "light",
+  // The deploy health check probes every deploy; CI already reports its failures.
+  ignoreUserAgent: "acme-ci-health-probe",
+};
 
 // The dialect is resolved lazily per request so environments without a DB
 // binding still serve assets and /health.

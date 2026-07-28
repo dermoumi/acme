@@ -1,17 +1,21 @@
 import { captureException, flush, getClient } from "@sentry/core";
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { SentryConfig } from "./config";
 
 // A ceiling, not a wait: low so a slow Sentry cannot delay error responses.
 const FLUSH_MS = 500;
 
 // Hono answers route errors itself, so withSentry never sees them: this is their only capture path.
-export function sentryErrorHandler(): ErrorHandler {
+export function sentryErrorHandler(config: SentryConfig = {}): ErrorHandler {
   return async (error, ctx) => {
     const expected = error instanceof HTTPException && error.status < 500;
+    const ignored =
+      config.ignoreUserAgent !== undefined &&
+      ctx.req.header("user-agent") === config.ignoreUserAgent;
 
     let eventId: string | undefined;
-    if (!expected) {
+    if (!expected && !ignored) {
       console.error(error);
       const id = captureException(error);
       // Without a client nothing was sent, and an unlookupable id is worse than none.

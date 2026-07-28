@@ -88,3 +88,26 @@ test("with no DSN the id is null rather than absent", async () => {
     sentryEventId: null,
   });
 });
+
+// The CI health probe hits every deploy; its failures are already reported by CI.
+test("ignoreUserAgent skips capture for a matching caller", async () => {
+  const { invoke, sent } = bench.build(
+    { SENTRY_DSN: DSN },
+    { ignoreUserAgent: "acme-ci-health-probe" },
+  );
+  const request = loginRequest();
+  request.headers.set("user-agent", "acme-ci-health-probe");
+  const res = await invoke(request);
+
+  expect(res.status).toBe(500);
+  expect(sent).toEqual([]);
+});
+
+test("a different user agent is still captured", async () => {
+  const { invoke, sent } = bench.build(
+    { SENTRY_DSN: DSN },
+    { ignoreUserAgent: "acme-ci-health-probe" },
+  );
+  await invoke(loginRequest());
+  expect(JSON.stringify(sent)).toContain(BOOM);
+});

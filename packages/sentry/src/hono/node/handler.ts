@@ -46,7 +46,7 @@ export function withSentry<Bindings extends SentryBindings>(
   app: Hono<{ Bindings: Bindings }>,
   config: SentryConfig = {},
 ): SentryHandler<Bindings> {
-  app.onError(sentryErrorHandler());
+  app.onError(sentryErrorHandler(config));
 
   const settings: SentryBindings = process.env;
   const options = sentryOptions(settings, config);
