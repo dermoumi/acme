@@ -14,7 +14,8 @@
       "workerd": "./src/hono/workerd/index.ts",
       "default": "./src/hono/node/index.ts"
     },
-    "./react": "./src/react/index.ts"
+    "./react": "./src/react/index.ts",
+    "./vite": "./src/vite/index.ts"
   },
   "scripts": {
     "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc -b",
@@ -26,7 +27,8 @@
     "@sentry/cloudflare": "catalog:",
     "@sentry/core": "catalog:",
     "@sentry/node": "catalog:",
-    "@sentry/react": "catalog:"
+    "@sentry/react": "catalog:",
+    "@sentry/vite-plugin": "catalog:"
   },
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",

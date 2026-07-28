@@ -32,7 +32,8 @@ export default defineConfig({
           name: "workerd",
           include,
           env,
-          exclude: ["src/hono/node/**"],
+          // Build-time and node-only surfaces have nothing to prove in workerd.
+          exclude: ["src/hono/node/**", "src/vite/**"],
         },
       },
     ],

@@ -62,7 +62,15 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "env": ["CLOUDFLARE_ENV", "APP_ENV", "APP_REVISION"],
+      "env": [
+        "CLOUDFLARE_ENV",
+        "APP_ENV",
+        "APP_REVISION",
+        "APP_VERSION",
+        "SENTRY_AUTH_TOKEN",
+        "SENTRY_ORG",
+        "SENTRY_PROJECT"
+      ],
       "outputLogs": "errors-only",
       "inputs": [
         "$TURBO_DEFAULT$",

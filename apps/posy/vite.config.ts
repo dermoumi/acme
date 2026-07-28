@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { sentryVite } from "@acme/sentry/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
@@ -47,6 +48,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // generated after Sentry has swept the build, so these would ship unused
+        sourcemap: false,
         globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
         navigateFallback: "/index.html",
         // Offline is read-only shell for now: never route server paths to the SPA.
@@ -58,6 +61,11 @@ export default defineConfig({
           /^\/debug\//u,
         ],
       },
+    }),
+    // the same values the bundle reports, so Sentry can match maps to events
+    sentryVite({
+      release: process.env.VITE_APP_VERSION,
+      dist: process.env.VITE_APP_REVISION,
     }),
   ],
   server: {
