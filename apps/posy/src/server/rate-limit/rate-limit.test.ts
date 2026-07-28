@@ -1,64 +1,28 @@
+import { SELF_PROVISIONED } from "#rate-limit/runtime";
 import { createBindings } from "#testing/runtime";
+import type { Store } from "hono-rate-limiter";
 import { expect, test } from "vitest";
 import { createApp } from "../app";
 import type { AppBindings } from "../bindings";
-import { LOGIN_LIMIT, PERIOD_SECONDS, SENTRY_LIMIT } from "./contract";
-
-// The limiter answers before the handler, and an empty body is rejected before
-// handleLogin opens a connection, so nothing here may reach a database.
-function noDatabase(): never {
-  throw new Error("these tests must not reach the database");
-}
-
-function testApp() {
-  return createApp({
-    getDialect: noDatabase,
-    rateLimitPeriodSeconds: PERIOD_SECONDS,
-  });
-}
-
-// Separate helper rather than testApp(undefined): passing undefined to an
-// optional parameter would just fall back to the default and limit anyway.
-function unlimitedApp() {
-  return createApp({ getDialect: noDatabase });
-}
-
-// Unique per test: workerd shares one limiter namespace across the whole file,
-// while node gets a fresh in-memory one from every createBindings() call.
-let clients = 0;
-function client(): Record<string, string> {
-  clients += 1;
-  return { "cf-connecting-ip": `203.0.113.${clients}` };
-}
-
-// Recursive rather than a loop: rate limiting is about order, so these requests
-// must not overlap, and awaiting inside a loop is banned.
-async function sequence(
-  times: number,
-  run: () => Promise<Response> | Response,
-  collected: Response[] = [],
-): Promise<Response[]> {
-  if (collected.length >= times) return collected;
-  collected.push(await run());
-  return sequence(times, run, collected);
-}
-
-async function post(
-  app: ReturnType<typeof testApp>,
-  env: AppBindings,
-  path: string,
-  headers: Record<string, string>,
-  body = "{}",
-): Promise<Response> {
-  return app.request(path, { method: "POST", headers, body }, env);
-}
+import type { RateLimitPolicy } from "./contract";
+import {
+  client,
+  LOGIN_POLICY,
+  noDatabase,
+  POLICIES,
+  post,
+  SENTRY_POLICY,
+  sequence,
+  testApp,
+  unlimitedApp,
+} from "./test-utils";
 
 test("login is capped, and the refusal says when to come back", async () => {
   const app = testApp();
   const env = createBindings();
   const headers = client();
 
-  const allowed = await sequence(LOGIN_LIMIT, () =>
+  const allowed = await sequence(LOGIN_POLICY.limit, () =>
     post(app, env, "/session", headers),
   );
   for (const response of allowed) expect(response.status).toBe(401);
@@ -74,12 +38,12 @@ test("reading and ending a session are never capped", async () => {
   const env = createBindings();
   const headers = client();
 
-  const reads = await sequence(LOGIN_LIMIT * 2, () =>
+  const reads = await sequence(LOGIN_POLICY.limit * 2, () =>
     app.request("/session", { headers }, env),
   );
   for (const response of reads) expect(response.status).toBe(200);
 
-  const ends = await sequence(LOGIN_LIMIT * 2, () =>
+  const ends = await sequence(LOGIN_POLICY.limit * 2, () =>
     app.request("/session", { method: "DELETE", headers }, env),
   );
   for (const response of ends) expect(response.status).toBe(204);
@@ -90,7 +54,9 @@ test("a refusal cannot tell real usernames from invented ones", async () => {
   const env = createBindings();
   const headers = client();
 
-  await sequence(LOGIN_LIMIT + 1, () => post(app, env, "/session", headers));
+  await sequence(LOGIN_POLICY.limit + 1, () =>
+    post(app, env, "/session", headers),
+  );
 
   const real = await post(
     app,
@@ -115,23 +81,29 @@ test("a refusal cannot tell real usernames from invented ones", async () => {
   );
 });
 
-test("a missing binding disables limiting instead of refusing requests", async () => {
+test("an unbound budget disables limiting only where bindings supply it", async () => {
   const app = testApp();
   const env = createBindings({ RATE_LIMIT_LOGIN: undefined });
   const headers = client();
 
-  const responses = await sequence(LOGIN_LIMIT * 2, () =>
+  const responses = await sequence(LOGIN_POLICY.limit * 2, () =>
     post(app, env, "/session", headers),
   );
+
+  if (SELF_PROVISIONED) {
+    // Nothing to lose: the policy still describes a budget, so it still applies.
+    expect(responses.some((response) => response.status === 429)).toBe(true);
+    return;
+  }
   for (const response of responses) expect(response.status).toBe(401);
 });
 
-test("an app built without a period does not limit, bindings or not", async () => {
+test("an app declaring no policies does not limit, bindings or not", async () => {
   const app = unlimitedApp();
   const env = createBindings();
   const headers = client();
 
-  const responses = await sequence(LOGIN_LIMIT * 2, () =>
+  const responses = await sequence(LOGIN_POLICY.limit * 2, () =>
     post(app, env, "/session", headers),
   );
   for (const response of responses) expect(response.status).toBe(401);
@@ -147,7 +119,7 @@ test("trustedProxies reaches the limiter from createApp", () => {
   expect(() =>
     createApp({
       getDialect: noDatabase,
-      rateLimitPeriodSeconds: PERIOD_SECONDS,
+      rateLimits: POLICIES,
       trustedProxies: ["10.0.0.0/"],
     }),
   ).toThrow("10.0.0.0/");
@@ -160,10 +132,120 @@ test("trustedProxies reaches the limiter from createApp", () => {
   expect(() =>
     createApp({
       getDialect: noDatabase,
-      rateLimitPeriodSeconds: PERIOD_SECONDS,
+      rateLimits: POLICIES,
       trustedProxies: ["10.0.0.0/8", "fc00::/7"],
     }),
   ).not.toThrow();
+});
+
+test("each policy reports its own Retry-After", async () => {
+  // One binding for both, so workerd shares a counter; node builds one limiter
+  // per policy. The tunnel budget of 1 needs at most two calls either way.
+  const app = testApp([
+    {
+      method: "POST",
+      path: "/session",
+      binding: "RATE_LIMIT_LOGIN",
+      limit: LOGIN_POLICY.limit,
+      periodSeconds: 60,
+    },
+    {
+      method: "POST",
+      path: "/sentry",
+      binding: "RATE_LIMIT_LOGIN",
+      limit: 1,
+      periodSeconds: 10,
+    },
+  ]);
+  const env = createBindings();
+  const headers = client();
+
+  await sequence(LOGIN_POLICY.limit, () => post(app, env, "/session", headers));
+  const login = await post(app, env, "/session", headers);
+  expect(login.status).toBe(429);
+  expect(login.headers.get("Retry-After")).toBe("60");
+
+  const tunnel = await sequence(2, () => post(app, env, "/sentry", headers));
+  expect(tunnel.at(-1)?.status).toBe(429);
+  expect(tunnel.at(-1)?.headers.get("Retry-After")).toBe("10");
+});
+
+test("a supplied store does the counting, one per policy", async () => {
+  // Workers count in the platform binding, so there is nothing to substitute.
+  if (!SELF_PROVISIONED) return;
+
+  const seen: string[] = [];
+  const counting = (policy: RateLimitPolicy): Store => {
+    let hits = 0;
+    return {
+      init: () => undefined,
+      increment: (key) => {
+        hits += 1;
+        seen.push(`${policy.binding} ${key}`);
+        return Promise.resolve({ totalHits: hits });
+      },
+      decrement: () => undefined,
+      resetKey: () => undefined,
+    };
+  };
+
+  const app = createApp({
+    getDialect: noDatabase,
+    rateLimits: POLICIES,
+    rateLimitStore: counting,
+  });
+  const env = createBindings();
+  const headers = client();
+
+  const responses = await sequence(LOGIN_POLICY.limit + 1, () =>
+    post(app, env, "/session", headers),
+  );
+  expect(responses.at(-1)?.status).toBe(429);
+  expect(seen).toHaveLength(LOGIN_POLICY.limit + 1);
+  expect(seen.every((entry) => entry.startsWith("RATE_LIMIT_LOGIN"))).toBe(
+    true,
+  );
+
+  // The tunnel's budget counts separately, in its own store.
+  await post(app, env, "/sentry", headers);
+  expect(seen.at(-1)).toContain("RATE_LIMIT_SENTRY");
+});
+
+async function healthStatus(
+  rateLimits: readonly RateLimitPolicy[],
+  env: AppBindings,
+) {
+  const res = await testApp(rateLimits).request("/health", {}, env);
+  return res.json();
+}
+
+test("health follows the policy list, not a fixed set of bindings", async () => {
+  expect(await healthStatus([], createBindings())).toMatchObject({
+    rateLimit: "off",
+  });
+  expect(await healthStatus(POLICIES, createBindings())).toMatchObject({
+    rateLimit: "on",
+  });
+
+  // Guarded on the capability, not the runtime: a runtime that builds limiters
+  // from the policies has no unbound state to report.
+  if (SELF_PROVISIONED) return;
+
+  // The discriminating case: a fixed binding list would call this partial,
+  // since it cannot know the login budget is one this app never declared.
+  expect(
+    await healthStatus(
+      [SENTRY_POLICY],
+      createBindings({ RATE_LIMIT_LOGIN: undefined }),
+    ),
+  ).toMatchObject({ rateLimit: "on" });
+
+  expect(
+    await healthStatus(
+      POLICIES,
+      createBindings({ RATE_LIMIT_SENTRY: undefined }),
+    ),
+  ).toMatchObject({ rateLimit: "partial" });
 });
 
 test("the sentry tunnel has its own budget", async () => {
@@ -171,7 +253,7 @@ test("the sentry tunnel has its own budget", async () => {
   const env = createBindings();
   const headers = client();
 
-  const allowed = await sequence(SENTRY_LIMIT, () =>
+  const allowed = await sequence(SENTRY_POLICY.limit, () =>
     post(app, env, "/sentry", headers),
   );
   for (const response of allowed) expect(response.status).not.toBe(429);

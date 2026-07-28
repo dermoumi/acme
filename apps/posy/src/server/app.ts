@@ -9,6 +9,8 @@ import {
   compileTrustedProxies,
   limiterStatus,
   rateLimit,
+  type LimiterStore,
+  type RateLimitPolicy,
   type TrustedProxies,
 } from "./rate-limit";
 
@@ -24,11 +26,17 @@ export interface AppOptions {
   /** Resolved per request, so an environment with no DB still serves assets. */
   getDialect: (env: AppBindings) => Dialect;
   /**
-   * Window reported in `Retry-After`, matching each `ratelimits` entry's
-   * `period`. Unset mounts no limiting, and `/health` then reads `off`
-   * whatever is bound.
+   * Routes to cap, one entry each. Absent or empty mounts no limiting, and
+   * `/health` then reads `off` whatever is bound.
    */
-  rateLimitPeriodSeconds?: number;
+  rateLimits?: readonly RateLimitPolicy[];
+  /**
+   * Where a self-provisioning runtime counts, one store per policy so budgets
+   * keep separate key spaces. Defaults to memory, which is per replica; return
+   * a `RedisStore` sharing one client to count across them. Ignored on Workers,
+   * where the platform binding does the counting.
+   */
+  rateLimitStore?: LimiterStore;
   /**
    * CIDR ranges whose `x-forwarded-for` may speak for the client behind it,
    * e.g. `["10.1.0.0/24"]`. Defaults to none, so no header is ever believed.
@@ -41,41 +49,36 @@ export interface AppOptions {
   trustedProxies?: readonly string[];
 }
 
+// Each policy names its own method, so a path stays uncapped for every method
+// it does not list: GET /session fires on every app load.
 function mountRateLimits(
   app: Hono<{ Bindings: AppBindings }>,
-  periodSeconds: number,
+  policies: readonly RateLimitPolicy[],
   trustedProxies: TrustedProxies,
+  store: LimiterStore | undefined,
 ): void {
-  // POST only: GET /session fires on every app load and must stay uncapped.
-  app.on(
-    "POST",
-    "/session",
-    rateLimit({ binding: "RATE_LIMIT_LOGIN", periodSeconds, trustedProxies }),
-  );
-  // The tunnel serves exactly one route at its mount root; a /sentry/* pattern
-  // would also match /sentry and charge every request twice.
-  app.on(
-    "POST",
-    "/sentry",
-    rateLimit({ binding: "RATE_LIMIT_SENTRY", periodSeconds, trustedProxies }),
-  );
+  for (const policy of policies) {
+    app.on(
+      policy.method,
+      policy.path,
+      rateLimit(policy, trustedProxies, store?.(policy)),
+    );
+  }
 }
 
 export function createApp(
   options: AppOptions,
 ): Hono<{ Bindings: AppBindings }> {
-  const { getDialect, rateLimitPeriodSeconds } = options;
+  const { getDialect } = options;
+  const rateLimits = options.rateLimits ?? [];
   const app = new Hono<{ Bindings: AppBindings }>();
 
   // Compiled here even when nothing is mounted, so a typo cannot sit unnoticed
   // in the config of an app that has not wired its limiters up yet.
   const trustedProxies = compileTrustedProxies(options.trustedProxies ?? []);
-  const limiting = rateLimitPeriodSeconds !== undefined;
 
   app.use(gate());
-  if (limiting) {
-    mountRateLimits(app, rateLimitPeriodSeconds, trustedProxies);
-  }
+  mountRateLimits(app, rateLimits, trustedProxies, options.rateLimitStore);
   app.route("/session", authRoutes(getDialect));
   // Inside the gate: staging's basic auth covers this like every other route.
   app.route("/sentry", sentryTunnel(sentryConfig));
@@ -94,9 +97,8 @@ export function createApp(
       // The deploy check waits for this, so a stale version cannot pass it.
       revision: ctx.env.APP_REVISION ?? "dev",
       sentry: ctx.env.SENTRY_DSN ? "configured" : "off",
-      // Limiting fails open, so a lost binding is silent without this. Unmounted
-      // reads "off" whatever is bound, since nothing is enforcing them.
-      rateLimit: limiting ? limiterStatus(ctx.env) : "off",
+      // Limiting fails open, so a lost binding is silent without this.
+      rateLimit: limiterStatus(ctx.env, rateLimits),
     }),
   );
 

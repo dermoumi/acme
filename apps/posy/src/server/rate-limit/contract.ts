@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import type { Store } from "hono-rate-limiter";
 import type { TrustedProxies } from "./trusted-proxies";
 
 /**
@@ -7,7 +8,7 @@ import type { TrustedProxies } from "./trusted-proxies";
  *
  * Structurally identical to Cloudflare's `RateLimit` binding, so on workerd the
  * platform supplies this directly and no adapter is needed. Node entrypoints
- * bind an equivalent object; see `createMemoryLimiter` in `runtime.node.ts`.
+ * build one from the policy itself; see `createLimiter` in `runtime.node.ts`.
  */
 export interface Limiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
@@ -25,11 +26,21 @@ export interface RateLimitBindings {
 }
 
 /**
- * How completely the limiters are bound, as reported on `/health`. `off` means
- * none and is a legitimate local setup; `misconfigured` means some but not all,
- * which never is. See {@link limiterStatus}.
+ * Whether limiting is in force, as reported on `/health`. `off` covers both no
+ * policies and none in force; `partial` means some but not all. See
+ * {@link limiterStatus}.
  */
-export type LimiterStatus = "configured" | "misconfigured" | "off";
+export type LimiterStatus = "on" | "partial" | "off";
+
+/** Builds a policy's limiter where the runtime can, undefined where only a
+ * platform binding supplies one. `store` counts somewhere shared instead. */
+export type CreateLimiter = (
+  policy: RateLimitPolicy,
+  store?: Store,
+) => Limiter | undefined;
+
+/** Supplies a store per policy, so each budget can carry its own key space. */
+export type LimiterStore = (policy: RateLimitPolicy) => Store;
 
 /**
  * Which proxies are allowed to speak for the client they forwarded.
@@ -50,29 +61,27 @@ export type ClientKey = (
   trust: TrustOptions,
 ) => string;
 
-/** Configuration for one protected route. */
-export interface RateLimitOptions {
+/**
+ * One protected route. An ordered list of these is the whole policy, so adding
+ * a limited endpoint is a new entry rather than an edit to the app factory.
+ */
+export interface RateLimitPolicy {
+  /** HTTP method to cap. Only this method is limited, never the whole path. */
+  method: string;
+  /** Path to cap, matched exactly as `app.on` would. */
+  path: string;
   /** Which binding holds this route's budget. */
   binding: keyof RateLimitBindings;
   /**
-   * Seconds to report in `Retry-After`. Must match the `period` configured for
-   * this binding in `wrangler.jsonc`: Cloudflare's outcome carries no reset
-   * time, so a configured period is the only value we can report.
+   * Requests allowed per window, mirroring `simple.limit` in `wrangler.jsonc`.
+   * **Never read at runtime**: the bound limiter enforces its own budget, so
+   * this records the intent and a wrong value misleads readers in silence.
+   */
+  limit: number;
+  /**
+   * Seconds reported in `Retry-After`, mirroring `simple.period`. Cloudflare's
+   * outcome carries no reset time, so a declared period is all we can report.
+   * Shapes that header only, never the window a request is measured against.
    */
   periodSeconds: number;
-  /**
-   * Ranges whose `x-forwarded-for` is trusted, already compiled by
-   * {@link compileTrustedProxies}. Defaults to none.
-   *
-   * Prefer the narrowest range that covers your proxies. Trusting a whole
-   * private space such as `172.16.0.0/12` trusts every container on the default
-   * Docker bridge, any of which could then forge a client address.
-   */
-  trustedProxies?: TrustedProxies;
 }
-
-// Must match the `simple.limit` values in wrangler.jsonc; the node arm and the
-// tests have no way to read that file.
-export const LOGIN_LIMIT = 10;
-export const SENTRY_LIMIT = 60;
-export const PERIOD_SECONDS = 60;

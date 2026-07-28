@@ -330,7 +330,7 @@ jobs:
           # Also fail-soft, but bound in wrangler.jsonc rather than by a secret, so
           # an app reporting the field at all must report it fully configured.
           limits=$(printf '%s' "$body" | jq -r '.rateLimit // empty' 2>/dev/null || true)
-          if [ -n "$limits" ] && [ "$limits" != "configured" ]; then
+          if [ -n "$limits" ] && [ "$limits" != "on" ]; then
             echo "::error::$HEALTH_PATH reports rate limiting as '$limits'; check the ratelimits bindings, or pass rateLimitPeriodSeconds to createApp"
             exit 1
           fi

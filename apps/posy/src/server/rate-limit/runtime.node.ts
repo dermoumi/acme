@@ -1,6 +1,6 @@
 import { getConnInfo } from "@hono/node-server/conninfo";
 import { MemoryStore } from "hono-rate-limiter";
-import type { ClientKey, Limiter } from "./contract";
+import type { ClientKey, CreateLimiter } from "./contract";
 import { resolveClientAddress } from "./trusted-proxies";
 
 // getConnInfo reads node's IncomingMessage, absent unless the request came
@@ -24,26 +24,28 @@ export const clientKey: ClientKey = (ctx, { trustedProxies }) => {
   );
 };
 
+export const SELF_PROVISIONED: boolean = true;
+
 /**
- * An in-process limiter for node entrypoints, counting in memory.
- *
- * Counts are per process, so replicas each get their own budget; swap in a
- * shared `hono-rate-limiter` store such as `RedisStore` once that matters.
+ * Builds the limiter from the policy's own budget, so a node app needs nothing
+ * bound: what `createApp` was given is what gets enforced. Counting defaults to
+ * memory, which is per replica; pass `RedisStore` to share it across them.
  */
-export function createMemoryLimiter(options: {
-  limit: number;
-  windowMs: number;
-}): Limiter {
-  const store = new MemoryStore();
-  // init() reads windowMs and nothing else off the middleware config.
-  store.init({ windowMs: options.windowMs } as Parameters<
-    typeof store.init
+export const createLimiter: CreateLimiter = (
+  policy,
+  store = new MemoryStore(),
+) => {
+  // Optional on the Store contract, and reads windowMs off the middleware
+  // config, which is the only field any bundled store looks at.
+  store.init?.({ windowMs: policy.periodSeconds * 1000 } as Parameters<
+    NonNullable<typeof store.init>
   >[0]);
 
   return {
-    limit: ({ key }) => {
-      const { totalHits } = store.increment(key);
-      return Promise.resolve({ success: totalHits <= options.limit });
+    // Awaited because a shared store is a round trip, unlike the memory one.
+    limit: async ({ key }) => {
+      const { totalHits } = await store.increment(key);
+      return { success: totalHits <= policy.limit };
     },
   };
-}
+};
