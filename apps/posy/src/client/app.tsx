@@ -3,11 +3,17 @@ import styles from "./app.module.css";
 import { TabBar, UpdatePrompt } from "./components";
 import { AuthProvider, RequireAuth } from "./lib/auth";
 import { useGuardedLocation } from "./lib/use-guarded-location";
-import { CollectionScreen } from "./screens/collection";
-import { CraftScreen } from "./screens/craft";
-import { LoginScreen } from "./screens/login";
-import { PullScreen } from "./screens/pull";
-import { SettingsScreen } from "./screens/settings";
+import {
+  CollectionScreen,
+  CraftScreen,
+  DebugScreen,
+  LoginScreen,
+  PullScreen,
+  SettingsScreen,
+} from "./screens";
+
+// Unlisted and absent from production, matching the server routes it drives.
+const debug = import.meta.env.VITE_APP_ENV !== "production";
 
 export function App() {
   return (
@@ -24,6 +30,7 @@ export function App() {
                   <Route component={CollectionScreen} path="/collection" />
                   <Route component={CraftScreen} path="/craft" />
                   <Route component={SettingsScreen} path="/settings" />
+                  {debug && <Route component={DebugScreen} path="/debug" />}
                   <Route>
                     <Redirect replace to="/" />
                   </Route>

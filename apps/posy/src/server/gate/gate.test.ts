@@ -1,6 +1,6 @@
 import { createBindings } from "#testing/runtime";
 import { expect, test } from "vitest";
-import app from "../index";
+import { app } from "../index";
 
 function creds(user: string, pass: string): { Authorization: string } {
   return { Authorization: `Basic ${btoa(`${user}:${pass}`)}` };
@@ -116,6 +116,36 @@ test("multi-user secret: both lines work, colons in passwords survive", async ()
 test("gated: /health stays open without credentials but gets noindex", async () => {
   const res = await app.request("/health", {}, gated);
   expect(res.status).toBe(200);
-  expect(await res.json()).toEqual({ status: "ok", app: "posy" });
+  expect(await res.json()).toEqual({
+    status: "ok",
+    app: "posy",
+    version: "dev",
+    revision: "dev",
+    sentry: "off",
+  });
   expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
+});
+
+test("/health reports the build so a deploy check can wait for it", async () => {
+  const res = await app.request(
+    "/health",
+    {},
+    { ...createBindings(), APP_VERSION: "1.2.3", APP_REVISION: "abc1234" },
+  );
+  expect(await res.json()).toMatchObject({
+    version: "1.2.3",
+    revision: "abc1234",
+  });
+});
+
+test("/health reports sentry as configured once a DSN is bound", async () => {
+  const res = await app.request(
+    "/health",
+    {},
+    {
+      ...createBindings(),
+      SENTRY_DSN: "https://dummy@dummy.ingest.sentry.io/1",
+    },
+  );
+  expect(await res.json()).toMatchObject({ sentry: "configured" });
 });

@@ -8,6 +8,8 @@ const include = ["src/**/*.test.ts"];
 export default defineConfig({
   test: {
     passWithNoTests: true,
+    // Tests throw on purpose; keep their output for the runs that fail.
+    silent: "passed-only",
     // The workers pool rejects the v8 provider: it needs node:inspector.
     coverage: {
       provider: "istanbul",

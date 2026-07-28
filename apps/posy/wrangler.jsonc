@@ -3,6 +3,14 @@
   "name": "posy-dev",
   "main": "src/server/index.ts",
   "compatibility_date": "2026-07-01",
+  // @sentry/cloudflare needs AsyncLocalStorage for its per-request client.
+  "compatibility_flags": ["nodejs_als"],
+  "vars": {
+    "APP_NAME": "posy",
+    "APP_ENV": "development",
+    "APP_VERSION": "dev",
+    "APP_REVISION": "dev"
+  },
   "assets": {
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
@@ -21,8 +29,10 @@
   "env": {
     "staging": {
       "name": "staging",
+      // vars are replaced wholesale per env, never merged with the top-level block.
       "vars": {
-        "REQUIRE_AUTH": "1"
+        "REQUIRE_AUTH": "1",
+        "APP_ENV": "staging"
       },
       "assets": {
         "binding": "ASSETS",
@@ -40,6 +50,9 @@
     },
     "production": {
       "name": "play",
+      "vars": {
+        "APP_ENV": "production"
+      },
       "d1_databases": [
         { "binding": "DB", "database_name": "posy", "database_id": "set-by-ci" }
       ]

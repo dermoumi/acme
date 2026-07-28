@@ -1,0 +1,41 @@
+import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { defineConfig } from "vitest/config";
+
+// One include for both projects, so the same test file runs on both runtimes.
+const include = ["src/**/*.test.ts"];
+
+// A developer's own SENTRY_DSN must never turn a test run into real traffic.
+const env = { SENTRY_DSN: "" };
+
+export default defineConfig({
+  test: {
+    // Tests throw on purpose; keep their output for the runs that fail.
+    silent: "passed-only",
+    // The workers pool rejects the v8 provider: it needs node:inspector.
+    coverage: {
+      provider: "istanbul",
+      exclude: ["src/hono/testing/**", "*.config.ts"],
+    },
+    projects: [
+      { test: { name: "node", include, env } },
+      {
+        plugins: [
+          cloudflareTest({
+            miniflare: {
+              compatibilityDate: "2026-07-01",
+              // @sentry/cloudflare needs AsyncLocalStorage, same as posy's worker.
+              compatibilityFlags: ["nodejs_als"],
+            },
+          }),
+        ],
+        test: {
+          name: "workerd",
+          include,
+          env,
+          // Build-time and node-only surfaces have nothing to prove in workerd.
+          exclude: ["src/hono/node/**", "src/vite/**"],
+        },
+      },
+    ],
+  },
+});

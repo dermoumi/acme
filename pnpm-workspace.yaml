@@ -7,8 +7,14 @@ minimumReleaseAge: 2880
 
 catalog:
   "@cloudflare/vite-plugin": "1.47.0"
+  "@hono/node-server": "2.0.11"
   "@cloudflare/vitest-pool-workers": "0.18.8"
   "@cloudflare/workers-types": "5.20260726.1"
+  "@sentry/cloudflare": "10.67.0"
+  "@sentry/core": "10.67.0"
+  "@sentry/node": "10.67.0"
+  "@sentry/react": "10.67.0"
+  "@sentry/vite-plugin": "5.4.0"
   "@types/better-sqlite3": "7.6.13"
   "@types/node": "24.13.3"
   "@types/react": "19.2.17"
@@ -36,6 +42,8 @@ catalog:
   wrangler: "4.114.0"
 
 allowBuilds:
+  # downloads the sentry-cli binary, which @sentry/vite-plugin shells out to
+  "@sentry/cli": true
   better-sqlite3: true
   esbuild: true
   sharp: true

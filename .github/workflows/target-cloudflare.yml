@@ -51,6 +51,16 @@ on:
         required: false
         type: boolean
         default: false
+      sentry-org:
+        description: Sentry org for source-map upload; defaults to the repository owner
+        required: false
+        type: string
+        default: ""
+      sentry-project:
+        description: Sentry project for source-map upload; defaults to the app name
+        required: false
+        type: string
+        default: ""
     secrets:
       CLOUDFLARE_API_TOKEN:
         description: Workers-edit token, from the target environment's CF account
@@ -60,6 +70,12 @@ on:
         required: true
       BASIC_AUTH:
         description: Basic-auth users ("user:pass" per line) gating preview/staging
+        required: false
+      SENTRY_DSN:
+        description: Sentry ingestion key; absent means the deploy is unmonitored
+        required: false
+      SENTRY_AUTH_TOKEN:
+        description: Sentry upload token; absent skips source-map upload
         required: false
 
 jobs:
@@ -98,6 +114,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 100 # Allows sentry's set-commit to work properly.
 
       - name: Setup
         uses: ./.github/actions/setup
@@ -110,10 +127,31 @@ jobs:
           app: ${{ inputs.app }}
           branch: ${{ inputs.branch }}
 
+      - name: Resolve build identity
+        id: revision
+        working-directory: apps/${{ inputs.app }}
+        env:
+          # on a PR, github.sha is the synthetic merge commit, not what was pushed
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          echo "short=${COMMIT_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "version=$(jq -r '.version // "dev"' package.json)" >> "$GITHUB_OUTPUT"
+
       - name: Build
         env:
           # preview builds use the staging env config under a per-branch worker name
           CLOUDFLARE_ENV: ${{ inputs.environment == 'production' && 'production' || 'staging' }}
+          # the client bakes these in; the deploy passes the same values to the worker
+          APP_NAME: ${{ inputs.app }}
+          # the client SDK bakes its tier in, so previews stay out of staging's events
+          APP_ENV: ${{ inputs.environment }}
+          APP_REVISION: ${{ steps.revision.outputs.short }}
+          # uploaded maps are keyed by these, so the deploy must report the same pair
+          APP_VERSION: ${{ steps.revision.outputs.version }}
+          # absent disables source-map upload; the build still succeeds
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ inputs.sentry-org || github.repository_owner }}
+          SENTRY_PROJECT: ${{ inputs.sentry-project || inputs.app }}
         run: pnpm exec turbo build --filter="@acme/$APP"
 
       - name: Provision D1 database
@@ -218,12 +256,25 @@ jobs:
         env:
           WORKERS_SUBDOMAIN: ${{ inputs.workers-subdomain }}
           BASIC_AUTH: ${{ secrets.BASIC_AUTH }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          APP_REVISION: ${{ steps.revision.outputs.short }}
+          APP_VERSION: ${{ steps.revision.outputs.version }}
           SLUG: ${{ steps.names.outputs.slug }}
         run: |
           extra_args=()
           # the worker fails closed (503) when staging deploys without this var
           if [ "$DEPLOY_ENV" != "production" ] && [ -n "$BASIC_AUTH" ]; then
             extra_args+=(--var "BASIC_AUTH:$BASIC_AUTH")
+          fi
+          # named env blocks replace the top-level vars rather than extending them,
+          # so everything the worker needs at runtime is passed here
+          extra_args+=(--var "APP_NAME:$APP")
+          extra_args+=(--var "APP_ENV:$DEPLOY_ENV")
+          extra_args+=(--var "APP_REVISION:$APP_REVISION")
+          extra_args+=(--var "APP_VERSION:$APP_VERSION")
+          # injected, never committed; absent just means this deploy is unmonitored
+          if [ -n "$SENTRY_DSN" ]; then
+            extra_args+=(--var "SENTRY_DSN:$SENTRY_DSN")
           fi
           if [ "$DEPLOY_ENV" = "preview" ]; then
             pnpm exec wrangler deploy --name "$SLUG" "${extra_args[@]}"
@@ -239,16 +290,39 @@ jobs:
         env:
           BASE_URL: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
           HEALTH_PATH: ${{ inputs.health-path }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          APP_REVISION: ${{ steps.revision.outputs.short }}
         run: |
           # asking for a probe that cannot run is a config bug, so fail rather than skip
           if [ -z "$BASE_URL" ]; then
             echo "::error::health-path is set but no url resolved; pass url, or workers-subdomain for previews"
             exit 1
           fi
-          # a branch's first preview needs time for its route to go live, so the probe
-          # retries; the timeouts are per attempt so a hang cannot run to the job limit
-          curl --fail --silent --show-error \
-            --connect-timeout 10 --max-time 30 \
-            --retry 15 --retry-delay 10 --retry-max-time 120 --retry-all-errors \
-            --user-agent "acme-ci-health-probe" \
-            "$BASE_URL$HEALTH_PATH"
+          # curl --retry only retries failures, and the PREVIOUS deployment answering
+          # 200 is not a failure, so waiting on the revision is what makes this check
+          # about the build we just shipped. Also covers a cold preview route 404ing.
+          deadline=$((SECONDS + 120))
+          while :; do
+            body=$(curl --fail --silent --show-error \
+              --connect-timeout 10 --max-time 30 \
+              --user-agent "acme-ci-health-probe" \
+              "$BASE_URL$HEALTH_PATH" || true)
+            served=$(printf '%s' "$body" | jq -r '.revision // empty' 2>/dev/null || true)
+            if [ "$served" = "$APP_REVISION" ]; then
+              break
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::$HEALTH_PATH never served revision $APP_REVISION (last: ${served:-no response})"
+              exit 1
+            fi
+            sleep 5
+          done
+          echo "$body"
+
+          # Capture is fail-soft, so a dsn that never reached the worker is silent.
+          # Only assert when one was supplied: no secret stays a legitimate deploy.
+          if [ -n "$SENTRY_DSN" ] &&
+             ! printf '%s' "$body" | grep -qE '"sentry" *: *"configured"'; then
+            echo "::error::SENTRY_DSN is set but $HEALTH_PATH does not report sentry as configured"
+            exit 1
+          fi
