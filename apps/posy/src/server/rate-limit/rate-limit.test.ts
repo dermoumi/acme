@@ -3,6 +3,7 @@ import { expect, test } from "vitest";
 import { createApp } from "../app";
 import type { AppBindings } from "../bindings";
 import { LOGIN_LIMIT, PERIOD_SECONDS, SENTRY_LIMIT } from "./contract";
+import { rateLimit } from "./rate-limit";
 
 // The limiter answers before the handler, and an empty body is rejected before
 // handleLogin opens a connection, so nothing here may reach a database.
@@ -139,6 +140,18 @@ test("an app built without a period does not limit, bindings or not", async () =
   // Bindings are present here, but nothing enforces them, so "off" is the truth.
   const health = await app.request("/health", {}, env);
   expect(await health.json()).toMatchObject({ rateLimit: "off" });
+});
+
+test("a malformed trusted proxy range refuses to build the middleware", () => {
+  // Building happens at startup, so this is a worker that fails to boot rather
+  // than one that silently trusts nobody for the rest of its life.
+  expect(() =>
+    rateLimit({
+      binding: "RATE_LIMIT_LOGIN",
+      periodSeconds: PERIOD_SECONDS,
+      trustedProxies: ["10.0.0.0/"],
+    }),
+  ).toThrow("10.0.0.0/");
 });
 
 test("the sentry tunnel has its own budget", async () => {

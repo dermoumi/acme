@@ -27,35 +27,62 @@ function parse(text: string): Address | undefined {
   }
 }
 
-function matches(address: Address, cidr: string): boolean {
+/** One trusted range, reduced to the comparison a request actually needs. */
+interface TrustedRange {
+  v4: boolean;
+  host: bigint;
+  network: bigint;
+}
+
+/** Trusted proxy ranges, already parsed. Build with {@link compileTrustedProxies}. */
+export type TrustedProxies = readonly TrustedRange[];
+
+function compile(cidr: string): TrustedRange | undefined {
   const [range, prefixText] = cidr.split("/");
   const target = range === undefined ? undefined : parse(range);
-  if (!target || target.v4 !== address.v4) return false;
+  if (!target) return undefined;
 
-  const width = address.v4 ? 32 : 128;
+  const width = target.v4 ? 32 : 128;
   // Guard the digits before Number(), which reads "" and " " as 0, and a zero
   // prefix matches every address: a trailing slash would trust the whole family.
-  if (prefixText !== undefined && !/^\d+$/u.test(prefixText)) return false;
+  if (prefixText !== undefined && !/^\d+$/u.test(prefixText)) return undefined;
   const prefix = prefixText === undefined ? width : Number(prefixText);
-  if (prefix > width) return false;
+  if (prefix > width) return undefined;
 
   const host = 2n ** BigInt(width - prefix);
-  return address.bits / host === target.bits / host;
+  return { v4: target.v4, host, network: target.bits / host };
 }
 
 /**
- * Whether `address` falls inside any of `cidrs`.
- *
- * Accepts bare addresses as well as CIDR notation, so `"10.0.0.1"` and
- * `"10.0.0.0/8"` are both valid entries. Unparseable addresses and malformed
- * entries are simply not trusted, so a typo in configuration narrows what is
- * believed rather than widening it.
+ * Parses trusted proxy ranges once, ahead of any request. Accepts bare
+ * addresses as well as CIDR notation. **Throws** on anything it cannot parse:
+ * this is the only point where configuration is checked rather than merely
+ * used, and a limiter that silently trusts nobody is worse than one that
+ * refuses to start.
  */
-export function isTrusted(address: string, cidrs: readonly string[]): boolean {
-  if (cidrs.length === 0) return false;
+export function compileTrustedProxies(
+  cidrs: readonly string[],
+): TrustedProxies {
+  return cidrs.map((cidr) => {
+    const compiled = compile(cidr);
+    if (!compiled) {
+      throw new Error(
+        `not a usable trusted proxy range: ${JSON.stringify(cidr)}`,
+      );
+    }
+    return compiled;
+  });
+}
+
+/** Whether `address` falls inside any of the compiled `trusted` ranges. */
+export function isTrusted(address: string, trusted: TrustedProxies): boolean {
+  if (trusted.length === 0) return false;
   const parsed = parse(address);
   if (!parsed) return false;
-  return cidrs.some((cidr) => matches(parsed, cidr));
+  return trusted.some(
+    (range) =>
+      range.v4 === parsed.v4 && parsed.bits / range.host === range.network,
+  );
 }
 
 /**
@@ -73,7 +100,7 @@ export function isTrusted(address: string, cidrs: readonly string[]): boolean {
 export function resolveClientAddress(
   peer: string,
   forwardedFor: string | undefined,
-  trustedProxies: readonly string[],
+  trustedProxies: TrustedProxies,
 ): string {
   if (!isTrusted(peer, trustedProxies)) return peer;
 

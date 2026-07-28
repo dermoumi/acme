@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import type { TrustedProxies } from "./trusted-proxies";
 
 /**
  * Consumes one unit of budget for `key` and reports whether the caller is still
@@ -37,7 +38,7 @@ export type LimiterStatus = "configured" | "misconfigured" | "off";
  * and clients are keyed on the address we actually see.
  */
 export interface TrustOptions {
-  trustedProxies: readonly string[];
+  trustedProxies: TrustedProxies;
 }
 
 /**
