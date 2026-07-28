@@ -72,3 +72,19 @@ test("the event is sent before the response resolves", async () => {
   await invoke(loginRequest());
   expect(JSON.stringify(sent)).toContain(BOOM);
 });
+
+test("the 500 body carries the event id so a user can quote it", async () => {
+  const { invoke } = bench.build({ SENTRY_DSN: DSN }, {});
+  const res = await invoke(loginRequest());
+  const body = (await res.json()) as { sentryEventId: string | null };
+  expect(body.sentryEventId).toMatch(/^[a-f0-9]{32}$/u);
+});
+
+test("with no DSN the id is null rather than absent", async () => {
+  const { invoke } = bench.build({}, {});
+  const res = await invoke(loginRequest());
+  expect(await res.json()).toEqual({
+    error: "Internal Server Error",
+    sentryEventId: null,
+  });
+});

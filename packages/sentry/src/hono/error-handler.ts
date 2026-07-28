@@ -1,4 +1,4 @@
-import { captureException, flush } from "@sentry/core";
+import { captureException, flush, getClient } from "@sentry/core";
 import type { ErrorHandler } from "hono";
 import { HTTPException } from "hono/http-exception";
 
@@ -9,14 +9,22 @@ const FLUSH_MS = 500;
 export function sentryErrorHandler(): ErrorHandler {
   return async (error, ctx) => {
     const expected = error instanceof HTTPException && error.status < 500;
+
+    let eventId: string | undefined;
     if (!expected) {
       console.error(error);
-      captureException(error);
+      const id = captureException(error);
+      // Without a client nothing was sent, and an unlookupable id is worse than none.
+      eventId = getClient() ? id : undefined;
       // Answering can end the runtime's work, so deliver before answering.
       await flush(FLUSH_MS).catch(() => false);
     }
 
     if (error instanceof HTTPException) return error.getResponse();
-    return ctx.text("Internal Server Error", 500);
+    // The id lets someone quote the exact event when reporting a failure.
+    return ctx.json(
+      { error: "Internal Server Error", sentryEventId: eventId ?? null },
+      500,
+    );
   };
 }
