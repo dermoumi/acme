@@ -1,6 +1,8 @@
 import type { AppBindings } from "../bindings";
 
-// Routes that throw on purpose have no business in production.
+// Only these environments allow debug content.
+const DEBUG_TIERS = new Set(["development", "preview", "staging"]);
+
 export function isDebugEnabled(env: AppBindings): boolean {
-  return (env.APP_ENV ?? "development") !== "production";
+  return DEBUG_TIERS.has(env.APP_ENV ?? "development");
 }

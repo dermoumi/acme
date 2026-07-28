@@ -56,6 +56,12 @@ test("production has no debug routes at all", async () => {
   }
 });
 
+// A tier nobody anticipated must fail closed, which a denylist did not.
+test("an unrecognised tier keeps them hidden", async () => {
+  const res = await app.request("/debug/boom", {}, env({ APP_ENV: "canary" }));
+  expect(res.status).toBe(404);
+});
+
 test("staging and preview keep them", async () => {
   const tiers = ["staging", "preview"];
   const responses = await Promise.all(
