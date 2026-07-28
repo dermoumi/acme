@@ -85,12 +85,16 @@ function redactUrl(url: string, keys: string[]): string {
   return `${url.slice(0, mark)}?${redactQuery(url.slice(mark + 1), keys)}`;
 }
 
+// Dropped, not masked: redactKeys covers header names too, so adding
+// "x-internal-token" behaves the way it does for bodies and query strings.
 function redactHeaders(
   headers: Record<string, string>,
+  keys: string[] = [],
 ): Record<string, string> {
   return Object.fromEntries(
     Object.entries(headers).filter(
-      ([name]) => !DENIED_HEADERS.has(name.toLowerCase()),
+      ([name]) =>
+        !DENIED_HEADERS.has(name.toLowerCase()) && !isSensitive(name, keys),
     ),
   );
 }
@@ -133,7 +137,7 @@ export function scrubEvent(
       ...(data !== undefined && {
         data: redactBody(data, keys, contentType(headers), keepUnparsedBody),
       }),
-      ...(headers && { headers: redactHeaders(headers) }),
+      ...(headers && { headers: redactHeaders(headers, keys) }),
     },
   };
 }

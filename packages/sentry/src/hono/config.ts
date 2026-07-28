@@ -17,8 +17,10 @@ export interface SentryConfig {
   /** Defaults to `"full"`. */
   masking?: MaskingLevel;
   /**
-   * Extra keys to mask. Case-insensitive substring match, so `"note"` also
-   * masks `userNote`. Unused when masking is `"none"`.
+   * Extra keys to mask, across body, query string, url and cookies.
+   * Case-insensitive substring match, so `"note"` also masks `userNote`.
+   * A matching header is dropped rather than masked, as credentials are.
+   * Unused when masking is `"none"`.
    */
   redactKeys?: string[];
   /**

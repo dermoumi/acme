@@ -188,3 +188,15 @@ test("multipart survives light masking and is withheld by full", () => {
   );
   expect(scrubEvent(event, ["password"]).request?.data).toBe("[redacted]");
 });
+
+// redactKeys visibly applies to bodies, query and cookies; headers behaving
+// differently would be a silent gap for a caller who added one.
+test("redactKeys drops matching headers, not just body keys", () => {
+  const event = {
+    type: undefined,
+    request: { headers: { "X-Tenant-Id": "acme", accept: "*/*" } },
+  } as ErrorEvent;
+
+  expect(scrub(event, ["tenant"]).request?.headers).toEqual({ accept: "*/*" });
+  expect(scrub(event).request?.headers).toHaveProperty("X-Tenant-Id");
+});
