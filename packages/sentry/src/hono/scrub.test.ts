@@ -47,10 +47,10 @@ test("keeps harmless query params, masking sensitive ones", () => {
   expect(request?.url).not.toContain(SESSION);
 });
 
-// Sentry's server-side scrubbing writes [Filtered]; ours must not read differently.
+// Sentry's own scrubbing writes [Filtered]; ours stays distinguishable from it.
 test("masks with the same marker Sentry itself uses", () => {
   const { request } = scrub();
-  expect(request?.data).toContain("[Filtered]");
+  expect(request?.data).toContain("[redacted]");
 });
 
 test("drops sensitive headers whatever their casing, keeps the rest", () => {
