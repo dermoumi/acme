@@ -122,6 +122,7 @@ test("gated: /health stays open without credentials but gets noindex", async () 
     version: "dev",
     revision: "dev",
     sentry: "off",
+    rateLimit: "on",
   });
   expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
 });

@@ -88,6 +88,14 @@ runs:
           exit 1
         fi
 
+        # Bound by config rather than a secret, so an app reporting the field at
+        # all must report it fully configured.
+        limits=$(printf '%s' "$body" | jq -r '.rateLimit // empty')
+        if [ -n "$limits" ] && [ "$limits" != "on" ]; then
+          echo "::error::$HEALTH_PATH reports rate limiting as '$limits'; check the bindings against the rateLimits passed to createApp"
+          exit 1
+        fi
+
         if [ "$CHECK_CLIENT" != "true" ]; then
           exit 0
         fi

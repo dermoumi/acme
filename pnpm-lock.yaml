@@ -57,6 +57,9 @@ catalogs:
     hono:
       specifier: 4.12.32
       version: 4.12.32
+    hono-rate-limiter:
+      specifier: 0.5.3
+      version: 0.5.3
     husky:
       specifier: 9.1.7
       version: 9.1.7
@@ -143,6 +146,9 @@ importers:
       hono:
         specifier: 'catalog:'
         version: 4.12.32
+      hono-rate-limiter:
+        specifier: 'catalog:'
+        version: 0.5.3(hono@4.12.32)
       kysely:
         specifier: 'catalog:'
         version: 0.29.4
@@ -2646,6 +2652,15 @@ packages:
   hasown@2.0.4:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
+
+  hono-rate-limiter@0.5.3:
+    resolution: {integrity: sha512-M0DxbVMpPELEzLi0AJg1XyBHLGJXz7GySjsPoK+gc5YeeBsdGDGe+2RvVuCAv8ydINiwlbxqYMNxUEyYfRji/A==}
+    peerDependencies:
+      hono: ^4.10.8
+      unstorage: ^1.17.3
+    peerDependenciesMeta:
+      unstorage:
+        optional: true
 
   hono@4.12.32:
     resolution: {integrity: sha512-XcuyW9qE2kJn07PkecMOBd5Vq/hMy7mmGw+idz1yblbg9N17ijJODrvPkn7/dwL3Kulj8LcRJ69DLOWf91dRUg==}
@@ -5874,6 +5889,10 @@ snapshots:
   hasown@2.0.4:
     dependencies:
       function-bind: 1.1.2
+
+  hono-rate-limiter@0.5.3(hono@4.12.32):
+    dependencies:
+      hono: 4.12.32
 
   hono@4.12.32: {}
 

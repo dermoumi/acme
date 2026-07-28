@@ -26,6 +26,21 @@
       "database_id": "posy-local"
     }
   ],
+  // namespace_id must be NUMERIC despite the schema typing it as a string:
+  // wrangler forwards it unvalidated and the API rejects anything else (10021).
+  // Self-chosen, nothing to provision. 0xxx dev, 1xxx production, 2xxx staging.
+  "ratelimits": [
+    {
+      "name": "RATE_LIMIT_LOGIN",
+      "namespace_id": "0001",
+      "simple": { "limit": 10, "period": 60 }
+    },
+    {
+      "name": "RATE_LIMIT_SENTRY",
+      "namespace_id": "0002",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ],
   "env": {
     "staging": {
       "name": "staging",
@@ -46,6 +61,19 @@
           "database_name": "posy-staging",
           "database_id": "set-by-ci"
         }
+      ],
+      // Repeated because binding blocks are replaced per env, never merged.
+      "ratelimits": [
+        {
+          "name": "RATE_LIMIT_LOGIN",
+          "namespace_id": "2001",
+          "simple": { "limit": 10, "period": 60 }
+        },
+        {
+          "name": "RATE_LIMIT_SENTRY",
+          "namespace_id": "2002",
+          "simple": { "limit": 60, "period": 60 }
+        }
       ]
     },
     "production": {
@@ -55,6 +83,18 @@
       },
       "d1_databases": [
         { "binding": "DB", "database_name": "posy", "database_id": "set-by-ci" }
+      ],
+      "ratelimits": [
+        {
+          "name": "RATE_LIMIT_LOGIN",
+          "namespace_id": "1001",
+          "simple": { "limit": 10, "period": 60 }
+        },
+        {
+          "name": "RATE_LIMIT_SENTRY",
+          "namespace_id": "1002",
+          "simple": { "limit": 60, "period": 60 }
+        }
       ]
     }
   }
