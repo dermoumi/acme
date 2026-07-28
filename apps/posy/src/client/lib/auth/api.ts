@@ -3,6 +3,29 @@ export interface SessionUser {
   name: string;
 }
 
+/**
+ * Too many login attempts. Separate from a rejected password, which resolves
+ * `null`, and a server fault, which throws plain: only this one is worth waiting.
+ */
+export class LoginRateLimitedError extends Error {
+  public readonly retryAfter: number;
+
+  public constructor(retryAfter: number) {
+    super(`login rate limited (retry after ${retryAfter}s)`);
+    this.name = "LoginRateLimitedError";
+    this.retryAfter = retryAfter;
+  }
+}
+
+const FALLBACK_RETRY_SECONDS = 60;
+
+function retryAfterSeconds(response: Response): number {
+  const seconds = Number(response.headers.get("Retry-After"));
+  return Number.isFinite(seconds) && seconds > 0
+    ? seconds
+    : FALLBACK_RETRY_SECONDS;
+}
+
 async function readUser(response: Response): Promise<SessionUser | null> {
   const body = (await response.json()) as { user?: SessionUser | null };
   return body.user ?? null;
@@ -26,6 +49,9 @@ export async function loginWithPassword(
     body: JSON.stringify({ username, password, clientVersion }),
   });
   if (response.status === 401) return null;
+  if (response.status === 429) {
+    throw new LoginRateLimitedError(retryAfterSeconds(response));
+  }
   if (!response.ok) throw new Error(`login failed (${response.status})`);
   return readUser(response);
 }
