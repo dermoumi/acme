@@ -1,5 +1,5 @@
 import { flush } from "@sentry/node";
-import { withSentry } from "../node/with-sentry-node";
+import { withSentry } from "../node/handler";
 import type { Bench } from "./contract";
 import { recordingConfig, throwingApp } from "./throwing-app";
 
