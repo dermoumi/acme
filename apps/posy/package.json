@@ -7,6 +7,10 @@
     "#testing/runtime": {
       "workerd": "./src/server/testing/runtime.workerd.ts",
       "default": "./src/server/testing/runtime.node.ts"
+    },
+    "#rate-limit/runtime": {
+      "workerd": "./src/server/rate-limit/runtime.workerd.ts",
+      "default": "./src/server/rate-limit/runtime.node.ts"
     }
   },
   "scripts": {
@@ -23,7 +27,9 @@
   },
   "dependencies": {
     "@acme/sentry": "workspace:*",
+    "@hono/node-server": "catalog:",
     "hono": "catalog:",
+    "hono-rate-limiter": "catalog:",
     "kysely": "catalog:",
     "kysely-d1": "catalog:",
     "react": "catalog:",

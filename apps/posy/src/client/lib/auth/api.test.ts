@@ -1,5 +1,10 @@
 import { expect, test, vi } from "vitest";
-import { endSession, fetchSession, loginWithPassword } from "./api";
+import {
+  endSession,
+  fetchSession,
+  LoginRateLimitedError,
+  loginWithPassword,
+} from "./api";
 
 function stubFetch(response: Response | Error): ReturnType<typeof vi.fn> {
   const fetchMock = vi.fn(() =>
@@ -53,6 +58,32 @@ test("loginWithPassword resolves null for bad credentials", async () => {
 test("server errors on login throw instead of looking like bad credentials", async () => {
   stubFetch(jsonResponse({ error: "internal" }, 500));
   await expect(loginWithPassword("u1", "pass", "1.2.3")).rejects.toThrow("500");
+});
+
+test("being rate limited is distinguishable from a server fault", async () => {
+  stubFetch(
+    new Response(JSON.stringify({ error: "rate_limited" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": "30" },
+    }),
+  );
+  await expect(loginWithPassword("u1", "pass", "1.2.3")).rejects.toBeInstanceOf(
+    LoginRateLimitedError,
+  );
+
+  stubFetch(
+    new Response(null, { status: 429, headers: { "Retry-After": "30" } }),
+  );
+  await expect(loginWithPassword("u1", "pass", "1.2.3")).rejects.toMatchObject({
+    retryAfter: 30,
+  });
+});
+
+test("a rate limit without a usable Retry-After still says how long to wait", async () => {
+  stubFetch(jsonResponse({ error: "rate_limited" }, 429));
+  await expect(loginWithPassword("u1", "pass", "1.2.3")).rejects.toMatchObject({
+    retryAfter: 60,
+  });
 });
 
 test("network failures reject instead of looking like bad credentials", async () => {

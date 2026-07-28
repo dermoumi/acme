@@ -15,7 +15,7 @@ async function appWithUser(): Promise<{ app: App; db: Kysely<Database> }> {
   const dialect = await migratedDialect();
   const db = createDb(dialect);
   await seedUser(db, "u1", "Tester", PASS);
-  return { app: createApp(() => dialect), db };
+  return { app: createApp({ getDialect: () => dialect }), db };
 }
 
 async function login(app: App, body: unknown): Promise<Response> {
@@ -100,16 +100,13 @@ test("sessions survive a worker restart", async () => {
   const db = createDb(dialect);
   await seedUser(db, "u1", "Tester", PASS);
   const cookie = cookieOf(
-    await login(
-      createApp(() => dialect),
-      {
-        username: "u1",
-        password: PASS,
-      },
-    ),
+    await login(createApp({ getDialect: () => dialect }), {
+      username: "u1",
+      password: PASS,
+    }),
   );
 
-  const rebooted = createApp(() => dialect);
+  const rebooted = createApp({ getDialect: () => dialect });
   const res = await getSession(rebooted, cookie);
   expect(await res.json()).toEqual({ user: { id: "u1", name: "Tester" } });
   await db.destroy();

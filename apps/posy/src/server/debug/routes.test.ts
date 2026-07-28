@@ -2,8 +2,10 @@ import { createBindings } from "#testing/runtime";
 import { expect, test } from "vitest";
 import { createApp } from "../app";
 
-const app = createApp(() => {
-  throw new Error("debug tests never reach the database");
+const app = createApp({
+  getDialect: () => {
+    throw new Error("debug tests never reach the database");
+  },
 });
 
 function env(overrides: Record<string, string> = {}) {

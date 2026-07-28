@@ -1,11 +1,15 @@
 import { useCallback, useState } from "react";
 import { Redirect } from "wouter";
-import { useAuth } from "../lib/auth";
+import { LoginRateLimitedError, useAuth } from "../lib/auth";
 import styles from "./login.module.css";
 
 const INVALID = "Wrong username or password.";
 const SERVER_ERROR = "Something went wrong. Try again in a moment.";
 const OFFLINE = "Could not reach Posy. Check your connection and try again.";
+
+function tooManyAttempts(seconds: number): string {
+  return `Too many sign-in attempts. Try again in ${seconds} seconds.`;
+}
 
 function LoginForm({
   busy,
@@ -65,7 +69,13 @@ export function LoginScreen() {
       try {
         if (!(await login(username, password))) setError(INVALID);
       } catch (err) {
-        setError(err instanceof TypeError ? OFFLINE : SERVER_ERROR);
+        const message =
+          err instanceof LoginRateLimitedError
+            ? tooManyAttempts(err.retryAfter)
+            : err instanceof TypeError
+              ? OFFLINE
+              : SERVER_ERROR;
+        setError(message);
       } finally {
         setBusy(false);
       }
