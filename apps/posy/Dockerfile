@@ -35,6 +35,15 @@ RUN cp -RL apps/posy/node_modules/better-sqlite3 /runtime-better-sqlite3 \
 FROM node:24.18.0-trixie-slim
 WORKDIR /app
 
+# Baked, not just build-time: /health reports these, so the image has to know
+# which build it is once it is running.
+ARG APP_NAME=posy
+ARG APP_VERSION=dev
+ARG APP_REVISION=dev
+ENV APP_NAME=$APP_NAME
+ENV APP_VERSION=$APP_VERSION
+ENV APP_REVISION=$APP_REVISION
+
 ENV NODE_ENV=production
 # Unset reads as development, which serves /debug/*.
 ENV APP_ENV=production

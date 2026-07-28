@@ -1,0 +1,118 @@
+name: Probe app
+description: Wait for a deployment to answer, then assert what it serves
+
+inputs:
+  base-url:
+    description: Origin to probe, e.g. https://posy.example.com or http://localhost:3000
+    required: true
+  health-path:
+    description: Health endpoint path
+    default: /health
+  revision:
+    description: >-
+      Expected build revision. When set, the probe waits until /health reports
+      it, which is what makes the check about the build just shipped rather than
+      whatever answered first. Leave empty to accept any healthy response.
+    default: ""
+  sentry-dsn:
+    description: >-
+      When non-empty, /health must report sentry as configured. Capture is
+      fail-soft, so a DSN that never reached the app is otherwise silent.
+    default: ""
+  check-client:
+    description: >-
+      Also assert the built client is served. Leave false for tiers behind basic
+      auth, where every path but /health answers 401.
+    default: "false"
+  timeout-seconds:
+    description: >-
+      Ceiling on the wait, not a delay: a healthy deployment passes immediately
+      and only a failing one spends the window.
+    default: "120"
+
+runs:
+  using: composite
+  steps:
+    - name: Probe
+      shell: bash
+      env:
+        BASE_URL: ${{ inputs.base-url }}
+        HEALTH_PATH: ${{ inputs.health-path }}
+        REVISION: ${{ inputs.revision }}
+        SENTRY_DSN: ${{ inputs.sentry-dsn }}
+        CHECK_CLIENT: ${{ inputs.check-client }}
+        TIMEOUT: ${{ inputs.timeout-seconds }}
+      run: |
+        set -euo pipefail
+
+        # Asking for a probe that cannot run is a config bug, so fail rather than skip.
+        if [ -z "$BASE_URL" ]; then
+          echo "::error::no base-url to probe; the caller resolved an empty url"
+          exit 1
+        fi
+
+        probe() {
+          curl --fail --silent --show-error \
+            --connect-timeout 10 --max-time 30 \
+            --user-agent "acme-ci-health-probe" "$@"
+        }
+
+        # curl --retry only retries failures, and a previous deploy answering
+        # 200 is not one. Waiting on the revision is what pins this to the new
+        # build; the same loop covers a cold route and a starting container.
+        deadline=$((SECONDS + TIMEOUT))
+        while :; do
+          body=$(probe "$BASE_URL$HEALTH_PATH" || true)
+          served=$(printf '%s' "$body" | jq -r '.revision // empty' 2>/dev/null || true)
+          if [ -n "$body" ] && { [ -z "$REVISION" ] || [ "$served" = "$REVISION" ]; }; then
+            break
+          fi
+          if [ "$SECONDS" -ge "$deadline" ]; then
+            echo "::error::$HEALTH_PATH never served ${REVISION:-a healthy response} (last: ${served:-no response})"
+            exit 1
+          fi
+          sleep 5
+        done
+        echo "$body"
+
+        status=$(printf '%s' "$body" | jq -r '.status // empty')
+        if [ "$status" != "ok" ]; then
+          echo "::error::$HEALTH_PATH reported status ${status:-none}"
+          exit 1
+        fi
+
+        # Only assert when a DSN was supplied: no secret is a legitimate deploy.
+        if [ -n "$SENTRY_DSN" ] &&
+           ! printf '%s' "$body" | grep -qE '"sentry" *: *"configured"'; then
+          echo "::error::SENTRY_DSN is set but $HEALTH_PATH does not report sentry as configured"
+          exit 1
+        fi
+
+        if [ "$CHECK_CLIENT" != "true" ]; then
+          exit 0
+        fi
+
+        index=$(probe "$BASE_URL/")
+        asset=$(printf '%s' "$index" | grep -oE '/assets/[^"]+\.js' | head -n1 || true)
+        if [ -z "$asset" ]; then
+          echo "::error::/ served no hashed asset; the client build is missing"
+          exit 1
+        fi
+
+        # Status alone proves nothing: SPA not-found handling answers 200 with
+        # the shell for missing files, so a broken build would look healthy.
+        for path in "$asset" /sw.js; do
+          type=$(probe --output /dev/null --write-out '%{content_type}' "$BASE_URL$path") || {
+            echo "::error::$path did not serve"
+            exit 1
+          }
+          case "$type" in
+            *javascript*) ;;
+            *)
+              echo "::error::$path served '$type', so the fallback answered and the file is missing"
+              exit 1
+              ;;
+          esac
+        done
+
+        echo "::notice::$BASE_URL served $HEALTH_PATH, $asset and /sw.js"
