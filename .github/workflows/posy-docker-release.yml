@@ -1,0 +1,17 @@
+name: Publish Posy image
+
+# Separate from posy-docker.yml: paths and tags in one push block silently
+# skips the tag runs.
+on:
+  push:
+    tags: ["posy-v*"]
+
+jobs:
+  publish:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/target-docker.yml
+    with:
+      app: posy
+      push: true
