@@ -22,6 +22,25 @@ export const sentryConfig: SentryConfig = {
   ignoreUserAgent: "acme-ci-health-probe",
 };
 
+// POST only keeps the per-load GET uncapped; /sentry exact, /* double-charges.
+// Mirrors wrangler.jsonc on Workers, which counts; on node these are the budget.
+export const rateLimitPolicies: readonly RateLimitPolicy[] = [
+  {
+    method: "POST",
+    path: "/session",
+    binding: "RATE_LIMIT_LOGIN",
+    limit: 10,
+    periodSeconds: 60,
+  },
+  {
+    method: "POST",
+    path: "/sentry",
+    binding: "RATE_LIMIT_SENTRY",
+    limit: 60,
+    periodSeconds: 60,
+  },
+];
+
 export interface AppOptions {
   /** Resolved per request, so an environment with no DB still serves assets. */
   getDialect: (env: AppBindings) => Dialect;

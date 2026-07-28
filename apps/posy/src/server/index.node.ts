@@ -1,6 +1,6 @@
 import { withSentry } from "@acme/sentry/hono";
 import { serve } from "@hono/node-server";
-import { createApp, sentryConfig } from "./app";
+import { createApp, rateLimitPolicies, sentryConfig } from "./app";
 import { staticAssets } from "./assets.node";
 import type { AppBindings } from "./bindings";
 import { fileDialect } from "./db/sqlite.node";
@@ -22,24 +22,7 @@ const dialect = fileDialect(process.env.DATABASE_PATH ?? "./posy.db");
 const handler = withSentry(
   createApp({
     getDialect: () => dialect,
-    // No platform binding here: node self-provisions, so unlike the worker's
-    // copy these numbers are the budget rather than a mirror of wrangler.jsonc.
-    rateLimits: [
-      {
-        method: "POST",
-        path: "/session",
-        binding: "RATE_LIMIT_LOGIN",
-        limit: 10,
-        periodSeconds: 60,
-      },
-      {
-        method: "POST",
-        path: "/sentry",
-        binding: "RATE_LIMIT_SENTRY",
-        limit: 60,
-        periodSeconds: 60,
-      },
-    ],
+    rateLimits: rateLimitPolicies,
     // Cloudflare sets cf-connecting-ip itself, so only node has to decide whose
     // forwarded header to believe. Empty trusts none, which is the safe default.
     trustedProxies: (process.env.TRUSTED_PROXIES ?? "")
