@@ -3,7 +3,6 @@ import { expect, test } from "vitest";
 import { createApp } from "../app";
 import type { AppBindings } from "../bindings";
 import { LOGIN_LIMIT, PERIOD_SECONDS, SENTRY_LIMIT } from "./contract";
-import { rateLimit } from "./rate-limit";
 
 // The limiter answers before the handler, and an empty body is rejected before
 // handleLogin opens a connection, so nothing here may reach a database.
@@ -142,16 +141,29 @@ test("an app built without a period does not limit, bindings or not", async () =
   expect(await health.json()).toMatchObject({ rateLimit: "off" });
 });
 
-test("a malformed trusted proxy range refuses to build the middleware", () => {
-  // Building happens at startup, so this is a worker that fails to boot rather
-  // than one that silently trusts nobody for the rest of its life.
+test("trustedProxies reaches the limiter from createApp", () => {
+  // createApp runs at module load on workerd, so a malformed range is a worker
+  // that fails to boot rather than one silently trusting nobody for its life.
   expect(() =>
-    rateLimit({
-      binding: "RATE_LIMIT_LOGIN",
-      periodSeconds: PERIOD_SECONDS,
+    createApp({
+      getDialect: noDatabase,
+      rateLimitPeriodSeconds: PERIOD_SECONDS,
       trustedProxies: ["10.0.0.0/"],
     }),
   ).toThrow("10.0.0.0/");
+
+  // Checked even with nothing mounted, or the typo waits for the first policy.
+  expect(() =>
+    createApp({ getDialect: noDatabase, trustedProxies: ["10.0.0.0/"] }),
+  ).toThrow("10.0.0.0/");
+
+  expect(() =>
+    createApp({
+      getDialect: noDatabase,
+      rateLimitPeriodSeconds: PERIOD_SECONDS,
+      trustedProxies: ["10.0.0.0/8", "fc00::/7"],
+    }),
+  ).not.toThrow();
 });
 
 test("the sentry tunnel has its own budget", async () => {

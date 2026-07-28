@@ -1,7 +1,6 @@
 import { clientKey } from "#rate-limit/runtime";
 import type { MiddlewareHandler } from "hono";
 import { rateLimiter } from "hono-rate-limiter";
-import { compileTrustedProxies } from "./trusted-proxies";
 import type {
   Limiter,
   LimiterStatus,
@@ -38,11 +37,7 @@ export function limiterStatus(env: RateLimitBindings): LimiterStatus {
 export function rateLimit(
   options: RateLimitOptions,
 ): MiddlewareHandler<{ Bindings: RateLimitBindings }> {
-  // Parsed here, not per request, so a malformed range fails at startup rather
-  // than silently matching nothing forever.
-  const trust = {
-    trustedProxies: compileTrustedProxies(options.trustedProxies ?? []),
-  };
+  const trust = { trustedProxies: options.trustedProxies ?? [] };
 
   return rateLimiter<{ Bindings: RateLimitBindings }>({
     // No binding, no limiting: an unconfigured route must not stop serving.

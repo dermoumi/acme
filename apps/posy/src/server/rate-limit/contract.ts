@@ -61,14 +61,14 @@ export interface RateLimitOptions {
    */
   periodSeconds: number;
   /**
-   * CIDR ranges whose `x-forwarded-for` header is trusted, e.g.
-   * `["10.1.0.0/24"]`. Defaults to none.
+   * Ranges whose `x-forwarded-for` is trusted, already compiled by
+   * {@link compileTrustedProxies}. Defaults to none.
    *
    * Prefer the narrowest range that covers your proxies. Trusting a whole
    * private space such as `172.16.0.0/12` trusts every container on the default
    * Docker bridge, any of which could then forge a client address.
    */
-  trustedProxies?: readonly string[];
+  trustedProxies?: TrustedProxies;
 }
 
 // Must match the `simple.limit` values in wrangler.jsonc; the node arm and the
