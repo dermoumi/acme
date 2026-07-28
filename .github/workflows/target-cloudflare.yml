@@ -140,6 +140,8 @@ jobs:
         env:
           # preview builds use the staging env config under a per-branch worker name
           CLOUDFLARE_ENV: ${{ inputs.environment == 'production' && 'production' || 'staging' }}
+          # the client bakes these in; the deploy passes the same values to the worker
+          APP_NAME: ${{ inputs.app }}
           # the client SDK bakes its tier in, so previews stay out of staging's events
           APP_ENV: ${{ inputs.environment }}
           APP_REVISION: ${{ steps.revision.outputs.short }}
@@ -263,7 +265,9 @@ jobs:
           if [ "$DEPLOY_ENV" != "production" ] && [ -n "$BASIC_AUTH" ]; then
             extra_args+=(--var "BASIC_AUTH:$BASIC_AUTH")
           fi
-          # previews build against the staging env block, so the tier comes from here
+          # named env blocks replace the top-level vars rather than extending them,
+          # so everything the worker needs at runtime is passed here
+          extra_args+=(--var "APP_NAME:$APP")
           extra_args+=(--var "APP_ENV:$DEPLOY_ENV")
           extra_args+=(--var "APP_REVISION:$APP_REVISION")
           extra_args+=(--var "APP_VERSION:$APP_VERSION")

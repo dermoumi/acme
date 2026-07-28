@@ -1,7 +1,11 @@
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import type { Plugin, PluginOption } from "vite";
+// Extension included: node loads this file directly when vite reads its config.
+import { releaseName } from "../release.ts";
 
 export interface SentryViteOptions {
+  /** App name, e.g. `posy`. Prefixes the release. Defaults to `APP_NAME`. */
+  app?: string;
   /** Sentry org slug. Defaults to `SENTRY_ORG`. */
   org?: string;
   /** Sentry project slug. Defaults to `SENTRY_PROJECT`. */
@@ -48,7 +52,11 @@ export function sentryVite(options: SentryViteOptions = {}): PluginOption {
       project: options.project ?? process.env.SENTRY_PROJECT,
       authToken,
       release: {
-        name: options.release ?? process.env.APP_VERSION ?? "dev",
+        name: releaseName(
+          options.app ?? process.env.APP_NAME,
+          options.release ?? process.env.APP_VERSION,
+          options.dist ?? process.env.APP_REVISION,
+        ),
         dist: options.dist ?? process.env.APP_REVISION ?? "dev",
       },
       sourcemaps: { filesToDeleteAfterUpload: ["./dist/**/*.map"] },

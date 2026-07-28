@@ -12,20 +12,21 @@ test("no DSN yields no options, so monitoring stays a silent no-op", () => {
 test("carries the dsn, environment and release through", () => {
   const options = sentryOptions({
     SENTRY_DSN: DSN,
+    APP_NAME: "posy",
     APP_ENV: "production",
     APP_VERSION: "1.2.3",
     APP_REVISION: "abc1234",
   });
   expect(options?.dsn).toBe(DSN);
   expect(options?.environment).toBe("production");
-  expect(options?.release).toBe("1.2.3");
+  expect(options?.release).toBe("posy@1.2.3+abc1234");
   expect(options?.dist).toBe("abc1234");
 });
 
 test("falls back to a development environment and a dev build", () => {
   const options = sentryOptions({ SENTRY_DSN: DSN });
   expect(options?.environment).toBe("development");
-  expect(options?.release).toBe("dev");
+  expect(options?.release).toBe("dev+dev");
   expect(options?.dist).toBe("dev");
 });
 

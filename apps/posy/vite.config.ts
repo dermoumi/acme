@@ -5,9 +5,11 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-const { version } = JSON.parse(
+const packageJson = JSON.parse(
   readFileSync(new URL("package.json", import.meta.url), "utf8"),
-) as { version: string };
+) as { name: string; version: string };
+
+const packageName = packageJson.name.replace(/^@[^/]+\//u, "");
 
 // An empty var has to fall back too, which `??` would not do.
 function envOr(name: string, fallback: string): string {
@@ -17,7 +19,9 @@ function envOr(name: string, fallback: string): string {
 
 // loadEnv picks VITE_-prefixed vars up from process.env, so this reaches
 // import.meta.env in both dev and build (plain `define` does not).
-process.env.VITE_APP_VERSION = version;
+// CI sets these for the worker too, so both halves agree; package.json is the local fallback.
+process.env.VITE_APP_NAME = envOr("APP_NAME", packageName);
+process.env.VITE_APP_VERSION = envOr("APP_VERSION", packageJson.version);
 process.env.VITE_APP_ENV = envOr("APP_ENV", "development");
 process.env.VITE_APP_REVISION = envOr("APP_REVISION", "dev");
 
@@ -64,6 +68,7 @@ export default defineConfig({
     }),
     // the same values the bundle reports, so Sentry can match maps to events
     sentryVite({
+      app: process.env.VITE_APP_NAME,
       release: process.env.VITE_APP_VERSION,
       dist: process.env.VITE_APP_REVISION,
     }),

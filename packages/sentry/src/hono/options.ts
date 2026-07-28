@@ -1,5 +1,6 @@
 import type { ErrorEvent, Options } from "@sentry/core";
 import type { SentryBindings } from "./bindings";
+import { releaseName } from "../release";
 import type { MaskingLevel, SentryConfig } from "./config";
 import {
   DEFAULT_REDACT_KEYS,
@@ -58,7 +59,7 @@ export function sentryOptions(
   return {
     dsn: env.SENTRY_DSN,
     environment: env.APP_ENV ?? "development",
-    release: env.APP_VERSION ?? "dev",
+    release: releaseName(env.APP_NAME, env.APP_VERSION, env.APP_REVISION),
     dist: env.APP_REVISION ?? "dev",
     dataCollection: dataCollection(masking),
     beforeSend: beforeSend(masking, keys),
