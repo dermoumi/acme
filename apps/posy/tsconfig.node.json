@@ -1,5 +1,4 @@
 {
   "extends": "@acme/tsconfig/tsconfig.node.json",
-  "include": ["scripts", "src/server", "vite.config.ts", "vitest.config.ts"],
-  "exclude": ["**/*.workerd.ts"]
+  "include": ["scripts", "vite.config.ts", "vitest.config.ts"]
 }

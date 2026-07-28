@@ -1,0 +1,5 @@
+{
+  "extends": "@acme/tsconfig/tsconfig.node.server.json",
+  "include": ["src/server"],
+  "exclude": ["**/*.workerd.ts"]
+}
