@@ -1,0 +1,14 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/posy/Dockerfile
+    image: posy:local
+    ports:
+      - "3000:3000"
+    volumes:
+      - posy-data:/var/lib/posy
+    restart: unless-stopped
+
+volumes:
+  posy-data:
