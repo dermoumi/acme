@@ -2,10 +2,16 @@ import type {
   ExecutionContext,
   Request as CfRequest,
 } from "@cloudflare/workers-types";
-import { wrapRequestHandler } from "@sentry/cloudflare";
+import {
+  setAsyncLocalStorageAsyncContextStrategy,
+  wrapRequestHandler,
+} from "@sentry/cloudflare";
 import type { SentryBindings } from "../bindings";
 import type { SentryConfig } from "../config";
 import { sentryOptions } from "../options";
+
+// Only Sentry's own handler installs this; without it every request shares one isolation scope.
+setAsyncLocalStorageAsyncContextStrategy();
 
 // Establishes the per-request client that sentryErrorHandler() captures onto.
 export function withRequestClient(

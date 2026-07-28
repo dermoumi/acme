@@ -1,4 +1,4 @@
-import type { Options } from "@sentry/core";
+import type { ErrorEvent, Options } from "@sentry/core";
 import type { SentryBindings } from "./bindings";
 import type { MaskingLevel, SentryConfig } from "./config";
 import {
@@ -12,7 +12,6 @@ type DataCollection = NonNullable<Options["dataCollection"]>;
 
 // Withheld at every level: a session token is impersonation material, not data.
 const CREDENTIALS = {
-  userInfo: false,
   cookies: false,
   httpHeaders: { request: { deny: SENSITIVE_HEADERS }, response: false },
   genAI: { inputs: false, outputs: false },
@@ -25,7 +24,24 @@ function dataCollection(masking: MaskingLevel): DataCollection {
     ...CREDENTIALS,
     httpBodies: ["incomingRequest"],
     urlQueryParams: true,
+    userInfo: masking !== "full",
     databaseQueryData: masking !== "full",
+  };
+}
+
+// userInfo only gates the ip Sentry infers, so an explicit setUser is dropped here.
+function beforeSend(
+  masking: MaskingLevel,
+  keys: string[],
+): (event: ErrorEvent) => ErrorEvent {
+  const scrub =
+    masking === "none"
+      ? stripCredentials
+      : (event: ErrorEvent) => scrubEvent(event, keys);
+  if (masking !== "full") return scrub;
+  return (event) => {
+    const { user, ...rest } = scrub(event);
+    return rest;
   };
 }
 
@@ -45,9 +61,6 @@ export function sentryOptions(
     release: env.APP_VERSION ?? "dev",
     dist: env.APP_REVISION ?? "dev",
     dataCollection: dataCollection(masking),
-    beforeSend:
-      masking === "none"
-        ? stripCredentials
-        : (event) => scrubEvent(event, keys),
+    beforeSend: beforeSend(masking, keys),
   };
 }

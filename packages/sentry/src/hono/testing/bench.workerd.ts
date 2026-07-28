@@ -1,4 +1,5 @@
 import type { ExecutionContext } from "@cloudflare/workers-types";
+import { getCurrentScope } from "@sentry/core";
 import {
   createExecutionContext,
   waitOnExecutionContext,
@@ -12,6 +13,8 @@ let latest: ExecutionContext | undefined;
 export const bench: Bench = {
   build: (env, config) => {
     const sent: unknown[] = [];
+    // Requests share the current scope, so a prior test's client would linger here.
+    if (!env.SENTRY_DSN) getCurrentScope().setClient(undefined);
     const handler = withSentry(throwingApp(), recordingConfig(config, sent));
 
     return {
