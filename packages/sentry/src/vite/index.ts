@@ -41,6 +41,10 @@ function sourcemapPlugin(enabled: boolean): Plugin {
  *
  * Uploaded maps are deleted from the build output afterwards, so `hidden` maps
  * never reach the browser.
+ *
+ * Also associates the release with its commits, which is what drives suspect
+ * commits and "resolved in this release". That needs full git history, so CI
+ * must not use a shallow clone.
  */
 export function sentryVite(options: SentryViteOptions = {}): PluginOption {
   const authToken = options.authToken ?? process.env.SENTRY_AUTH_TOKEN;
@@ -58,6 +62,8 @@ export function sentryVite(options: SentryViteOptions = {}): PluginOption {
           options.dist ?? process.env.APP_REVISION,
         ),
         dist: options.dist ?? process.env.APP_REVISION ?? "dev",
+        // Never fail a build over monitoring: shallow clones have no range to diff.
+        setCommits: { auto: true, ignoreMissing: true, ignoreEmpty: true },
       },
       sourcemaps: { filesToDeleteAfterUpload: ["./dist/**/*.map"] },
       disable: !authToken,
