@@ -14,4 +14,6 @@ jobs:
       environment: production
       url: https://play.posy.workers.dev
       d1: true
+      sentry-org: sdrmme
+      sentry-project: posy
     secrets: inherit

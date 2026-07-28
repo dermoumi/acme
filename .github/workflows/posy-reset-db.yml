@@ -97,4 +97,6 @@ jobs:
       url: ${{ github.ref == 'refs/heads/main' && 'https://staging.posy-stg.workers.dev' || '' }}
       d1: true
       seed: true
+      sentry-org: sdrmme
+      sentry-project: posy
     secrets: inherit

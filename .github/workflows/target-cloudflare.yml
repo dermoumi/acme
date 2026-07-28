@@ -51,6 +51,16 @@ on:
         required: false
         type: boolean
         default: false
+      sentry-org:
+        description: Sentry org for source-map upload; defaults to the repository owner
+        required: false
+        type: string
+        default: ""
+      sentry-project:
+        description: Sentry project for source-map upload; defaults to the app name
+        required: false
+        type: string
+        default: ""
     secrets:
       CLOUDFLARE_API_TOKEN:
         description: Workers-edit token, from the target environment's CF account
@@ -63,6 +73,9 @@ on:
         required: false
       SENTRY_DSN:
         description: Sentry ingestion key; absent means the deploy is unmonitored
+        required: false
+      SENTRY_AUTH_TOKEN:
+        description: Sentry upload token; absent skips source-map upload
         required: false
 
 jobs:
@@ -113,12 +126,15 @@ jobs:
           app: ${{ inputs.app }}
           branch: ${{ inputs.branch }}
 
-      - name: Resolve revision
+      - name: Resolve build identity
         id: revision
+        working-directory: apps/${{ inputs.app }}
         env:
           # on a PR, github.sha is the synthetic merge commit, not what was pushed
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: echo "short=${COMMIT_SHA::7}" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "short=${COMMIT_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "version=$(jq -r '.version // "dev"' package.json)" >> "$GITHUB_OUTPUT"
 
       - name: Build
         env:
@@ -127,6 +143,12 @@ jobs:
           # the client SDK bakes its tier in, so previews stay out of staging's events
           APP_ENV: ${{ inputs.environment }}
           APP_REVISION: ${{ steps.revision.outputs.short }}
+          # uploaded maps are keyed by these, so the deploy must report the same pair
+          APP_VERSION: ${{ steps.revision.outputs.version }}
+          # absent disables source-map upload; the build still succeeds
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ inputs.sentry-org || github.repository_owner }}
+          SENTRY_PROJECT: ${{ inputs.sentry-project || inputs.app }}
         run: pnpm exec turbo build --filter="@acme/$APP"
 
       - name: Provision D1 database
@@ -233,6 +255,7 @@ jobs:
           BASIC_AUTH: ${{ secrets.BASIC_AUTH }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           APP_REVISION: ${{ steps.revision.outputs.short }}
+          APP_VERSION: ${{ steps.revision.outputs.version }}
           SLUG: ${{ steps.names.outputs.slug }}
         run: |
           extra_args=()
@@ -243,10 +266,7 @@ jobs:
           # previews build against the staging env block, so the tier comes from here
           extra_args+=(--var "APP_ENV:$DEPLOY_ENV")
           extra_args+=(--var "APP_REVISION:$APP_REVISION")
-          version=$(jq -r '.version // empty' package.json)
-          if [ -n "$version" ]; then
-            extra_args+=(--var "APP_VERSION:$version")
-          fi
+          extra_args+=(--var "APP_VERSION:$APP_VERSION")
           # injected, never committed; absent just means this deploy is unmonitored
           if [ -n "$SENTRY_DSN" ]; then
             extra_args+=(--var "SENTRY_DSN:$SENTRY_DSN")
