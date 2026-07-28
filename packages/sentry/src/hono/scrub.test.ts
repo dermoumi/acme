@@ -143,10 +143,48 @@ test("passes through an event carrying no request", () => {
   expect(scrub(event)).toEqual(event);
 });
 
-test("leaves a non JSON body alone rather than dropping it", () => {
+// This asserted the opposite until 2026-07-28, which is what let a form-posted
+// password through. Masking by key is impossible without a parse, so the level
+// decides: light keeps it for debugging, full withholds it.
+test("withholds a body it cannot parse, unless masking is light", () => {
   const event: ErrorEvent = {
     type: undefined,
     request: { data: "plain text body" },
   };
-  expect(scrub(event).request?.data).toBe("plain text body");
+  expect(scrub(event).request?.data).toBe("[redacted]");
+  expect(scrubEvent(event, [], true).request?.data).toBe("plain text body");
+});
+
+// A native form post is how login works without javascript; its body is not JSON.
+test("masks a form-encoded body by key", () => {
+  const { request } = scrubEvent(
+    {
+      type: undefined,
+      request: {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        data: "username=sara&password=hunter2",
+      },
+    },
+    ["password"],
+  );
+
+  expect(request?.data).toContain("username=sara");
+  expect(request?.data).not.toContain("hunter2");
+});
+
+// A file upload makes the WHOLE form multipart, so this is the shape posy gets
+// the moment one lands. light ships it, accepting what full withholds.
+test("multipart survives light masking and is withheld by full", () => {
+  const event: ErrorEvent = {
+    type: undefined,
+    request: {
+      headers: { "content-type": "multipart/form-data; boundary=x" },
+      data: '--x\r\nContent-Disposition: form-data; name="avatar"; filename="cat.png"\r\n\r\nPNG',
+    },
+  };
+
+  expect(scrubEvent(event, ["password"], true).request?.data).toContain(
+    "cat.png",
+  );
+  expect(scrubEvent(event, ["password"]).request?.data).toBe("[redacted]");
 });

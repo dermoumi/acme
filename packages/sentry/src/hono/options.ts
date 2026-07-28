@@ -38,7 +38,7 @@ function beforeSend(
   const scrub =
     masking === "none"
       ? stripCredentials
-      : (event: ErrorEvent) => scrubEvent(event, keys);
+      : (event: ErrorEvent) => scrubEvent(event, keys, masking === "light");
   if (masking !== "full") return scrub;
   return (event) => {
     const { user, ...rest } = scrub(event);

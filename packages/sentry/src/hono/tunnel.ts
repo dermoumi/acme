@@ -53,7 +53,9 @@ function rewriteEnvelope(
     const event = payload as ErrorEvent;
     return [
       itemHeader,
-      masking === "none" ? stripCredentials(event) : scrubEvent(event, keys),
+      masking === "none"
+        ? stripCredentials(event)
+        : scrubEvent(event, keys, masking === "light"),
     ];
   });
 

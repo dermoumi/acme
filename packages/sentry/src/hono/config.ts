@@ -5,7 +5,8 @@ import type { Options } from "@sentry/core";
  *
  * - `none`: body and query values kept verbatim
  * - `light`: values masked when their key looks sensitive
- * - `full`: also withholds database query data and user info (ip, user id)
+ * - `full`: also withholds database query data, user info (ip, user id), and
+ *   bodies neither JSON nor form-encoded, which cannot be masked key by key
  *
  * Cookies and authorization headers are stripped at every level, `none` included.
  */

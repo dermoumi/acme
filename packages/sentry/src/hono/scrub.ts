@@ -45,22 +45,38 @@ function redactValue(value: unknown, keys: string[]): unknown {
   return value;
 }
 
-// Bodies arrive as the raw string, so reach the keys by parsing and reserialising.
-function redactBody(data: unknown, keys: string[]): unknown {
-  if (typeof data !== "string") return redactValue(data, keys);
-  try {
-    return JSON.stringify(redactValue(JSON.parse(data) as unknown, keys));
-  } catch {
-    return data;
-  }
-}
-
 function redactQuery(query: string, keys: string[]): string {
   const redacted = new URLSearchParams();
   for (const [name, value] of new URLSearchParams(query)) {
     redacted.append(name, isSensitive(name, keys) ? REDACTED : value);
   }
   return redacted.toString();
+}
+
+function contentType(headers: Record<string, string> | undefined): string {
+  const found = Object.entries(headers ?? {}).find(
+    ([name]) => name.toLowerCase() === "content-type",
+  );
+  return found?.[1].toLowerCase() ?? "";
+}
+
+// Bodies arrive as the raw string, so reach the keys by parsing and reserialising.
+// A body neither parse understands cannot be masked, only kept whole or dropped.
+function redactBody(
+  data: unknown,
+  keys: string[],
+  type: string,
+  keepUnparsed: boolean,
+): unknown {
+  if (typeof data !== "string") return redactValue(data, keys);
+  try {
+    return JSON.stringify(redactValue(JSON.parse(data) as unknown, keys));
+  } catch {
+    if (type.includes("application/x-www-form-urlencoded")) {
+      return redactQuery(data, keys);
+    }
+    return keepUnparsed ? data : REDACTED;
+  }
 }
 
 function redactUrl(url: string, keys: string[]): string {
@@ -95,6 +111,7 @@ export function stripCredentials(event: ErrorEvent): ErrorEvent {
 export function scrubEvent(
   event: ErrorEvent,
   redactKeys: string[],
+  keepUnparsedBody = false,
 ): ErrorEvent {
   const { request } = event;
   if (!request) return event;
@@ -113,7 +130,9 @@ export function scrubEvent(
             ? redactQuery(query_string, keys)
             : (redactValue(query_string, keys) as typeof query_string),
       }),
-      ...(data !== undefined && { data: redactBody(data, keys) }),
+      ...(data !== undefined && {
+        data: redactBody(data, keys, contentType(headers), keepUnparsedBody),
+      }),
       ...(headers && { headers: redactHeaders(headers) }),
     },
   };
