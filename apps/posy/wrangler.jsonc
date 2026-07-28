@@ -26,17 +26,18 @@
       "database_id": "posy-local"
     }
   ],
-  // namespace_id is self-chosen, nothing to provision. Distinct ids per env so
-  // staging load cannot eat production's budget. Limits mirror contract.ts.
+  // namespace_id must be NUMERIC despite the schema typing it as a string:
+  // wrangler forwards it unvalidated and the API rejects anything else (10021).
+  // Self-chosen, nothing to provision, distinct per env and per binding.
   "ratelimits": [
     {
       "name": "RATE_LIMIT_LOGIN",
-      "namespace_id": "posy-login-dev",
+      "namespace_id": "1001",
       "simple": { "limit": 10, "period": 60 }
     },
     {
       "name": "RATE_LIMIT_SENTRY",
-      "namespace_id": "posy-sentry-dev",
+      "namespace_id": "1002",
       "simple": { "limit": 60, "period": 60 }
     }
   ],
@@ -65,12 +66,12 @@
       "ratelimits": [
         {
           "name": "RATE_LIMIT_LOGIN",
-          "namespace_id": "posy-login-staging",
+          "namespace_id": "1011",
           "simple": { "limit": 10, "period": 60 }
         },
         {
           "name": "RATE_LIMIT_SENTRY",
-          "namespace_id": "posy-sentry-staging",
+          "namespace_id": "1012",
           "simple": { "limit": 60, "period": 60 }
         }
       ]
@@ -86,12 +87,12 @@
       "ratelimits": [
         {
           "name": "RATE_LIMIT_LOGIN",
-          "namespace_id": "posy-login-production",
+          "namespace_id": "1021",
           "simple": { "limit": 10, "period": 60 }
         },
         {
           "name": "RATE_LIMIT_SENTRY",
-          "namespace_id": "posy-sentry-production",
+          "namespace_id": "1022",
           "simple": { "limit": 60, "period": 60 }
         }
       ]
