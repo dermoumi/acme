@@ -57,7 +57,16 @@ function mountRateLimits(
   trustedProxies: TrustedProxies,
   store: LimiterStore | undefined,
 ): void {
+  const mounted = new Set<string>();
+
   for (const policy of policies) {
+    const route = `${policy.method} ${policy.path}`;
+    // Both would mount, and the request would be charged to each in turn.
+    if (mounted.has(route)) {
+      throw new Error(`two rate limit policies cap the same route: ${route}`);
+    }
+    mounted.add(route);
+
     app.on(
       policy.method,
       policy.path,

@@ -61,21 +61,37 @@ export type ClientKey = (
   trust: TrustOptions,
 ) => string;
 
+/** Methods a policy may cap. Hono uppercases, but the union keeps it uniform. */
+export type RateLimitMethod =
+  | "DELETE"
+  | "GET"
+  | "HEAD"
+  | "OPTIONS"
+  | "PATCH"
+  | "POST"
+  | "PUT";
+
 /**
  * One protected route. An ordered list of these is the whole policy, so adding
  * a limited endpoint is a new entry rather than an edit to the app factory.
  */
 export interface RateLimitPolicy {
-  /** HTTP method to cap. Only this method is limited, never the whole path. */
-  method: string;
+  /**
+   * Method to cap; only this one is limited, never the whole path. A union
+   * because a typo would otherwise mount a route nothing ever matches, and
+   * silently not limiting looks exactly like working.
+   */
+  method: RateLimitMethod;
   /** Path to cap, matched exactly as `app.on` would. */
   path: string;
   /** Which binding holds this route's budget. */
   binding: keyof RateLimitBindings;
   /**
    * Requests allowed per window, mirroring `simple.limit` in `wrangler.jsonc`.
-   * **Never read at runtime**: the bound limiter enforces its own budget, so
-   * this records the intent and a wrong value misleads readers in silence.
+   *
+   * **Enforced where the runtime self-provisions**, which is node: this is the
+   * budget. On Workers the platform binding carries its own and this only
+   * records intent, so the two disagreeing is silent in that direction.
    */
   limit: number;
   /**

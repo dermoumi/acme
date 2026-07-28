@@ -170,6 +170,24 @@ test("each policy reports its own Retry-After", async () => {
   expect(tunnel.at(-1)?.headers.get("Retry-After")).toBe("10");
 });
 
+test("two policies capping one route refuse to build", () => {
+  // Both mount, so the request is charged twice: the /sentry/* bug again.
+  expect(() =>
+    createApp({
+      getDialect: noDatabase,
+      rateLimits: [LOGIN_POLICY, { ...LOGIN_POLICY, periodSeconds: 10 }],
+    }),
+  ).toThrow("POST /session");
+
+  // A different method on the same path is a different route, and fine.
+  expect(() =>
+    createApp({
+      getDialect: noDatabase,
+      rateLimits: [LOGIN_POLICY, { ...LOGIN_POLICY, method: "DELETE" }],
+    }),
+  ).not.toThrow();
+});
+
 test("a supplied store does the counting, one per policy", async () => {
   // Workers count in the platform binding, so there is nothing to substitute.
   if (!SELF_PROVISIONED) return;
