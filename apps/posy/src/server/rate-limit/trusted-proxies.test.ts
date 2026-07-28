@@ -69,3 +69,25 @@ test("malformed configuration narrows trust rather than widening it", () => {
   expect(isTrusted("10.0.0.1", ["10.0.0.0/999"])).toBe(false);
   expect(isTrusted("10.0.0.1", [])).toBe(false);
 });
+
+test("an empty prefix trusts nothing, not everything", () => {
+  // Number("") is 0, and a zero prefix matches every address, so a trailing
+  // slash would turn one typo into "believe every peer".
+  for (const typo of [
+    "10.0.0.0/",
+    "10.0.0.0/ ",
+    "10.0.0.0/+8",
+    "10.0.0.0/0x8",
+  ]) {
+    expect(isTrusted("203.0.113.7", [typo])).toBe(false);
+  }
+
+  // The bypass it would buy: an untrusted peer's forged header believed.
+  expect(resolveClientAddress("203.0.113.7", "9.9.9.9", ["10.0.0.0/"])).toBe(
+    "203.0.113.7",
+  );
+});
+
+test("an explicit zero prefix is honoured, since that one is intent", () => {
+  expect(isTrusted("203.0.113.7", ["0.0.0.0/0"])).toBe(true);
+});

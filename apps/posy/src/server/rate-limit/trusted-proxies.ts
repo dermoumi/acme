@@ -33,8 +33,11 @@ function matches(address: Address, cidr: string): boolean {
   if (!target || target.v4 !== address.v4) return false;
 
   const width = address.v4 ? 32 : 128;
+  // Guard the digits before Number(), which reads "" and " " as 0, and a zero
+  // prefix matches every address: a trailing slash would trust the whole family.
+  if (prefixText !== undefined && !/^\d+$/u.test(prefixText)) return false;
   const prefix = prefixText === undefined ? width : Number(prefixText);
-  if (!Number.isInteger(prefix) || prefix < 0 || prefix > width) return false;
+  if (prefix > width) return false;
 
   const host = 2n ** BigInt(width - prefix);
   return address.bits / host === target.bits / host;
