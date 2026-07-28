@@ -164,10 +164,10 @@ test("/health tells a deploy check when a rate limiter went missing", async () =
   expect(await off.json()).toMatchObject({ rateLimit: "off" });
 
   // The dangerous one: half-configured looks healthy from the outside.
-  const partial = await app.request(
+  const half = await app.request(
     "/health",
     {},
     { ...createBindings(), RATE_LIMIT_SENTRY: undefined },
   );
-  expect(await partial.json()).toMatchObject({ rateLimit: "partial" });
+  expect(await half.json()).toMatchObject({ rateLimit: "misconfigured" });
 });

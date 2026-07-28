@@ -24,6 +24,13 @@ export interface RateLimitBindings {
 }
 
 /**
+ * How completely the limiters are bound, as reported on `/health`. `off` means
+ * none and is a legitimate local setup; `misconfigured` means some but not all,
+ * which never is. See {@link limiterStatus}.
+ */
+export type LimiterStatus = "configured" | "misconfigured" | "off";
+
+/**
  * Which proxies are allowed to speak for the client they forwarded.
  *
  * An empty list, the default, means no `x-forwarded-for` header is ever believed

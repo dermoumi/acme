@@ -4,5 +4,6 @@ export {
   PERIOD_SECONDS,
   SENTRY_LIMIT,
   type Limiter,
+  type LimiterStatus,
   type RateLimitBindings,
 } from "./contract";
