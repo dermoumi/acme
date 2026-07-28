@@ -26,6 +26,20 @@
       "database_id": "posy-local"
     }
   ],
+  // namespace_id is self-chosen, nothing to provision. Distinct ids per env so
+  // staging load cannot eat production's budget. Limits mirror contract.ts.
+  "ratelimits": [
+    {
+      "name": "RATE_LIMIT_LOGIN",
+      "namespace_id": "posy-login-dev",
+      "simple": { "limit": 10, "period": 60 }
+    },
+    {
+      "name": "RATE_LIMIT_SENTRY",
+      "namespace_id": "posy-sentry-dev",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ],
   "env": {
     "staging": {
       "name": "staging",
@@ -46,6 +60,19 @@
           "database_name": "posy-staging",
           "database_id": "set-by-ci"
         }
+      ],
+      // Repeated because binding blocks are replaced per env, never merged.
+      "ratelimits": [
+        {
+          "name": "RATE_LIMIT_LOGIN",
+          "namespace_id": "posy-login-staging",
+          "simple": { "limit": 10, "period": 60 }
+        },
+        {
+          "name": "RATE_LIMIT_SENTRY",
+          "namespace_id": "posy-sentry-staging",
+          "simple": { "limit": 60, "period": 60 }
+        }
       ]
     },
     "production": {
@@ -55,6 +82,18 @@
       },
       "d1_databases": [
         { "binding": "DB", "database_name": "posy", "database_id": "set-by-ci" }
+      ],
+      "ratelimits": [
+        {
+          "name": "RATE_LIMIT_LOGIN",
+          "namespace_id": "posy-login-production",
+          "simple": { "limit": 10, "period": 60 }
+        },
+        {
+          "name": "RATE_LIMIT_SENTRY",
+          "namespace_id": "posy-sentry-production",
+          "simple": { "limit": 60, "period": 60 }
+        }
       ]
     }
   }

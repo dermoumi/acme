@@ -3,6 +3,8 @@ import { SqliteDialect } from "kysely";
 import indexHtml from "../../../test/fixtures/assets/index.html?raw";
 import { createDb } from "../db";
 import type { GateBindings } from "../gate";
+import { LOGIN_LIMIT, PERIOD_SECONDS, SENTRY_LIMIT } from "../rate-limit";
+import { createMemoryLimiter } from "../rate-limit/runtime.node";
 import type {
   CreateBindings,
   CreateEmptyDb,
@@ -38,8 +40,17 @@ function assets(): GateBindings["ASSETS"] {
   };
 }
 
+// Fresh limiters per call, so a test gets a clean budget by building its own app.
 export const createBindings: CreateBindings = (overrides = {}) => ({
   ASSETS: assets(),
+  RATE_LIMIT_LOGIN: createMemoryLimiter({
+    limit: LOGIN_LIMIT,
+    windowMs: PERIOD_SECONDS * 1000,
+  }),
+  RATE_LIMIT_SENTRY: createMemoryLimiter({
+    limit: SENTRY_LIMIT,
+    windowMs: PERIOD_SECONDS * 1000,
+  }),
   ...overrides,
 });
 

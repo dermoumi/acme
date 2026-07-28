@@ -5,6 +5,7 @@ import { authRoutes } from "./auth";
 import { debugRoutes, isDebugEnabled } from "./debug";
 import type { AppBindings } from "./bindings";
 import { gate } from "./gate";
+import { PERIOD_SECONDS, rateLimit } from "./rate-limit";
 
 // One policy for both halves: the tunnel scrubs client events, withSentry the
 // server's. Auth is the only sensitive thing posy handles.
@@ -22,6 +23,19 @@ export function createApp(
   const app = new Hono<{ Bindings: AppBindings }>();
 
   app.use(gate());
+  // POST only: GET /session fires on every app load and must stay uncapped.
+  app.on(
+    "POST",
+    "/session",
+    rateLimit({ binding: "RATE_LIMIT_LOGIN", periodSeconds: PERIOD_SECONDS }),
+  );
+  // The tunnel serves exactly one route at its mount root; a /sentry/* pattern
+  // would also match /sentry and charge every request twice.
+  app.on(
+    "POST",
+    "/sentry",
+    rateLimit({ binding: "RATE_LIMIT_SENTRY", periodSeconds: PERIOD_SECONDS }),
+  );
   app.route("/session", authRoutes(getDialect));
   // Inside the gate: staging's basic auth covers this like every other route.
   app.route("/sentry", sentryTunnel(sentryConfig));
