@@ -10,8 +10,10 @@ import { compileTrustedProxies } from "./trusted-proxies";
 
 /**
  * Caps how often one client may call the routes it is mounted on, keyed on IP.
- * Where only the platform counts and nothing is bound, the route keeps serving:
- * this bounds cost, it is not a security boundary. Build one per app.
+ * Where nothing can count, the route keeps serving: this bounds cost, it is not
+ * a security boundary.
+ *
+ * Build one per app, so a budget cannot outlive the app that owns it.
  */
 export function createRateLimiter<Bindings extends object>(
   options: RateLimiterOptions = {},

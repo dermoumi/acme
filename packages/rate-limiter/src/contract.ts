@@ -34,7 +34,9 @@ export type LimiterBinding<Bindings> = {
 export interface RateLimiterOptions {
   /**
    * CIDR ranges whose `x-forwarded-for` may speak for the client behind them;
-   * malformed ones throw. Inert on Workers, which set `cf-connecting-ip`.
+   * malformed ones throw. Inert on Workers, which set `cf-connecting-ip`
+   * themselves, and load-bearing on node, so it can look unused without being
+   * dead config.
    */
   trustedProxies?: readonly string[];
 }
@@ -43,8 +45,10 @@ export interface RateLimiterOptions {
 export interface RateLimiter<Bindings extends object> {
   /**
    * Middleware capping one budget, ready to mount.
-   * @param limit - The budget on node, counted per process. On Workers the
-   * binding carries its own, so this only records intent.
+   *
+   * @param limit - The budget on node, counted per process, so replicas each
+   * get their own. On Workers the binding carries its own and this only
+   * records intent.
    * @param periodSeconds - Shapes `Retry-After` only, never the window measured.
    */
   create(
