@@ -73,9 +73,9 @@ jobs:
         run: |
           set -euo pipefail
           bytes=$(docker image inspect --format '{{.Size}}' "$TAG")
-          echo "| image | size |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| \`$TAG\` | $((bytes / 1024 / 1024)) MB |" >> "$GITHUB_STEP_SUMMARY"
+          # tee so it lands in the log too: the step summary is web-only.
+          printf '%s image size: %s MB\n' "$TAG" "$((bytes / 1024 / 1024))" |
+            tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Start container
         env:
@@ -255,9 +255,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Summary
+      - name: Report pushed tags
         env:
           TAGS: ${{ steps.release.outputs.tags }}
         run: |
           set -euo pipefail
-          echo "Pushed \`${TAGS//,/\`, \`}\`" >> "$GITHUB_STEP_SUMMARY"
+          # tee so it lands in the log too: the step summary is web-only.
+          printf 'pushed:\n%s\n' "${TAGS//,/$'\n'}" |
+            tee -a "$GITHUB_STEP_SUMMARY"
