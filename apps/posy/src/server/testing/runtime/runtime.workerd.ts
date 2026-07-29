@@ -1,10 +1,10 @@
+import type { Limiter } from "@acme/rate-limiter";
 import type { D1Database } from "@cloudflare/workers-types";
 import { env } from "cloudflare:test";
 import { NO_MIGRATIONS } from "kysely/migration";
-import { d1MigrationDialect } from "../../../scripts/d1-migration-dialect";
-import { createDb, createMigrator } from "../db";
-import type { GateBindings } from "../gate";
-import type { Limiter } from "../rate-limit";
+import { d1MigrationDialect } from "../../../../scripts/d1-migration-dialect";
+import { createDb, createMigrator } from "../../db";
+import type { GateBindings } from "../../gate";
 import type {
   CreateBindings,
   CreateEmptyDb,
