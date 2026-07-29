@@ -12,6 +12,7 @@ RUN corepack enable
 # Manifests before sources, so editing a file does not redo the install.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/posy/package.json apps/posy/
+COPY packages/rate-limiter/package.json packages/rate-limiter/
 COPY packages/sentry/package.json packages/sentry/
 COPY packages/tsconfig/package.json packages/tsconfig/
 RUN pnpm install --frozen-lockfile

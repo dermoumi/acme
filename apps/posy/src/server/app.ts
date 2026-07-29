@@ -1,18 +1,11 @@
+import { createRateLimiter } from "@acme/rate-limiter";
 import { sentryTunnel, type SentryConfig } from "@acme/sentry/hono";
 import { Hono } from "hono";
 import type { Dialect } from "kysely";
 import { authRoutes } from "./auth";
-import { debugRoutes, isDebugEnabled } from "./debug";
 import type { AppBindings } from "./bindings";
+import { debugRoutes, isDebugEnabled } from "./debug";
 import { gate } from "./gate";
-import {
-  compileTrustedProxies,
-  limiterStatus,
-  rateLimit,
-  type LimiterStore,
-  type RateLimitPolicy,
-  type TrustedProxies,
-} from "./rate-limit";
 
 // One policy for both halves: the tunnel scrubs client events, withSentry the
 // server's. Auth is the only sensitive thing posy handles.
@@ -22,91 +15,45 @@ export const sentryConfig: SentryConfig = {
   ignoreUserAgent: "acme-ci-health-probe",
 };
 
-// POST only keeps the per-load GET uncapped; /sentry exact, /* double-charges.
-// Mirrors wrangler.jsonc on Workers, which counts; on node these are the budget.
-export const rateLimitPolicies: readonly RateLimitPolicy[] = [
-  {
-    method: "POST",
-    path: "/session",
-    binding: "RATE_LIMIT_LOGIN",
-    limit: 10,
-    periodSeconds: 60,
-  },
-  {
-    method: "POST",
-    path: "/sentry",
-    binding: "RATE_LIMIT_SENTRY",
-    limit: 60,
-    periodSeconds: 60,
-  },
-];
+// Mirror wrangler.jsonc, which no runtime reads back. Exported so a test reads
+// the budget off the source instead of copying it.
+export const RATE_LOGIN_LIMIT = 10;
+export const RATE_LOGIN_PERIOD = 60;
+export const RATE_TUNNEL_LIMIT = 60;
+export const RATE_TUNNEL_PERIOD = 60;
 
 export interface AppOptions {
   /** Resolved per request, so an environment with no DB still serves assets. */
   getDialect: (env: AppBindings) => Dialect;
   /**
-   * Routes to cap, one entry each. Absent or empty mounts no limiting, and
-   * `/health` then reads `off` whatever is bound.
-   */
-  rateLimits?: readonly RateLimitPolicy[];
-  /**
-   * Where a self-provisioning runtime counts, one store per policy so budgets
-   * keep separate key spaces. Defaults to memory, which is per replica; return
-   * a `RedisStore` sharing one client to count across them. Ignored on Workers,
-   * where the platform binding does the counting.
-   */
-  rateLimitStore?: LimiterStore;
-  /**
-   * CIDR ranges whose `x-forwarded-for` may speak for the client behind it,
-   * e.g. `["10.1.0.0/24"]`. Defaults to none, so no header is ever believed.
-   * Malformed ranges throw here, at startup.
-   *
-   * **Inert on Workers, load-bearing on node**, which is why it can look unused:
-   * Cloudflare sets `cf-connecting-ip` itself, so only node has to decide whose
-   * forwarded header to trust. Not dead config.
+   * CIDR ranges whose `x-forwarded-for` may speak for the client behind them;
+   * malformed ones throw at startup. Inert on Workers, load-bearing on node,
+   * which is why it can look unused here.
    */
   trustedProxies?: readonly string[];
-}
-
-// Each policy names its own method, so a path stays uncapped for every method
-// it does not list: GET /session fires on every app load.
-function mountRateLimits(
-  app: Hono<{ Bindings: AppBindings }>,
-  policies: readonly RateLimitPolicy[],
-  trustedProxies: TrustedProxies,
-  store: LimiterStore | undefined,
-): void {
-  const mounted = new Set<string>();
-
-  for (const policy of policies) {
-    const route = `${policy.method} ${policy.path}`;
-    // Both would mount, and the request would be charged to each in turn.
-    if (mounted.has(route)) {
-      throw new Error(`two rate limit policies cap the same route: ${route}`);
-    }
-    mounted.add(route);
-
-    app.on(
-      policy.method,
-      policy.path,
-      rateLimit(policy, trustedProxies, store?.(policy)),
-    );
-  }
 }
 
 export function createApp(
   options: AppOptions,
 ): Hono<{ Bindings: AppBindings }> {
   const { getDialect } = options;
-  const rateLimits = options.rateLimits ?? [];
   const app = new Hono<{ Bindings: AppBindings }>();
-
-  // Compiled here even when nothing is mounted, so a typo cannot sit unnoticed
-  // in the config of an app that has not wired its limiters up yet.
-  const trustedProxies = compileTrustedProxies(options.trustedProxies ?? []);
+  const limiter = createRateLimiter<AppBindings>({
+    trustedProxies: options.trustedProxies,
+  });
 
   app.use(gate());
-  mountRateLimits(app, rateLimits, trustedProxies, options.rateLimitStore);
+  // POST only keeps the per-load GET uncapped; /sentry exact, /* double-charges.
+  app.on(
+    "POST",
+    "/session",
+    limiter.create("RATE_LIMIT_LOGIN", RATE_LOGIN_LIMIT, RATE_LOGIN_PERIOD),
+  );
+  app.on(
+    "POST",
+    "/sentry",
+    limiter.create("RATE_LIMIT_SENTRY", RATE_TUNNEL_LIMIT, RATE_TUNNEL_PERIOD),
+  );
   app.route("/session", authRoutes(getDialect));
   // Inside the gate: staging's basic auth covers this like every other route.
   app.route("/sentry", sentryTunnel(sentryConfig));
@@ -126,7 +73,7 @@ export function createApp(
       revision: ctx.env.APP_REVISION ?? "dev",
       sentry: ctx.env.SENTRY_DSN ? "configured" : "off",
       // Limiting fails open, so a lost binding is silent without this.
-      rateLimit: limiterStatus(ctx.env, rateLimits),
+      rateLimit: limiter.status(ctx.env),
     }),
   );
 

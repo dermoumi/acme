@@ -1,8 +1,8 @@
 import SQLite from "better-sqlite3";
 import { SqliteDialect } from "kysely";
-import indexHtml from "../../../test/fixtures/assets/index.html?raw";
-import { createDb } from "../db";
-import type { GateBindings } from "../gate";
+import indexHtml from "../../../../test/fixtures/assets/index.html?raw";
+import { createDb } from "../../db";
+import type { GateBindings } from "../../gate";
 import type {
   CreateBindings,
   CreateEmptyDb,
