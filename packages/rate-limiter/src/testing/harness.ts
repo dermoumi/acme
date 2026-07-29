@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { createRateLimiter } from "../rate-limiter";
-import type { RateLimiterOptions } from "../contract";
-import type { TestBindings } from "./contract";
+import { createRateLimiter, type RateLimiterOptions } from "../rate-limiter";
+import type { TestBindings } from "./runtime/contract";
 
-// Kept equal to vitest.config.ts: node enforces these, workerd miniflare's.
+// Kept equal to the ratelimits bindings in vitest.config.ts: node enforces
+// these numbers, workerd enforces miniflare's.
 export const TEST_BUDGET = { limit: 3, periodSeconds: 60 };
 export const OTHER_BUDGET = { limit: 1, periodSeconds: 10 };
 

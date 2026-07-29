@@ -1,2 +1,2 @@
-export type { Limiter, RateLimiter } from "./contract";
-export { createRateLimiter } from "./rate-limiter";
+export { createRateLimiter, type RateLimiter } from "./rate-limiter";
+export type { Limiter } from "./runtime/contract";

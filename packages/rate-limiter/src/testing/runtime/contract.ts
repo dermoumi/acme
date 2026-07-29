@@ -1,4 +1,4 @@
-import type { Limiter } from "../contract";
+import type { Limiter } from "../../runtime/contract";
 
 export interface TestBindings {
   RATE_LIMIT_TEST?: Limiter;

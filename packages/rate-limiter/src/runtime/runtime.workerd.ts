@@ -1,4 +1,4 @@
-import { bound } from "./bindings";
+import { bound } from "../bindings";
 import type { ClientAddress, GetBinding, Limiter } from "./contract";
 
 export const clientAddress: ClientAddress = (ctx) =>

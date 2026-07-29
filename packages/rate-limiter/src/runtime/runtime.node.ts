@@ -1,9 +1,9 @@
 import { getConnInfo } from "@hono/node-server/conninfo";
 import type { Context } from "hono";
 import { MemoryStore, type Store } from "hono-rate-limiter";
-import { bound } from "./bindings";
+import { bound } from "../bindings";
 import type { ClientAddress, GetBinding, Limiter } from "./contract";
-import { resolveClientAddress } from "./trusted-proxies";
+import { resolveClientAddress } from "../trusted-proxies";
 
 // No real config to pass: the middleware never runs here, and stores read windowMs.
 type StoreConfig = Parameters<NonNullable<Store["init"]>>[0];
