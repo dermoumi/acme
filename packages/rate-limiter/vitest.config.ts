@@ -1,14 +1,14 @@
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
 import { defineConfig } from "vitest/config";
+import {
+  OTHER_LIMIT,
+  OTHER_PERIOD,
+  TEST_LIMIT,
+  TEST_PERIOD,
+} from "./src/testing/budgets";
 
 // One include for both projects, so the same test file runs on both runtimes.
 const include = ["src/**/*.test.ts"];
-
-// Must agree with the harness budgets, or a test asserts the wrong count.
-const ratelimits = {
-  RATE_LIMIT_TEST: { namespace_id: "9001", simple: { limit: 3, period: 60 } },
-  RATE_LIMIT_OTHER: { namespace_id: "9002", simple: { limit: 1, period: 10 } },
-} as const;
 
 export default defineConfig({
   test: {
@@ -26,7 +26,16 @@ export default defineConfig({
           cloudflareTest({
             miniflare: {
               compatibilityDate: "2026-07-01",
-              ratelimits,
+              ratelimits: {
+                RATE_LIMIT_TEST: {
+                  namespace_id: "9001",
+                  simple: { limit: TEST_LIMIT, period: TEST_PERIOD },
+                },
+                RATE_LIMIT_OTHER: {
+                  namespace_id: "9002",
+                  simple: { limit: OTHER_LIMIT, period: OTHER_PERIOD },
+                },
+              },
             },
           }),
         ],

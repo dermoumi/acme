@@ -1,11 +1,7 @@
 import { Hono } from "hono";
 import { createRateLimiter, type RateLimiterOptions } from "../rate-limiter";
+import { OTHER_LIMIT, OTHER_PERIOD, TEST_LIMIT, TEST_PERIOD } from "./budgets";
 import type { TestBindings } from "./runtime/contract";
-
-// Kept equal to the ratelimits bindings in vitest.config.ts: node enforces
-// these numbers, workerd enforces miniflare's.
-export const TEST_BUDGET = { limit: 3, periodSeconds: 60 };
-export const OTHER_BUDGET = { limit: 1, periodSeconds: 10 };
 
 export function limitedApp(options: RateLimiterOptions = {}) {
   const limiter = createRateLimiter<TestBindings>(options);
@@ -14,31 +10,13 @@ export function limitedApp(options: RateLimiterOptions = {}) {
   app.on(
     "POST",
     "/limited",
-    limiter.create(
-      "RATE_LIMIT_TEST",
-      TEST_BUDGET.limit,
-      TEST_BUDGET.periodSeconds,
-    ),
+    limiter.create("RATE_LIMIT_TEST", TEST_LIMIT, TEST_PERIOD),
   );
   app.on(
     "POST",
     "/other",
-    limiter.create(
-      "RATE_LIMIT_OTHER",
-      OTHER_BUDGET.limit,
-      OTHER_BUDGET.periodSeconds,
-    ),
+    limiter.create("RATE_LIMIT_OTHER", OTHER_LIMIT, OTHER_PERIOD),
   );
-  app.get("/status", (ctx) => ctx.text(limiter.status(ctx.env)));
-  app.all("*", (ctx) => ctx.text("served"));
-
-  return app;
-}
-
-export function unlimitedApp() {
-  const limiter = createRateLimiter<TestBindings>();
-  const app = new Hono<{ Bindings: TestBindings }>();
-
   app.get("/status", (ctx) => ctx.text(limiter.status(ctx.env)));
   app.all("*", (ctx) => ctx.text("served"));
 
