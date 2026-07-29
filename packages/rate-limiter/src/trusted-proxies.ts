@@ -78,8 +78,9 @@ export function isTrusted(address: string, trusted: TrustedProxies): boolean {
   );
 }
 
-// Untrusted peer vouches for nothing, so ignore its header; else walk from the
-// right. Filtering trusted entries and taking the leftmost instead is a bypass.
+// An untrusted peer vouches for nothing, so its header is ignored and the peer
+// is used: it is the only address that cannot have been forged. Otherwise walk
+// from the right, since proxies append and a client can only prepend.
 export function resolveClientAddress(
   peer: string,
   forwardedFor: string | undefined,
