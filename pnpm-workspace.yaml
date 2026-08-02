@@ -22,7 +22,7 @@ catalog:
   "@vitejs/plugin-react": "6.0.5"
   "@vitest/coverage-istanbul": "4.1.10"
   better-sqlite3: "13.0.2"
-  hono: "4.12.32"
+  hono: "4.12.33"
   hono-rate-limiter: "0.5.3"
   husky: "9.1.7"
   kysely: "0.29.4"
