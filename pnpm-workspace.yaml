@@ -40,7 +40,7 @@ catalog:
   vitest: "4.1.10"
   workbox-window: "7.4.1"
   wouter: "3.10.0"
-  wrangler: "4.114.0"
+  wrangler: "4.116.0"
 
 allowBuilds:
   # downloads the sentry-cli binary, which @sentry/vite-plugin shells out to
