@@ -4,7 +4,7 @@
 # live outside this directory.
 #   docker build -f apps/posy/Dockerfile .
 
-FROM node:24.18.0-trixie AS build
+FROM node:24.18.1-trixie AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /app
 RUN corepack enable
@@ -33,7 +33,7 @@ RUN cp -RL apps/posy/node_modules/better-sqlite3 /runtime-better-sqlite3 \
            /runtime-better-sqlite3/src \
            /runtime-better-sqlite3/binding.gyp
 
-FROM node:24.18.0-trixie-slim
+FROM node:24.18.1-trixie-slim
 WORKDIR /app
 
 # Baked, not just build-time: /health reports these, so the image has to know

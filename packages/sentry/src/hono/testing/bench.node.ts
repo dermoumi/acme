@@ -26,6 +26,6 @@ export const bench: Bench = {
     };
   },
   settle: async () => {
-    await flush(2000);
+    await flush();
   },
 };
