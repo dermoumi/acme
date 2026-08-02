@@ -27,14 +27,13 @@ function parse(text: string): Address | undefined {
   }
 }
 
-/** One trusted range, reduced to the comparison a request actually needs. */
+// One trusted range, reduced to the comparison a request actually needs.
 interface TrustedRange {
   v4: boolean;
   host: bigint;
   network: bigint;
 }
 
-/** Trusted proxy ranges, already parsed. Build with {@link compileTrustedProxies}. */
 export type TrustedProxies = readonly TrustedRange[];
 
 function compile(cidr: string): TrustedRange | undefined {
@@ -53,13 +52,8 @@ function compile(cidr: string): TrustedRange | undefined {
   return { v4: target.v4, host, network: target.bits / host };
 }
 
-/**
- * Parses trusted proxy ranges once, ahead of any request. Accepts bare
- * addresses as well as CIDR notation. **Throws** on anything it cannot parse:
- * this is the only point where configuration is checked rather than merely
- * used, and a limiter that silently trusts nobody is worse than one that
- * refuses to start.
- */
+// Throws on anything it cannot parse: a limiter that silently trusts nobody is
+// worse than one that refuses to start.
 export function compileTrustedProxies(
   cidrs: readonly string[],
 ): TrustedProxies {
@@ -74,7 +68,6 @@ export function compileTrustedProxies(
   });
 }
 
-/** Whether `address` falls inside any of the compiled `trusted` ranges. */
 export function isTrusted(address: string, trusted: TrustedProxies): boolean {
   if (trusted.length === 0) return false;
   const parsed = parse(address);
@@ -85,18 +78,9 @@ export function isTrusted(address: string, trusted: TrustedProxies): boolean {
   );
 }
 
-/**
- * Resolves the client address from a request that arrived via `peer`.
- *
- * An untrusted `peer` means nothing vouched for the header, so it is ignored and
- * `peer` is used: it is the only address that cannot have been forged. Otherwise
- * the header is walked from the right, since proxies append and a client can
- * only prepend, and the first entry that is not itself a trusted proxy wins.
- *
- * Do not "simplify" that to filtering out every trusted entry and taking the
- * leftmost survivor. It is a full bypass: a client prepends a fake origin behind
- * a fake proxy address and the filter walks past the only real entry.
- */
+// An untrusted peer vouches for nothing, so its header is ignored and the peer
+// is used: it is the only address that cannot have been forged. Otherwise walk
+// from the right, since proxies append and a client can only prepend.
 export function resolveClientAddress(
   peer: string,
   forwardedFor: string | undefined,

@@ -1,0 +1,43 @@
+{
+  "name": "@acme/rate-limiter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#runtime": {
+      "workerd": "./src/runtime/runtime.workerd.ts",
+      "default": "./src/runtime/runtime.node.ts"
+    },
+    "#testing/runtime": {
+      "workerd": "./src/testing/runtime/runtime.workerd.ts",
+      "default": "./src/testing/runtime/runtime.node.ts"
+    }
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc -b",
+    "lint:fix": "oxlint -c ../../.oxlintrc.json --fix . && oxfmt -c ../../.oxfmtrc.json .",
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@hono/node-server": "catalog:",
+    "hono-rate-limiter": "catalog:"
+  },
+  "devDependencies": {
+    "@acme/tsconfig": "workspace:*",
+    "@cloudflare/vitest-pool-workers": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-istanbul": "catalog:",
+    "hono": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "hono": "catalog:"
+  }
+}

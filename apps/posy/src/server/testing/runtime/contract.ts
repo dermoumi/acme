@@ -1,6 +1,6 @@
 import type { Dialect, Kysely } from "kysely";
-import type { AppBindings } from "../bindings";
-import type { Database } from "../db";
+import type { AppBindings } from "../../bindings";
+import type { Database } from "../../db";
 
 // Both runtimes bind these: tests import them and never learn which one they run on.
 export type CreateBindings = (overrides?: Partial<AppBindings>) => AppBindings;

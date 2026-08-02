@@ -71,6 +71,15 @@
   },
   "overrides": [
     {
+      // A describe() body groups its cases: its length is not complexity, and a
+      // helper belongs in the block that uses it even if it captures nothing.
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "rules": {
+        "max-lines-per-function": "off",
+        "unicorn/consistent-function-scoping": "off"
+      }
+    },
+    {
       "files": ["**/*.d.ts"],
       "rules": {
         // Declaration files can export {}
