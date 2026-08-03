@@ -3,8 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#testing/runtime": {
+      "workerd": "./src/testing/runtime/runtime.workerd.ts",
+      "default": "./src/testing/runtime/runtime.node.ts"
+    }
+  },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./d1": "./src/d1/index.ts"
   },
   "scripts": {
     "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc -b",
@@ -13,10 +20,13 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
-    "kysely": "catalog:"
+    "kysely": "catalog:",
+    "kysely-d1": "catalog:"
   },
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",
+    "@cloudflare/vitest-pool-workers": "catalog:",
+    "@cloudflare/workers-types": "catalog:",
     "@types/better-sqlite3": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",

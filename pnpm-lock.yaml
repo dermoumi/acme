@@ -222,10 +222,19 @@ importers:
       kysely:
         specifier: 'catalog:'
         version: 0.29.4
+      kysely-d1:
+        specifier: 'catalog:'
+        version: 0.4.0(kysely@0.29.4)
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@cloudflare/vitest-pool-workers':
+        specifier: 'catalog:'
+        version: 0.18.8(@cloudflare/workers-types@5.20260728.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20260728.1
       '@types/better-sqlite3':
         specifier: 'catalog:'
         version: 7.6.13

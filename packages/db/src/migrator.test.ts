@@ -1,5 +1,5 @@
-import SQLite from "better-sqlite3";
-import { type Kysely, SqliteDialect, sql } from "kysely";
+import { createEmptyDialect } from "#testing/runtime";
+import { type Kysely, sql } from "kysely";
 import { type Migration, NO_MIGRATIONS } from "kysely/migration";
 import { expect, test } from "vitest";
 import { createDb } from "./database";
@@ -36,21 +36,22 @@ const migrations: Migrations = {
   },
 };
 
-function emptyDb(): Kysely<TestSchema> {
-  return createDb(new SqliteDialect({ database: new SQLite(":memory:") }));
+async function emptyDb(): Promise<Kysely<TestSchema>> {
+  return createDb<TestSchema>(await createEmptyDialect());
 }
 
+// Excludes D1's internal tables, which node simply never has.
 async function tableNames(db: Kysely<TestSchema>): Promise<string[]> {
   const rows = await sql<{ name: string }>`
     select name from sqlite_master
     where type = 'table' and name not like 'sqlite_%'
-      and name not like '%migration%'
+      and name not like '%migration%' and name not glob '_cf_*'
   `.execute(db);
   return rows.rows.map((row) => row.name).toSorted();
 }
 
 test("migrates up from zero, in key order", async () => {
-  const db = emptyDb();
+  const db = await emptyDb();
   const { error, results } = await createMigrator(
     db,
     migrations,
@@ -65,7 +66,7 @@ test("migrates up from zero, in key order", async () => {
 });
 
 test("down() reverts to an empty schema", async () => {
-  const db = emptyDb();
+  const db = await emptyDb();
   await createMigrator(db, migrations).migrateToLatest();
   const { error } = await createMigrator(db, migrations).migrateTo(
     NO_MIGRATIONS,
@@ -76,7 +77,7 @@ test("down() reverts to an empty schema", async () => {
 });
 
 test("migrateTo stops at the named migration", async () => {
-  const db = emptyDb();
+  const db = await emptyDb();
   const { error } = await createMigrator(db, migrations).migrateTo(
     "0001_widgets",
   );
@@ -86,7 +87,7 @@ test("migrateTo stops at the named migration", async () => {
 });
 
 test("an empty record is a valid, no-op migration set", async () => {
-  const db = emptyDb();
+  const db = await emptyDb();
   const { error, results } = await createMigrator(db, {}).migrateToLatest();
   expect(error).toBeUndefined();
   expect(results).toEqual([]);
@@ -94,7 +95,7 @@ test("an empty record is a valid, no-op migration set", async () => {
 });
 
 test("a failing migration reports the error and leaves later ones unrun", async () => {
-  const db = emptyDb();
+  const db = await emptyDb();
   const broken: Migrations = {
     "0001_widgets": createWidgets,
     "0002_broken": {
@@ -106,5 +107,18 @@ test("a failing migration reports the error and leaves later ones unrun", async 
   expect(error).toBeDefined();
   expect(results?.map((result) => result.status)).toEqual(["Success", "Error"]);
   expect(await tableNames(db)).toEqual(["widgets"]);
+  await db.destroy();
+});
+
+test("rerunning migrateToLatest is a no-op", async () => {
+  const db = await emptyDb();
+  await createMigrator(db, migrations).migrateToLatest();
+  const { error, results } = await createMigrator(
+    db,
+    migrations,
+  ).migrateToLatest();
+  expect(error).toBeUndefined();
+  expect(results).toEqual([]);
+  expect(await tableNames(db)).toEqual(["gadgets", "widgets"]);
   await db.destroy();
 });
