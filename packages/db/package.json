@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "imports": {
+    "#runtime": {
+      "workerd": "./src/runtime/runtime.workerd.ts",
+      "default": "./src/runtime/runtime.node.ts"
+    },
     "#testing/runtime": {
       "workerd": "./src/testing/runtime/runtime.workerd.ts",
       "default": "./src/testing/runtime/runtime.node.ts"
@@ -29,13 +33,25 @@
     "@cloudflare/workers-types": "catalog:",
     "@types/better-sqlite3": "catalog:",
     "@types/node": "catalog:",
+    "@types/pg": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "better-sqlite3": "catalog:",
+    "pg": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "kysely": "catalog:"
+    "better-sqlite3": "catalog:",
+    "kysely": "catalog:",
+    "pg": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    }
   }
 }
