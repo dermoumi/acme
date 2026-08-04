@@ -27,7 +27,8 @@ runs:
         APP: ${{ inputs.app }}
         BRANCH: ${{ inputs.branch }}
       run: |
-        slugify() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-40; }
+        # Trim after cutting: cut can land on a separator, and a trailing "-" is an illegal DNS label
+        slugify() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g' | cut -c1-40 | sed -E 's/^-+//; s/-+$//'; }
         slug=$(slugify "$BRANCH")
         # "staging" shares the account with previews; "" would be an invalid name
         case "$slug" in staging | "") slug="branch-$slug" ;; esac
