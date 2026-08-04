@@ -16,8 +16,8 @@ describe("createDbSource", () => {
     expect(await source.resolve()).toBe(await source.resolve());
   });
 
-  // The cache lives in the factory's closure, not at module scope, so two sources
-  // in one process cannot collide.
+  // The cache lives in the factory's closure, not at module scope, so two
+  // sources in one process cannot collide.
   it("keeps two sources independent", async () => {
     const dialect = await createEmptyDialect();
     const first = createDbSource({ dialect });

@@ -16,8 +16,8 @@ describe("createDbSource over sqlite", () => {
     return pathToFileURL(path.join(dir, name)).href;
   }
 
-  // Guards anyone "optimising" the cache into a shared connection: two
-  // :memory: databases are private, and losing that would silently share state.
+  // Guards anyone "optimising" the cache into a shared connection.
+  // Two :memory: databases are private; losing that would silently share state.
   it("keeps two :memory: sources from seeing each other", async () => {
     const first = await createDbSource({ url: ":memory:" }).resolve();
     const second = await createDbSource({ url: ":memory:" }).resolve();
@@ -59,8 +59,8 @@ describe("createDbSource over sqlite", () => {
     await db.destroy();
   });
 
-  // Asserting a retry, not just a second failure: a cached rejection would also
-  // reject twice, so only a later success proves the cache was cleared.
+  // Asserting a retry, not just a second failure: a cached rejection rejects
+  // twice too, so only a later success proves the cache was cleared.
   it("retries a failed connection rather than caching it", async () => {
     const nested = path.join(dir, "appears-later");
     const source = createDbSource({

@@ -16,12 +16,11 @@ export interface DbVariables<DB> {
 /**
  * Resolves the database once per request and puts it on the context.
  *
- * Mount it only on the routes that query, not app-wide: on node the first
- * request through it opens the connection, and a route serving static assets
- * has no reason to pay for one.
+ * Mount it only on routes that query, not app-wide: on node the first request
+ * through it opens the connection, and a route serving assets need not pay.
  *
- * Takes the source rather than hanging off it, so `createDbSource` stays free of Hono
- * and this import cost falls only on apps that mount middleware.
+ * Takes the source rather than hanging off it, so `createDbSource` stays free
+ * of Hono and only apps mounting middleware pay for the import.
  */
 export function dbMiddleware<DB>(
   source: DbSource<DB>,

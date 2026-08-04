@@ -106,8 +106,8 @@ describe("createMigrator", () => {
   it("reports a failure and leaves later migrations unrun", async () => {
     const dialect = await createEmptyDialect();
     const db = createDb<TestSchema>(dialect);
-    // Asked of the dialect, not tracked by hand: kysely decides whether to wrap
-    // the batch in a transaction from exactly this flag.
+    // Asked of the dialect, not tracked by hand: kysely uses this same flag
+    // to decide whether to wrap the batch in a transaction.
     const rollsBack = dialect.createAdapter().supportsTransactionalDdl;
     const broken: Migrations = {
       "0001_widgets": createWidgets,

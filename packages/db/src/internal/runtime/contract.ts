@@ -7,8 +7,8 @@ export interface RuntimeOptions {
   binding: string;
 }
 
-// Curried like @acme/rate-limiter's GetBinding, and for the same reason: node
-// opens one connection per source, workerd reads a binding off every request.
+// Curried like @acme/rate-limiter's GetBinding, and for the same reason:
+// node opens one connection per source, workerd reads one off every request.
 export type CreateDialectResolver = (
   options: RuntimeOptions,
 ) => (env: unknown) => Promise<Dialect>;

@@ -25,9 +25,9 @@ export interface DbSource<DB> {
   /**
    * The database for this request.
    *
-   * On node the connection is opened once and reused, so `env` is ignored. On
-   * workerd the D1 binding is read from `env` every time, because that is where
-   * the platform puts it.
+   * On node the connection opens once and is reused, so `env` is ignored.
+   * On workerd the binding is read from `env` every time, because that is
+   * where the platform puts it.
    */
   resolve(env?: unknown): Promise<Kysely<DB>>;
 }
@@ -35,9 +35,9 @@ export interface DbSource<DB> {
 /**
  * Resolves the app's database without app code knowing which engine it got.
  *
- * Build one per app and pass it down; the runtime decides how `resolve` answers.
- * A failed connection is not cached, so a transient failure does not disable the
- * source for the life of the process.
+ * Build one per app and pass it down; the runtime decides how `resolve`
+ * answers. A failed connection is not cached, so a transient failure cannot
+ * disable the source for the life of the process.
  */
 export function createDbSource<DB>(
   options: DbSourceOptions = {},

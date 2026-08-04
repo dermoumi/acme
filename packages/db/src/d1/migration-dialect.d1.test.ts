@@ -5,8 +5,8 @@ import { describe, expect, it } from "vitest";
 import { createDb } from "../internal/database";
 import { d1MigrationDialect } from "./migration-dialect";
 
-// Only what is true of D1 alone lives here; the migrator and query contracts
-// run on every runtime from src/migrator.test.ts and src/database.test.ts.
+// D1-only facts. The migrator and query contracts run on every engine, from
+// internal/migrator and internal/database.
 
 function database(): D1Database {
   return env.DB as D1Database;
@@ -30,8 +30,8 @@ describe("d1MigrationDialect", () => {
     await db.destroy();
   });
 
-  // The reason this dialect exists: guards the fix against a kysely-d1 release
-  // that looks like it made the wrapper redundant.
+  // Guards the fix against a kysely-d1 release that only looks like it made
+  // the wrapper redundant.
   it("wraps a stock D1Dialect that still cannot introspect D1", async () => {
     const db = createDb(new D1Dialect({ database: database() }));
     await expect(db.introspection.getTables()).rejects.toThrow(

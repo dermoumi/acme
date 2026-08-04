@@ -2,8 +2,8 @@ import { dialectFromUrl } from "../../uri/uri.node";
 import { resetPostgres } from "../postgres.node";
 import type { CreateEmptyDialect } from "./contract";
 
-// Each vitest project declares the url it wants tested, so the contract runs
-// through the same dialectFromUrl the app does rather than a hand-built dialect.
+// Each vitest project declares the url it tests, so the contract runs through
+// the same dialectFromUrl the app does, not a dialect built for testing.
 const url = process.env.ACME_DB_TEST_URL ?? ":memory:";
 
 // A private in-memory sqlite is empty by construction; a server keeps whatever

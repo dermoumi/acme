@@ -15,7 +15,7 @@ export const createDialectResolver: CreateDialectResolver = (options) => {
       throw new Error("no database url: pass `url` to createDbSource");
     }
 
-    // Cleared on failure so a transient one does not poison the source for good.
+    // Cleared on failure, so a transient one cannot poison the source for good.
     cached = dialectFromUrl(url).catch((error: unknown) => {
       cached = undefined;
       throw error;

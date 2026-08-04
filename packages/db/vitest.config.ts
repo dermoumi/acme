@@ -1,7 +1,7 @@
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
 import { defineConfig, type ViteUserConfig } from "vitest/config";
 
-// Two vocabularies that never overlap, so a suffix says which axis it constrains.
+// Two vocabularies that never overlap, so a suffix names its own axis.
 // A plain *.test.ts is the engine contract and runs in every project below.
 const include = ["src/**/*.test.ts"];
 const NODE = "src/**/*.node.test.ts";
@@ -21,8 +21,8 @@ const postgres: ViteUserConfig[] = postgresUrl
           name: "node:postgres",
           include,
           exclude: [WORKERD, SQLITE, D1],
-          // Serial: parallel files would need a schema each, and kysely's migrator
-          // finds another worker's tables and skips creating its own (migrator.js:385).
+          // Serial: parallel files need a schema each, and kysely then finds
+          // another worker's tables and skips its own (migrator.js:385).
           fileParallelism: false,
           env: { ACME_DB_TEST_URL: postgresUrl },
         },

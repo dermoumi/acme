@@ -9,8 +9,8 @@ interface TestSchema {
   widgets: { id: string };
 }
 
-// Carries Bindings as well, so mounting on a bindings-typed app is type-checked
-// here rather than discovered in an app.
+// Carries Bindings too, so mounting on a bindings-typed app is type-checked
+// here rather than discovered later in an app.
 interface TestBindings {
   DB?: unknown;
 }
@@ -57,8 +57,8 @@ describe("dbMiddleware", () => {
     expect(res.status).toBe(200);
   });
 
-  // Proves the middleware hands over one database, not a fresh empty one per
-  // request: the write in an earlier request has to be visible in a later one.
+  // Proves the middleware hands over one database, not a fresh one per
+  // request: an earlier write has to be visible later.
   it("keeps writes visible across requests", async () => {
     const app = await appOverEmptyDb();
     await app.request("/db/create");

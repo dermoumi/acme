@@ -13,7 +13,7 @@ export const createEmptyDialect: CreateEmptyDialect = async () => {
   for (const table of tables) {
     // D1 owns the _cf_* tables and rejects touching them.
     if (table.name.startsWith("_cf_")) continue;
-    // oxlint-disable-next-line no-await-in-loop -- parallel drops can hit a table another still references
+    // oxlint-disable-next-line no-await-in-loop -- parallel drops can race
     await db.schema.dropTable(table.name).ifExists().execute();
   }
   await db.destroy();

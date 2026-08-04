@@ -25,7 +25,7 @@ function mockFetch(
   response: { ok?: boolean; status?: number } = {},
 ): Call[] {
   const calls: Call[] = [];
-  // Typed to what restD1 actually sends, rather than RequestInit's wider union.
+  // Typed to what restD1 sends, not RequestInit's wider union.
   interface SentInit {
     headers: Record<string, string>;
     body: string;
@@ -152,8 +152,8 @@ describe("remoteD1Dialect", () => {
   });
 });
 
-// restD1 claims the whole D1Database type while implementing three methods. That
-// is only sound while kysely-d1 confines itself to them, so assert it directly.
+// restD1 claims the whole D1Database type while implementing three methods,
+// which holds only while kysely-d1 confines itself to them. Assert it directly.
 describe("the surface restD1 has to implement", () => {
   it("is only prepare, bind and all", async () => {
     const touched = new Set<string>();
