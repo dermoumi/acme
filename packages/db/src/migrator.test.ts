@@ -1,7 +1,7 @@
 import { createEmptyDialect } from "#testing/runtime";
 import { type Kysely, sql } from "kysely";
 import { type Migration, NO_MIGRATIONS } from "kysely/migration";
-import { expect, test } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createDb } from "./database";
 import { createMigrator, type Migrations } from "./migrator";
 
@@ -36,89 +36,97 @@ const migrations: Migrations = {
   },
 };
 
-async function emptyDb(): Promise<Kysely<TestSchema>> {
-  return createDb<TestSchema>(await createEmptyDialect());
-}
+describe("createMigrator", () => {
+  async function emptyDb(): Promise<Kysely<TestSchema>> {
+    return createDb<TestSchema>(await createEmptyDialect());
+  }
 
-// Excludes D1's internal tables, which node simply never has.
-async function tableNames(db: Kysely<TestSchema>): Promise<string[]> {
-  const rows = await sql<{ name: string }>`
-    select name from sqlite_master
-    where type = 'table' and name not like 'sqlite_%'
-      and name not like '%migration%' and name not glob '_cf_*'
-  `.execute(db);
-  return rows.rows.map((row) => row.name).toSorted();
-}
+  // Excludes D1's internal tables, which node simply never has.
+  async function tableNames(db: Kysely<TestSchema>): Promise<string[]> {
+    const rows = await sql<{ name: string }>`
+      select name from sqlite_master
+      where type = 'table' and name not like 'sqlite_%'
+        and name not like '%migration%' and name not glob '_cf_*'
+    `.execute(db);
+    return rows.rows.map((row) => row.name).toSorted();
+  }
 
-test("migrates up from zero, in key order", async () => {
-  const db = await emptyDb();
-  const { error, results } = await createMigrator(
-    db,
-    migrations,
-  ).migrateToLatest();
-  expect(error).toBeUndefined();
-  expect(results?.map((result) => result.migrationName)).toEqual([
-    "0001_widgets",
-    "0002_gadgets",
-  ]);
-  expect(await tableNames(db)).toEqual(["gadgets", "widgets"]);
-  await db.destroy();
-});
+  it("migrates up from zero, in key order", async () => {
+    const db = await emptyDb();
+    const { error, results } = await createMigrator(
+      db,
+      migrations,
+    ).migrateToLatest();
+    expect(error).toBeUndefined();
+    expect(results?.map((result) => result.migrationName)).toEqual([
+      "0001_widgets",
+      "0002_gadgets",
+    ]);
+    expect(await tableNames(db)).toEqual(["gadgets", "widgets"]);
+    await db.destroy();
+  });
 
-test("down() reverts to an empty schema", async () => {
-  const db = await emptyDb();
-  await createMigrator(db, migrations).migrateToLatest();
-  const { error } = await createMigrator(db, migrations).migrateTo(
-    NO_MIGRATIONS,
-  );
-  expect(error).toBeUndefined();
-  expect(await tableNames(db)).toEqual([]);
-  await db.destroy();
-});
+  it("reverts to an empty schema with down()", async () => {
+    const db = await emptyDb();
+    await createMigrator(db, migrations).migrateToLatest();
+    const { error } = await createMigrator(db, migrations).migrateTo(
+      NO_MIGRATIONS,
+    );
+    expect(error).toBeUndefined();
+    expect(await tableNames(db)).toEqual([]);
+    await db.destroy();
+  });
 
-test("migrateTo stops at the named migration", async () => {
-  const db = await emptyDb();
-  const { error } = await createMigrator(db, migrations).migrateTo(
-    "0001_widgets",
-  );
-  expect(error).toBeUndefined();
-  expect(await tableNames(db)).toEqual(["widgets"]);
-  await db.destroy();
-});
+  it("stops at the migration migrateTo names", async () => {
+    const db = await emptyDb();
+    const { error } = await createMigrator(db, migrations).migrateTo(
+      "0001_widgets",
+    );
+    expect(error).toBeUndefined();
+    expect(await tableNames(db)).toEqual(["widgets"]);
+    await db.destroy();
+  });
 
-test("an empty record is a valid, no-op migration set", async () => {
-  const db = await emptyDb();
-  const { error, results } = await createMigrator(db, {}).migrateToLatest();
-  expect(error).toBeUndefined();
-  expect(results).toEqual([]);
-  await db.destroy();
-});
+  it("treats an empty record as a valid, no-op migration set", async () => {
+    const db = await emptyDb();
+    const { error, results } = await createMigrator(db, {}).migrateToLatest();
+    expect(error).toBeUndefined();
+    expect(results).toEqual([]);
+    await db.destroy();
+  });
 
-test("a failing migration reports the error and leaves later ones unrun", async () => {
-  const db = await emptyDb();
-  const broken: Migrations = {
-    "0001_widgets": createWidgets,
-    "0002_broken": {
-      up: () => Promise.reject(new Error("boom")),
-      down: () => Promise.resolve(),
-    },
-  };
-  const { error, results } = await createMigrator(db, broken).migrateToLatest();
-  expect(error).toBeDefined();
-  expect(results?.map((result) => result.status)).toEqual(["Success", "Error"]);
-  expect(await tableNames(db)).toEqual(["widgets"]);
-  await db.destroy();
-});
+  it("reports a failure and leaves later migrations unrun", async () => {
+    const db = await emptyDb();
+    const broken: Migrations = {
+      "0001_widgets": createWidgets,
+      "0002_broken": {
+        up: () => Promise.reject(new Error("boom")),
+        down: () => Promise.resolve(),
+      },
+    };
+    const { error, results } = await createMigrator(
+      db,
+      broken,
+    ).migrateToLatest();
+    expect(error).toBeDefined();
+    expect(results?.map((result) => result.status)).toEqual([
+      "Success",
+      "Error",
+    ]);
+    expect(await tableNames(db)).toEqual(["widgets"]);
+    await db.destroy();
+  });
 
-test("rerunning migrateToLatest is a no-op", async () => {
-  const db = await emptyDb();
-  await createMigrator(db, migrations).migrateToLatest();
-  const { error, results } = await createMigrator(
-    db,
-    migrations,
-  ).migrateToLatest();
-  expect(error).toBeUndefined();
-  expect(results).toEqual([]);
-  expect(await tableNames(db)).toEqual(["gadgets", "widgets"]);
-  await db.destroy();
+  it("is a no-op when rerun after reaching latest", async () => {
+    const db = await emptyDb();
+    await createMigrator(db, migrations).migrateToLatest();
+    const { error, results } = await createMigrator(
+      db,
+      migrations,
+    ).migrateToLatest();
+    expect(error).toBeUndefined();
+    expect(results).toEqual([]);
+    expect(await tableNames(db)).toEqual(["gadgets", "widgets"]);
+    await db.destroy();
+  });
 });
