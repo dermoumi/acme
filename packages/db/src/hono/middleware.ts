@@ -6,18 +6,20 @@ import type { DbSource } from "../internal/source";
 /**
  * The context variables {@link dbMiddleware} sets.
  *
- * Put it on a router's `Variables` to read `ctx.var.db` with the app's schema:
+ * Put it on a router's `Variables` to call `ctx.var.db()` with the app's schema:
  * `new Hono<{ Bindings: AppBindings; Variables: DbVariables<Database> }>()`.
  */
 export interface DbVariables<DB> {
-  db: Kysely<DB>;
+  /** The request's database, resolved on the first call and reused after it. */
+  db: () => Promise<Kysely<DB>>;
 }
 
 /**
- * Resolves the database once per request and puts it on the context.
+ * Puts a lazy handle on the request's database.
  *
- * Mount it only on routes that query, not app-wide: on node the first request
- * through it opens the connection, and a route serving assets need not pay.
+ * Nothing resolves until a handler calls `ctx.var.db()`, so mounting this
+ * app-wide costs a closure, and a route that never queries never opens a
+ * connection. The answer is memoised per request, so asking twice is free.
  *
  * Takes the source rather than hanging off it, so `createDbSource` stays free
  * of Hono and only apps mounting middleware pay for the import.
@@ -26,7 +28,8 @@ export function dbMiddleware<DB>(
   source: DbSource<DB>,
 ): MiddlewareHandler<{ Variables: DbVariables<DB> }> {
   return createMiddleware<{ Variables: DbVariables<DB> }>(async (ctx, next) => {
-    ctx.set("db", await source.resolve(ctx.env));
+    let pending: Promise<Kysely<DB>> | undefined;
+    ctx.set("db", () => (pending ??= source.resolve(ctx.env)));
     await next();
   });
 }

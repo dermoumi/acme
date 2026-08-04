@@ -20,15 +20,19 @@ interface TestEnv {
   Variables: DbVariables<TestSchema>;
 }
 
+// Neither arm can resolve this: node is given no url, workerd no such binding.
+const unresolvable = { binding: "NO_SUCH_BINDING" };
+
 async function appOverEmptyDb() {
   const source = createDbSource<TestSchema>({
     dialect: await createEmptyDialect(),
   });
   const app = new Hono<TestEnv>();
-  app.use("/db/*", dbMiddleware(source));
+  app.use(dbMiddleware(source));
 
   app.get("/db/create", async (ctx) => {
-    await ctx.var.db.schema
+    const db = await ctx.var.db();
+    await db.schema
       .createTable("widgets")
       .addColumn("id", "text", (col) => col.primaryKey())
       .execute();
@@ -36,14 +40,15 @@ async function appOverEmptyDb() {
   });
 
   app.get("/db/insert", async (ctx) => {
-    await ctx.var.db.insertInto("widgets").values({ id: "w1" }).execute();
+    const db = await ctx.var.db();
+    await db.insertInto("widgets").values({ id: "w1" }).execute();
     return ctx.json({ ok: true });
   });
 
   app.get("/db/count", async (ctx) => {
     const rows = await sql<{ total: number }>`
       select count(*) as total from widgets
-    `.execute(ctx.var.db);
+    `.execute(await ctx.var.db());
     return ctx.json({ count: Number(rows.rows[0]?.total) });
   });
 
@@ -51,7 +56,7 @@ async function appOverEmptyDb() {
 }
 
 describe("dbMiddleware", () => {
-  it("puts a usable database on the context", async () => {
+  it("hands a handler a usable database", async () => {
     const app = await appOverEmptyDb();
     const res = await app.request("/db/create");
     expect(res.status).toBe(200);
@@ -68,21 +73,37 @@ describe("dbMiddleware", () => {
     expect(await res.json()).toEqual({ count: 1 });
   });
 
+  // The reason it can be mounted app-wide: a route that never asks pays nothing,
+  // so even a source that cannot resolve leaves it untouched.
+  it("resolves nothing until a handler asks", async () => {
+    const app = new Hono<TestEnv>();
+    app.use(dbMiddleware(createDbSource<TestSchema>(unresolvable)));
+    app.get("/quiet", (ctx) => ctx.json({ ok: true }));
+
+    const res = await app.request("/quiet");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+  });
+
   it("surfaces a source that cannot resolve as a failed request", async () => {
     const app = new Hono<TestEnv>();
-    // No url and no binding on this env: both arms refuse.
-    app.use("/db/*", dbMiddleware(createDbSource<TestSchema>()));
-    app.get("/db/query", (ctx) => ctx.json({ ok: Boolean(ctx.var.db) }));
+    app.use(dbMiddleware(createDbSource<TestSchema>(unresolvable)));
+    app.get("/db/query", async (ctx) =>
+      ctx.json({ ok: !!(await ctx.var.db()) }),
+    );
 
     const res = await app.request("/db/query");
     expect(res.status).toBe(500);
   });
 
-  it("leaves routes it is not mounted on alone", async () => {
+  it("resolves once per request however often it is asked", async () => {
     const app = await appOverEmptyDb();
-    app.get("/plain", (ctx) => ctx.json({ ok: true }));
+    app.get("/twice", async (ctx) => {
+      const [first, second] = [await ctx.var.db(), await ctx.var.db()];
+      return ctx.json({ same: first === second });
+    });
 
-    const res = await app.request("/plain");
-    expect(res.status).toBe(200);
+    const res = await app.request("/twice");
+    expect(await res.json()).toEqual({ same: true });
   });
 });

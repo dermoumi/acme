@@ -42,10 +42,10 @@ async function describe(
  *
  * Passes requests through unwrapped when `SENTRY_DSN` is unset.
  */
-export function withSentry<Bindings extends SentryBindings>(
-  app: Hono<{ Bindings: Bindings }>,
+export function withSentry<Env extends { Bindings: SentryBindings }>(
+  app: Hono<Env>,
   config: SentryConfig = {},
-): SentryHandler<Bindings> {
+): SentryHandler<Env["Bindings"]> {
   app.onError(sentryErrorHandler(config));
 
   const settings: SentryBindings = process.env;
