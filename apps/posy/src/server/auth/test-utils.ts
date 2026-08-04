@@ -1,13 +1,19 @@
 import { createBindings, createEmptyDialect } from "#testing/runtime";
 import type { Dialect, Kysely } from "kysely";
 import type { AppBindings } from "../bindings";
-import { createDb, createMigrator, type Database } from "../db";
+import { createDb } from "@acme/db";
+import { createMigrator, type Database } from "../db";
 import { hashPassword } from "./password";
 
 export async function migratedDialect(): Promise<Dialect> {
   const dialect = await createEmptyDialect();
-  const { error } = await createMigrator(createDb(dialect)).migrateToLatest();
-  if (error) throw new Error("migration failed", { cause: error });
+  const migrator = createMigrator(createDb<Database>(dialect));
+
+  const { error } = await migrator.migrateToLatest();
+  if (error) {
+    throw new Error("migration failed", { cause: error });
+  }
+
   return dialect;
 }
 

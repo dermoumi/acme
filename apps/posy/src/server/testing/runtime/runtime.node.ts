@@ -1,7 +1,8 @@
 import SQLite from "better-sqlite3";
 import { SqliteDialect } from "kysely";
 import indexHtml from "../../../../test/fixtures/assets/index.html?raw";
-import { createDb } from "../../db";
+import { createDb } from "@acme/db";
+import type { Database } from "../../db";
 import type { GateBindings } from "../../gate";
 import type {
   CreateBindings,
@@ -46,8 +47,12 @@ export const createBindings: CreateBindings = (overrides = {}) => ({
 });
 
 // A private in-memory database is empty by construction.
-export const createEmptyDialect: CreateEmptyDialect = () =>
-  Promise.resolve(new SqliteDialect({ database: new SQLite(":memory:") }));
+export const createEmptyDialect: CreateEmptyDialect = () => {
+  return Promise.resolve(
+    new SqliteDialect({ database: new SQLite(":memory:") }),
+  );
+};
 
-export const createEmptyDb: CreateEmptyDb = async () =>
-  createDb(await createEmptyDialect());
+export const createEmptyDb: CreateEmptyDb = async () => {
+  return createDb<Database>(await createEmptyDialect());
+};

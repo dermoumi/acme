@@ -140,6 +140,9 @@ importers:
 
   apps/posy:
     dependencies:
+      '@acme/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@acme/rate-limiter':
         specifier: workspace:*
         version: link:../../packages/rate-limiter
@@ -155,9 +158,6 @@ importers:
       kysely:
         specifier: 'catalog:'
         version: 0.29.4
-      kysely-d1:
-        specifier: 'catalog:'
-        version: 0.4.0(kysely@0.29.4)
       react:
         specifier: 'catalog:'
         version: 19.2.8

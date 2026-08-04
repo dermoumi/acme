@@ -1,7 +1,8 @@
 import type { Kysely } from "kysely";
 import { expect, test } from "vitest";
 import { createApp } from "../app";
-import { createDb, type Database } from "../db";
+import { createDb } from "@acme/db";
+import type { Database } from "../db";
 import {
   createSession,
   resolveSession,
@@ -9,6 +10,7 @@ import {
   SESSION_MAX_AGE_SECONDS,
 } from "./session";
 import { DbSessionStore } from "./session-db";
+import { noDatabase } from "../testing/no-database";
 import { migratedDialect, seedUser, testEnv as env } from "./test-utils";
 import { hashToken } from "./tokens";
 
@@ -18,7 +20,7 @@ async function seeded(): Promise<{
   db: Kysely<Database>;
   store: DbSessionStore;
 }> {
-  const db = createDb(await migratedDialect());
+  const db = createDb<Database>(await migratedDialect());
   await seedUser(db, "u1");
   return { db, store: new DbSessionStore(db) };
 }
@@ -47,13 +49,14 @@ test("resolveSession returns the userId for a valid token", async () => {
 test("resolveSession refreshes last_seen_at only after an hour", async () => {
   const { db, store } = await seeded();
   const token = await createSession(store, "u1", null, 1000);
-  const lastSeen = async () =>
-    (
+  const lastSeen = async () => {
+    return (
       await db
         .selectFrom("sessions")
         .select("last_seen_at")
         .executeTakeFirstOrThrow()
     ).last_seen_at;
+  };
 
   await resolveSession(store, token, 1000 + HOUR_MS);
   expect(await lastSeen()).toBe(1000);
@@ -71,11 +74,7 @@ test("resolveSession rejects expired sessions", async () => {
 });
 
 test("GET /session without a cookie never touches the db", async () => {
-  const app = createApp({
-    getDialect: () => {
-      throw new Error("getDialect must not be called");
-    },
-  });
+  const app = createApp({ database: noDatabase });
   const res = await app.request("/session", {}, env);
   expect(res.status).toBe(200);
   expect(await res.json()).toEqual({ user: null });
@@ -83,11 +82,11 @@ test("GET /session without a cookie never touches the db", async () => {
 
 test("GET /session resolves the cookie to a user", async () => {
   const dialect = await migratedDialect();
-  const db = createDb(dialect);
+  const db = createDb<Database>(dialect);
   await seedUser(db, "u1");
   const store = new DbSessionStore(db);
   const token = await createSession(store, "u1", null, Date.now());
-  const app = createApp({ getDialect: () => dialect });
+  const app = createApp({ database: { dialect } });
 
   const authed = await app.request(
     "/session",

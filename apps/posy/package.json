@@ -22,12 +22,12 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@acme/db": "workspace:*",
     "@acme/rate-limiter": "workspace:*",
     "@acme/sentry": "workspace:*",
     "@hono/node-server": "catalog:",
     "hono": "catalog:",
     "kysely": "catalog:",
-    "kysely-d1": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "workbox-window": "catalog:",

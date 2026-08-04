@@ -7,15 +7,12 @@ import {
   RATE_TUNNEL_LIMIT,
 } from "./app";
 import type { AppBindings } from "./bindings";
+import { noDatabase } from "./testing/no-database";
 
 // @acme/rate-limiter tests the limiter itself. These cover only what posy wires:
 // which routes and methods are capped, at which budget, and in which order.
-function noDatabase(): never {
-  throw new Error("these tests must not reach the database");
-}
-
 function testApp() {
-  return createApp({ getDialect: noDatabase });
+  return createApp({ database: noDatabase });
 }
 
 // Unique per test: workerd shares one limiter namespace across the whole file.
@@ -104,12 +101,12 @@ describe("createApp", () => {
     // Runs at module load on workerd, so a bad range is a worker that fails to
     // boot rather than one silently trusting nobody for its life.
     expect(() =>
-      createApp({ getDialect: noDatabase, trustedProxies: ["10.0.0.0/"] }),
+      createApp({ database: noDatabase, trustedProxies: ["10.0.0.0/"] }),
     ).toThrow("10.0.0.0/");
 
     expect(() =>
       createApp({
-        getDialect: noDatabase,
+        database: noDatabase,
         trustedProxies: ["10.0.0.0/8", "fc00::/7"],
       }),
     ).not.toThrow();

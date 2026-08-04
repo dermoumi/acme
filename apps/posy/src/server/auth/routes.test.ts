@@ -1,21 +1,22 @@
+import { createDb } from "@acme/db";
 import type { Hono } from "hono";
 import type { Kysely } from "kysely";
 import { expect, test } from "vitest";
 import { createApp } from "../app";
-import type { AppBindings } from "../bindings";
-import { createDb, type Database } from "../db";
+import type { AppEnv } from "../bindings";
+import type { Database } from "../db";
 import { SESSION_COOKIE } from "./session";
 import { migratedDialect, seedUser, testEnv } from "./test-utils";
 
-type App = Hono<{ Bindings: AppBindings }>;
+type App = Hono<AppEnv>;
 
 const PASS = "test-dummy-pass";
 
 async function appWithUser(): Promise<{ app: App; db: Kysely<Database> }> {
   const dialect = await migratedDialect();
-  const db = createDb(dialect);
+  const db = createDb<Database>(dialect);
   await seedUser(db, "u1", "Tester", PASS);
-  return { app: createApp({ getDialect: () => dialect }), db };
+  return { app: createApp({ database: { dialect } }), db };
 }
 
 async function login(app: App, body: unknown): Promise<Response> {
@@ -97,16 +98,16 @@ test("wrong password and unknown user are indistinguishable", async () => {
 
 test("sessions survive a worker restart", async () => {
   const dialect = await migratedDialect();
-  const db = createDb(dialect);
+  const db = createDb<Database>(dialect);
   await seedUser(db, "u1", "Tester", PASS);
   const cookie = cookieOf(
-    await login(createApp({ getDialect: () => dialect }), {
+    await login(createApp({ database: { dialect } }), {
       username: "u1",
       password: PASS,
     }),
   );
 
-  const rebooted = createApp({ getDialect: () => dialect });
+  const rebooted = createApp({ database: { dialect } });
   const res = await getSession(rebooted, cookie);
   expect(await res.json()).toEqual({ user: { id: "u1", name: "Tester" } });
   await db.destroy();

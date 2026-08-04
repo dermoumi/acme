@@ -1,9 +1,11 @@
 import { createRateLimiter } from "@acme/rate-limiter";
 import { sentryTunnel, type SentryConfig } from "@acme/sentry/hono";
+import { createDbSource, type DbSourceOptions } from "@acme/db";
+import { dbMiddleware } from "@acme/db/hono";
 import { Hono } from "hono";
-import type { Dialect } from "kysely";
 import { authRoutes } from "./auth";
-import type { AppBindings } from "./bindings";
+import type { AppEnv, AppBindings } from "./bindings";
+import type { Database } from "./db";
 import { debugRoutes, isDebugEnabled } from "./debug";
 import { gate } from "./gate";
 
@@ -23,8 +25,11 @@ export const RATE_TUNNEL_LIMIT = 60;
 export const RATE_TUNNEL_PERIOD = 60;
 
 export interface AppOptions {
-  /** Resolved per request, so an environment with no DB still serves assets. */
-  getDialect: (env: AppBindings) => Dialect;
+  /**
+   * How to reach the database. Omit it on Workers, where the D1 binding is
+   * found on `env`; node passes a url, and tests pass a ready-made dialect.
+   */
+  database?: DbSourceOptions;
   /**
    * CIDR ranges whose `x-forwarded-for` may speak for the client behind them;
    * malformed ones throw at startup. Inert on Workers, load-bearing on node,
@@ -33,16 +38,16 @@ export interface AppOptions {
   trustedProxies?: readonly string[];
 }
 
-export function createApp(
-  options: AppOptions,
-): Hono<{ Bindings: AppBindings }> {
-  const { getDialect } = options;
-  const app = new Hono<{ Bindings: AppBindings }>();
+export function createApp(options: AppOptions = {}): Hono<AppEnv> {
+  const app = new Hono<AppEnv>();
+  const db = createDbSource<Database>(options.database);
   const limiter = createRateLimiter<AppBindings>({
     trustedProxies: options.trustedProxies,
   });
 
   app.use(gate());
+  app.use(dbMiddleware(db));
+
   // POST only keeps the per-load GET uncapped; /sentry exact, /* double-charges.
   app.on(
     "POST",
@@ -54,7 +59,7 @@ export function createApp(
     "/sentry",
     limiter.create("RATE_LIMIT_SENTRY", RATE_TUNNEL_LIMIT, RATE_TUNNEL_PERIOD),
   );
-  app.route("/session", authRoutes(getDialect));
+  app.route("/session", authRoutes());
   // Inside the gate: staging's basic auth covers this like every other route.
   app.route("/sentry", sentryTunnel(sentryConfig));
   // Mounted everywhere but answered only off production, so the tier decides at
