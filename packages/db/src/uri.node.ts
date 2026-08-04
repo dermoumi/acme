@@ -18,7 +18,7 @@ export function toDatabasePath(url: string): string {
 }
 
 // Drivers are optional peers, so a missing one is a wiring mistake worth
-// naming rather than a bare ERR_MODULE_NOT_FOUND from somewhere in the kit.
+// naming rather than a bare ERR_MODULE_NOT_FOUND from deep inside the package.
 async function load<Module>(
   name: string,
   importer: () => Promise<Module>,

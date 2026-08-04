@@ -1,7 +1,7 @@
 /**
  * Serializes a value for a JSON column; {@link parseJsonText} reads it back.
  *
- * Every engine the kit supports stores JSON as TEXT, so routing writes through
+ * Every engine this package supports stores JSON as TEXT, so routing writes through
  * one pair keeps a future engine-specific encoding to a single place.
  */
 export function jsonText(value: unknown): string {

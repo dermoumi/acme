@@ -36,7 +36,7 @@ function d1TableIntrospector(db: Kysely<unknown>): DatabaseIntrospector {
  * `pragma_table_info()` join; D1's protected internal `_cf_*` tables make that
  * throw `SQLITE_AUTH`, so the Migrator dies before it runs a single migration.
  * Upstream owns neither half (kysely#1571 open since 2025-09, kysely-d1 last
- * released 2025-04), so the kit carries the fix.
+ * released 2025-04), so this package carries the fix.
  *
  * Reports names only, with empty `columns`. That is all the Migrator reads; do
  * not reach for this if you need real column metadata.

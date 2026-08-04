@@ -1,27 +1,27 @@
 import { createEmptyDialect } from "#testing/runtime";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
-import { createDbKit } from "./kit";
+import { createDbSource } from "./source";
 
-describe("createDbKit", () => {
+describe("createDbSource", () => {
   it("resolves a working database from an explicit dialect", async () => {
-    const kit = createDbKit({ dialect: await createEmptyDialect() });
-    const db = await kit.resolve();
+    const source = createDbSource({ dialect: await createEmptyDialect() });
+    const db = await source.resolve();
     const rows = await sql<{ one: number }>`select 1 as one`.execute(db);
     expect(rows.rows[0]?.one).toBe(1);
   });
 
   it("hands back the same database for the same dialect", async () => {
-    const kit = createDbKit({ dialect: await createEmptyDialect() });
-    expect(await kit.resolve()).toBe(await kit.resolve());
+    const source = createDbSource({ dialect: await createEmptyDialect() });
+    expect(await source.resolve()).toBe(await source.resolve());
   });
 
-  // The cache lives in the factory's closure, not at module scope, so two kits
+  // The cache lives in the factory's closure, not at module scope, so two sources
   // in one process cannot collide.
-  it("keeps two kits independent", async () => {
+  it("keeps two sources independent", async () => {
     const dialect = await createEmptyDialect();
-    const first = createDbKit({ dialect });
-    const second = createDbKit({ dialect });
+    const first = createDbSource({ dialect });
+    const second = createDbSource({ dialect });
     expect(await first.resolve()).not.toBe(await second.resolve());
   });
 });

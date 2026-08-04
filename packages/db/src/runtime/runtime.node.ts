@@ -12,10 +12,10 @@ export const createDialectResolver: CreateDialectResolver = (options) => {
 
     const { url } = options;
     if (!url) {
-      throw new Error("no database url: pass `url` to createDbKit");
+      throw new Error("no database url: pass `url` to createDbSource");
     }
 
-    // Cleared on failure so a transient one does not poison the kit for good.
+    // Cleared on failure so a transient one does not poison the source for good.
     cached = dialectFromUrl(url).catch((error: unknown) => {
       cached = undefined;
       throw error;

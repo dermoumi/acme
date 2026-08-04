@@ -5,7 +5,7 @@ import { createDb } from "./database";
 /** Cloudflare's conventional D1 binding name. */
 const DEFAULT_BINDING = "DB";
 
-export interface DbKitOptions {
+export interface DbSourceOptions {
   /**
    * Where the database lives, on node: `:memory:`, `file:...`, or
    * `postgres:...`. Ignored on workerd, which reads a binding instead.
@@ -15,13 +15,13 @@ export interface DbKitOptions {
   binding?: string;
   /**
    * A ready-made dialect, which wins over everything else. For tests and for
-   * engines the kit does not resolve itself.
+   * engines it cannot resolve itself.
    */
   dialect?: Dialect;
 }
 
-/** Hands out the app's database. Build one with {@link createDbKit}. */
-export interface DbKit<DB> {
+/** Hands out the app's database. Build one with {@link createDbSource}. */
+export interface DbSource<DB> {
   /**
    * The database for this request.
    *
@@ -37,9 +37,11 @@ export interface DbKit<DB> {
  *
  * Build one per app and pass it down; the runtime decides how `resolve` answers.
  * A failed connection is not cached, so a transient failure does not disable the
- * kit for the life of the process.
+ * source for the life of the process.
  */
-export function createDbKit<DB>(options: DbKitOptions = {}): DbKit<DB> {
+export function createDbSource<DB>(
+  options: DbSourceOptions = {},
+): DbSource<DB> {
   const resolveDialect = createDialectResolver({
     url: options.url,
     binding: options.binding ?? DEFAULT_BINDING,

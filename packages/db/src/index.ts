@@ -1,4 +1,4 @@
 export { createDb } from "./database";
 export { jsonText, parseJsonText } from "./json";
-export { createDbKit, type DbKit, type DbKitOptions } from "./kit";
+export { createDbSource, type DbSource, type DbSourceOptions } from "./source";
 export { createMigrator, type Migrations } from "./migrator";

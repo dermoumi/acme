@@ -2,7 +2,7 @@ import { createEmptyDialect } from "#testing/runtime";
 import { Hono } from "hono";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
-import { createDbKit } from "../kit";
+import { createDbSource } from "../source";
 import { type DbVariables, dbMiddleware } from "./middleware";
 
 interface TestSchema {
@@ -21,9 +21,11 @@ interface TestEnv {
 }
 
 async function appOverEmptyDb() {
-  const kit = createDbKit<TestSchema>({ dialect: await createEmptyDialect() });
+  const source = createDbSource<TestSchema>({
+    dialect: await createEmptyDialect(),
+  });
   const app = new Hono<TestEnv>();
-  app.use("/db/*", dbMiddleware(kit));
+  app.use("/db/*", dbMiddleware(source));
 
   app.get("/db/create", async (ctx) => {
     await ctx.var.db.schema
@@ -66,10 +68,10 @@ describe("dbMiddleware", () => {
     expect(await res.json()).toEqual({ count: 1 });
   });
 
-  it("surfaces a kit that cannot resolve as a failed request", async () => {
+  it("surfaces a source that cannot resolve as a failed request", async () => {
     const app = new Hono<TestEnv>();
     // No url and no binding on this env: both arms refuse.
-    app.use("/db/*", dbMiddleware(createDbKit<TestSchema>()));
+    app.use("/db/*", dbMiddleware(createDbSource<TestSchema>()));
     app.get("/db/query", (ctx) => ctx.json({ ok: Boolean(ctx.var.db) }));
 
     const res = await app.request("/db/query");

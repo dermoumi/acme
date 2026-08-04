@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Kysely } from "kysely";
-import type { DbKit } from "../kit";
+import type { DbSource } from "../source";
 
 /**
  * The context variables {@link dbMiddleware} sets.
@@ -20,14 +20,14 @@ export interface DbVariables<DB> {
  * request through it opens the connection, and a route serving static assets
  * has no reason to pay for one.
  *
- * Takes the kit rather than hanging off it, so `createDbKit` stays free of Hono
+ * Takes the source rather than hanging off it, so `createDbSource` stays free of Hono
  * and this import cost falls only on apps that mount middleware.
  */
 export function dbMiddleware<DB>(
-  kit: DbKit<DB>,
+  source: DbSource<DB>,
 ): MiddlewareHandler<{ Variables: DbVariables<DB> }> {
   return createMiddleware<{ Variables: DbVariables<DB> }>(async (ctx, next) => {
-    ctx.set("db", await kit.resolve(ctx.env));
+    ctx.set("db", await source.resolve(ctx.env));
     await next();
   });
 }
