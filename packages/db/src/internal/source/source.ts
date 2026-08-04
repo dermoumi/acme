@@ -1,6 +1,6 @@
 import { createDialectResolver } from "#runtime";
 import type { Dialect, Kysely } from "kysely";
-import { createDb } from "./database";
+import { createDb } from "../database";
 
 /** Cloudflare's conventional D1 binding name. */
 const DEFAULT_BINDING = "DB";

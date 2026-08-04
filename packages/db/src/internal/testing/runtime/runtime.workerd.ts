@@ -1,7 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { env } from "cloudflare:test";
 import { createDb } from "../../database";
-import { d1MigrationDialect } from "../../d1";
+import { d1MigrationDialect } from "../../../d1";
 import type { CreateEmptyDialect } from "./contract";
 
 // The pool has no isolatedStorage, so every test shares one D1 instance:

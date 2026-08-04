@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createDb } from "./database";
 
 interface TestSchema {
-  widgets: { id: string; label: string };
+  widgets: { id: string; label: string; note: string | null; count: number };
 }
 
 describe("createDb", () => {
@@ -14,19 +14,41 @@ describe("createDb", () => {
       .createTable("widgets")
       .addColumn("id", "text", (col) => col.primaryKey())
       .addColumn("label", "text", (col) => col.notNull())
+      .addColumn("note", "text")
+      .addColumn("count", "integer")
       .execute();
     return db;
   }
 
   it("queries the schema it was typed with", async () => {
     const db = await widgetDb();
-    await db.insertInto("widgets").values({ id: "w1", label: "Cog" }).execute();
+    await db
+      .insertInto("widgets")
+      .values({ id: "w1", label: "Cog", note: "spare", count: 3 })
+      .execute();
 
     const row = await db
       .selectFrom("widgets")
       .selectAll()
       .executeTakeFirstOrThrow();
-    expect(row).toEqual({ id: "w1", label: "Cog" });
+    expect(row).toEqual({ id: "w1", label: "Cog", note: "spare", count: 3 });
+    await db.destroy();
+  });
+
+  // Engines disagree about empty and absent values often enough to pin down.
+  it("brings a null column back as null, not empty string", async () => {
+    const db = await widgetDb();
+    await db
+      .insertInto("widgets")
+      .values({ id: "w1", label: "Cog", note: null, count: 0 })
+      .execute();
+
+    const row = await db
+      .selectFrom("widgets")
+      .selectAll()
+      .executeTakeFirstOrThrow();
+    expect(row.note).toBeNull();
+    expect(row.count).toBe(0);
     await db.destroy();
   });
 
@@ -43,7 +65,7 @@ describe("createDb", () => {
       await expect(
         db
           .insertInto("widgets")
-          .values({ id: "w2" } as { id: string; label: string })
+          .values({ id: "w2" } as TestSchema["widgets"])
           .execute(),
       ).rejects.toThrow();
       await db.destroy();
@@ -51,12 +73,16 @@ describe("createDb", () => {
 
     it("rejects a duplicate primary key", async () => {
       const db = await widgetDb();
+      const widget = { id: "w1", note: null, count: 0 };
       await db
         .insertInto("widgets")
-        .values({ id: "w1", label: "Cog" })
+        .values({ ...widget, label: "Cog" })
         .execute();
       await expect(
-        db.insertInto("widgets").values({ id: "w1", label: "Bolt" }).execute(),
+        db
+          .insertInto("widgets")
+          .values({ ...widget, label: "Bolt" })
+          .execute(),
       ).rejects.toThrow();
       await db.destroy();
     });

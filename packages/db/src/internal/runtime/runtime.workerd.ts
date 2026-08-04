@@ -1,5 +1,5 @@
 import type { D1Database } from "@cloudflare/workers-types";
-import { d1MigrationDialect } from "../d1";
+import { d1MigrationDialect } from "../../d1";
 import type { CreateDialectResolver } from "./contract";
 
 // Not cached: the binding arrives on each request's env, and holding one past

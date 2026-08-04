@@ -1,4 +1,8 @@
-export { createDb } from "./database";
-export { jsonText, parseJsonText } from "./json";
-export { createDbSource, type DbSource, type DbSourceOptions } from "./source";
-export { createMigrator, type Migrations } from "./migrator";
+export { createDb } from "./internal/database";
+export { jsonText, parseJsonText } from "./internal/json";
+export {
+  createDbSource,
+  type DbSource,
+  type DbSourceOptions,
+} from "./internal/source";
+export { createMigrator, type Migrations } from "./internal/migrator";

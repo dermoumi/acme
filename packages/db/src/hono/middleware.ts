@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { createMiddleware } from "hono/factory";
 import type { Kysely } from "kysely";
-import type { DbSource } from "../source";
+import type { DbSource } from "../internal/source";
 
 /**
  * The context variables {@link dbMiddleware} sets.

@@ -1,9 +1,34 @@
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
-import { defineConfig } from "vitest/config";
+import { defineConfig, type ViteUserConfig } from "vitest/config";
 
-// A plain *.test.ts is a contract and runs on every runtime, taking its dialect
-// from #testing/runtime. A suffix is only for what one runtime alone can show.
+// Two vocabularies that never overlap, so a suffix says which axis it constrains.
+// A plain *.test.ts is the engine contract and runs in every project below.
 const include = ["src/**/*.test.ts"];
+const NODE = "src/**/*.node.test.ts";
+const WORKERD = "src/**/*.workerd.test.ts";
+const SQLITE = "src/**/*.sqlite.test.ts";
+const POSTGRES = "src/**/*.postgres.test.ts";
+const D1 = "src/**/*.d1.test.ts";
+
+const postgresUrl = process.env.ACME_DB_TEST_POSTGRES_URL;
+
+// Defined only when a server is configured, so `pnpm test` needs no postgres.
+// CI runs it by name, which fails loudly if the variable ever goes missing.
+const postgres: ViteUserConfig[] = postgresUrl
+  ? [
+      {
+        test: {
+          name: "node:postgres",
+          include,
+          exclude: [WORKERD, SQLITE, D1],
+          // Serial: parallel files would need a schema each, and kysely's migrator
+          // finds another worker's tables and skips creating its own (migrator.js:385).
+          fileParallelism: false,
+          env: { ACME_DB_TEST_URL: postgresUrl },
+        },
+      },
+    ]
+  : [];
 
 export default defineConfig({
   test: {
@@ -12,14 +37,15 @@ export default defineConfig({
     // The workers pool rejects the v8 provider: it needs node:inspector.
     coverage: {
       provider: "istanbul",
-      exclude: ["src/testing/**", "*.config.ts"],
+      exclude: ["src/internal/testing/**", "*.config.ts"],
     },
     projects: [
       {
         test: {
-          name: "node",
+          name: "node:sqlite",
           include,
-          exclude: ["src/**/*.workerd.test.ts"],
+          exclude: [WORKERD, POSTGRES, D1],
+          env: { ACME_DB_TEST_URL: ":memory:" },
         },
       },
       {
@@ -32,11 +58,12 @@ export default defineConfig({
           }),
         ],
         test: {
-          name: "workerd",
+          name: "workerd:d1",
           include,
-          exclude: ["src/**/*.node.test.ts"],
+          exclude: [NODE, SQLITE, POSTGRES],
         },
       },
+      ...postgres,
     ],
   },
 });

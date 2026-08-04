@@ -1,5 +1,5 @@
 import type { Dialect } from "kysely";
-import { dialectFromUrl } from "../uri.node";
+import { dialectFromUrl } from "../uri/uri.node";
 import type { CreateDialectResolver } from "./contract";
 
 export const createDialectResolver: CreateDialectResolver = (options) => {

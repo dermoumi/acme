@@ -5,5 +5,10 @@
     "customConditions": ["workerd"]
   },
   "include": ["src"],
-  "exclude": ["**/*.node.ts", "**/*.node.test.ts"]
+  "exclude": [
+    "**/*.node.ts",
+    "**/*.node.test.ts",
+    "**/*.sqlite.test.ts",
+    "**/*.postgres.test.ts"
+  ]
 }

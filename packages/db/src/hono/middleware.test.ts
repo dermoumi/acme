@@ -2,7 +2,7 @@ import { createEmptyDialect } from "#testing/runtime";
 import { Hono } from "hono";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
-import { createDbSource } from "../source";
+import { createDbSource } from "../internal/source";
 import { type DbVariables, dbMiddleware } from "./middleware";
 
 interface TestSchema {

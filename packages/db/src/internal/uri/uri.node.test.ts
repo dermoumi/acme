@@ -4,7 +4,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { PostgresDialect, SqliteDialect, sql } from "kysely";
 import { afterAll, describe, expect, it } from "vitest";
-import { createDb } from "./database";
+import { createDb } from "../database";
 import { dialectFromUrl, toDatabasePath } from "./uri.node";
 
 describe("toDatabasePath", () => {
@@ -75,5 +75,12 @@ describe("dialectFromUrl", () => {
     await expect(dialectFromUrl("mysql://localhost/db")).rejects.toThrow(
       /unsupported database url/u,
     );
+  });
+
+  // Nothing listens on port 1, so this needs no server of its own.
+  it("surfaces an unreachable postgres on the first query", async () => {
+    const db = createDb(await dialectFromUrl("postgres://no@127.0.0.1:1/none"));
+    await expect(sql`select 1`.execute(db)).rejects.toThrow();
+    await db.destroy();
   });
 });

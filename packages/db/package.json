@@ -5,12 +5,12 @@
   "type": "module",
   "imports": {
     "#runtime": {
-      "workerd": "./src/runtime/runtime.workerd.ts",
-      "default": "./src/runtime/runtime.node.ts"
+      "workerd": "./src/internal/runtime/runtime.workerd.ts",
+      "default": "./src/internal/runtime/runtime.node.ts"
     },
     "#testing/runtime": {
-      "workerd": "./src/testing/runtime/runtime.workerd.ts",
-      "default": "./src/testing/runtime/runtime.node.ts"
+      "workerd": "./src/internal/testing/runtime/runtime.workerd.ts",
+      "default": "./src/internal/testing/runtime/runtime.node.ts"
     }
   },
   "exports": {

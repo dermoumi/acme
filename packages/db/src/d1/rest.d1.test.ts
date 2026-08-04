@@ -1,7 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { D1Dialect } from "kysely-d1";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createDb } from "../database";
+import { createDb } from "../internal/database";
 import { type RemoteD1Config, remoteD1Dialect, restD1 } from "./rest";
 
 interface TestSchema {

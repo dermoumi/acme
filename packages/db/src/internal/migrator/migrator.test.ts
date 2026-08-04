@@ -2,7 +2,7 @@ import { createEmptyDialect } from "#testing/runtime";
 import { type Kysely, sql } from "kysely";
 import { type Migration, NO_MIGRATIONS } from "kysely/migration";
 import { describe, expect, it } from "vitest";
-import { createDb } from "./database";
+import { createDb } from "../database";
 import { createMigrator, type Migrations } from "./migrator";
 
 interface TestSchema {
@@ -36,19 +36,27 @@ const migrations: Migrations = {
   },
 };
 
+// Sorted, so tableNames returns a stable order without sorting its results.
+const MIGRATED_TABLES = ["gadgets", "widgets"];
+
 describe("createMigrator", () => {
   async function emptyDb(): Promise<Kysely<TestSchema>> {
     return createDb<TestSchema>(await createEmptyDialect());
   }
 
-  // Excludes D1's internal tables, which node simply never has.
+  // Probed rather than listed: sqlite_master does not exist on postgres, and
+  // introspection there would also see the other workers' schemas.
   async function tableNames(db: Kysely<TestSchema>): Promise<string[]> {
-    const rows = await sql<{ name: string }>`
-      select name from sqlite_master
-      where type = 'table' and name not like 'sqlite_%'
-        and name not like '%migration%' and name not glob '_cf_*'
-    `.execute(db);
-    return rows.rows.map((row) => row.name).toSorted();
+    const present = await Promise.all(
+      MIGRATED_TABLES.map(async (name) => {
+        const probe = sql`select 1 from ${sql.table(name)} where 1 = 0`;
+        return probe.execute(db).then(
+          () => name,
+          () => undefined,
+        );
+      }),
+    );
+    return present.filter((name) => name !== undefined);
   }
 
   it("migrates up from zero, in key order", async () => {
@@ -96,7 +104,11 @@ describe("createMigrator", () => {
   });
 
   it("reports a failure and leaves later migrations unrun", async () => {
-    const db = await emptyDb();
+    const dialect = await createEmptyDialect();
+    const db = createDb<TestSchema>(dialect);
+    // Asked of the dialect, not tracked by hand: kysely decides whether to wrap
+    // the batch in a transaction from exactly this flag.
+    const rollsBack = dialect.createAdapter().supportsTransactionalDdl;
     const broken: Migrations = {
       "0001_widgets": createWidgets,
       "0002_broken": {
@@ -113,7 +125,9 @@ describe("createMigrator", () => {
       "Success",
       "Error",
     ]);
-    expect(await tableNames(db)).toEqual(["widgets"]);
+    // Engines genuinely disagree here, so state it rather than pick a side:
+    // postgres rolls the whole batch back, sqlite and D1 keep what ran.
+    expect(await tableNames(db)).toEqual(rollsBack ? [] : ["widgets"]);
     await db.destroy();
   });
 
