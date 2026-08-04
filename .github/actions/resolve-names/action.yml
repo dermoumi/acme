@@ -31,6 +31,6 @@ runs:
         slugify() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g' | cut -c1-40 | sed -E 's/^-+//; s/-+$//'; }
         slug=$(slugify "$BRANCH")
         # "staging" shares the account with previews; "" would be an invalid name
-        case "$slug" in staging | "") slug="branch-$slug" ;; esac
+        case "$slug" in staging | "") slug=$(slugify "branch-$slug") ;; esac
         echo "slug=$slug" >> "$GITHUB_OUTPUT"
         echo "db=$(slugify "$APP")-$slug" >> "$GITHUB_OUTPUT"
