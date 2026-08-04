@@ -256,6 +256,9 @@ importers:
       better-sqlite3:
         specifier: 'catalog:'
         version: 13.0.2
+      hono:
+        specifier: 'catalog:'
+        version: 4.12.32
       pg:
         specifier: 'catalog:'
         version: 8.22.0
