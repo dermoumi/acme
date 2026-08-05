@@ -55,8 +55,8 @@ catalogs:
       specifier: 13.0.2
       version: 13.0.2
     hono:
-      specifier: 4.12.33
-      version: 4.12.33
+      specifier: 4.12.34
+      version: 4.12.34
     hono-rate-limiter:
       specifier: 0.5.3
       version: 0.5.3
@@ -142,10 +142,10 @@ importers:
         version: link:../../packages/sentry
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.0.12(hono@4.12.33)
+        version: 2.0.12(hono@4.12.34)
       hono:
         specifier: 'catalog:'
-        version: 4.12.33
+        version: 4.12.34
       kysely:
         specifier: 'catalog:'
         version: 0.29.4
@@ -221,10 +221,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.0.12(hono@4.12.33)
+        version: 2.0.12(hono@4.12.34)
       hono-rate-limiter:
         specifier: 'catalog:'
-        version: 0.5.3(hono@4.12.33)
+        version: 0.5.3(hono@4.12.34)
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
@@ -243,7 +243,7 @@ importers:
         version: 4.1.10(supports-color@10.2.2)(vitest@4.1.10)
       hono:
         specifier: 'catalog:'
-        version: 4.12.33
+        version: 4.12.34
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -283,7 +283,7 @@ importers:
         version: 5.20260801.1
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.0.12(hono@4.12.33)
+        version: 2.0.12(hono@4.12.34)
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
@@ -295,7 +295,7 @@ importers:
         version: 4.1.10(supports-color@10.2.2)(vitest@4.1.10)
       hono:
         specifier: 'catalog:'
-        version: 4.12.33
+        version: 4.12.34
       react:
         specifier: 'catalog:'
         version: 19.2.8
@@ -2706,8 +2706,8 @@ packages:
       unstorage:
         optional: true
 
-  hono@4.12.33:
-    resolution: {integrity: sha512-+SwvkaiJtxsiPjhy9LivY/1m7UsNqCJetM1BrZl9A5DkQhlbHQDU730mMiDPWjnoCYOM8Chf3WrCJw27kNTPFQ==}
+  hono@4.12.34:
+    resolution: {integrity: sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA==}
     engines: {node: '>=16.9.0'}
 
   html-escaper@2.0.2:
@@ -4584,9 +4584,9 @@ snapshots:
   '@esbuild/win32-x64@0.28.1':
     optional: true
 
-  '@hono/node-server@2.0.12(hono@4.12.33)':
+  '@hono/node-server@2.0.12(hono@4.12.34)':
     dependencies:
-      hono: 4.12.33
+      hono: 4.12.34
 
   '@img/colour@1.1.0': {}
 
@@ -5942,11 +5942,11 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono-rate-limiter@0.5.3(hono@4.12.33):
+  hono-rate-limiter@0.5.3(hono@4.12.34):
     dependencies:
-      hono: 4.12.33
+      hono: 4.12.34
 
-  hono@4.12.33: {}
+  hono@4.12.34: {}
 
   html-escaper@2.0.2: {}
 
