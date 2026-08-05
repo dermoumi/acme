@@ -1,14 +1,10 @@
 import type { Dialect } from "kysely";
 
-export interface RuntimeOptions {
-  /** Node only: which engine to build, and where it lives. */
-  url?: string;
-  /** Workerd only: the name of the D1 binding on `env`. */
-  binding: string;
-}
-
-// Curried like @acme/rate-limiter's GetBinding, and for the same reason:
-// node opens one connection per source, workerd reads one off every request.
-export type CreateDialectResolver = (
-  options: RuntimeOptions,
-) => (env: unknown) => Promise<Dialect>;
+// Names, never values: each runtime reads what it needs off the request's env,
+// so nothing is opened before one arrives. workerd uses only the binding, node
+// only the url var, which it derives from the binding unless given one.
+export type ResolveDialect = (
+  env: unknown,
+  binding: string,
+  urlVar?: string,
+) => Promise<Dialect>;

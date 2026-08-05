@@ -1,25 +1,37 @@
-import { createDb } from "@acme/db";
+import { resetDb } from "@acme/db/testing";
 import type { Hono } from "hono";
 import type { Kysely } from "kysely";
-import { expect, test } from "vitest";
+import { beforeEach, expect, test } from "vitest";
 import { createApp } from "../app";
-import type { AppEnv } from "../bindings";
-import type { Database } from "../db";
+import type { AppBindings, AppEnv } from "../bindings";
+import { type Database, getDb } from "../db";
 import { SESSION_COOKIE } from "./session";
-import { migratedDialect, seedUser, testEnv } from "./test-utils";
+import { migratedEnv, seedUser } from "./test-utils";
 
 type App = Hono<AppEnv>;
 
 const PASS = "test-dummy-pass";
 
-async function appWithUser(): Promise<{ app: App; db: Kysely<Database> }> {
-  const dialect = await migratedDialect();
-  const db = createDb<Database>(dialect);
+// The accessor holds its database for the life of the process, so each test
+// starts by dropping the last one's.
+beforeEach(() => resetDb(getDb));
+
+async function appWithUser(): Promise<{
+  app: App;
+  db: Kysely<Database>;
+  env: AppBindings;
+}> {
+  const env = await migratedEnv();
+  const db = await getDb({ env });
   await seedUser(db, "u1", "Tester", PASS);
-  return { app: createApp({ database: { dialect } }), db };
+  return { app: createApp(), db, env };
 }
 
-async function login(app: App, body: unknown): Promise<Response> {
+async function login(
+  app: App,
+  env: AppBindings,
+  body: unknown,
+): Promise<Response> {
   return app.request(
     "/session",
     {
@@ -27,7 +39,7 @@ async function login(app: App, body: unknown): Promise<Response> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     },
-    testEnv,
+    env,
   );
 }
 
@@ -38,18 +50,22 @@ function cookieOf(res: Response): string {
   return `${SESSION_COOKIE}=${match[1]}`;
 }
 
-async function getSession(app: App, cookie?: string): Promise<Response> {
+async function getSession(
+  app: App,
+  env: AppBindings,
+  cookie?: string,
+): Promise<Response> {
   return app.request(
     "/session",
     cookie ? { headers: { Cookie: cookie } } : {},
-    testEnv,
+    env,
   );
 }
 
 test("correct password issues a session", async () => {
-  const { app, db } = await appWithUser();
+  const { app, db, env } = await appWithUser();
 
-  const res = await login(app, {
+  const res = await login(app, env, {
     username: "u1",
     password: PASS,
     clientVersion: "1.2.3",
@@ -64,7 +80,7 @@ test("correct password issues a session", async () => {
   expect(header).toContain("Max-Age=34560000");
   expect(header).toContain("Path=/");
 
-  const whoami = await getSession(app, cookieOf(res));
+  const whoami = await getSession(app, env, cookieOf(res));
   expect(await whoami.json()).toEqual({ user: { id: "u1", name: "Tester" } });
 
   const session = await db
@@ -72,18 +88,17 @@ test("correct password issues a session", async () => {
     .selectAll()
     .executeTakeFirstOrThrow();
   expect(session.client_version).toBe("1.2.3");
-  await db.destroy();
 });
 
 test("wrong password and unknown user are indistinguishable", async () => {
-  const { app, db } = await appWithUser();
+  const { app, env } = await appWithUser();
 
   const attempts = await Promise.all([
-    login(app, {}),
-    login(app, "not an object"),
-    login(app, { username: "u1", password: "wrong" }),
-    login(app, { username: "ghost", password: PASS }),
-    login(app, { username: "u1" }),
+    login(app, env, {}),
+    login(app, env, "not an object"),
+    login(app, env, { username: "u1", password: "wrong" }),
+    login(app, env, { username: "ghost", password: PASS }),
+    login(app, env, { username: "u1" }),
   ]);
   const bodies = await Promise.all(attempts.map((res) => res.json()));
   for (const res of attempts) {
@@ -93,56 +108,55 @@ test("wrong password and unknown user are indistinguishable", async () => {
   for (const body of bodies) {
     expect(body).toEqual({ error: "invalid_credentials" });
   }
-  await db.destroy();
 });
 
+// A second createApp over the same accessor is what a restarted worker sees.
 test("sessions survive a worker restart", async () => {
-  const dialect = await migratedDialect();
-  const db = createDb<Database>(dialect);
-  await seedUser(db, "u1", "Tester", PASS);
+  const { app, env } = await appWithUser();
   const cookie = cookieOf(
-    await login(createApp({ database: { dialect } }), {
-      username: "u1",
-      password: PASS,
-    }),
+    await login(app, env, { username: "u1", password: PASS }),
   );
 
-  const rebooted = createApp({ database: { dialect } });
-  const res = await getSession(rebooted, cookie);
+  const res = await getSession(createApp(), env, cookie);
   expect(await res.json()).toEqual({ user: { id: "u1", name: "Tester" } });
-  await db.destroy();
 });
 
 test("logout revokes only the current device's session", async () => {
-  const { app, db } = await appWithUser();
-  const phone = cookieOf(await login(app, { username: "u1", password: PASS }));
-  const tablet = cookieOf(await login(app, { username: "u1", password: PASS }));
+  const { app, env } = await appWithUser();
+  const phone = cookieOf(
+    await login(app, env, { username: "u1", password: PASS }),
+  );
+  const tablet = cookieOf(
+    await login(app, env, { username: "u1", password: PASS }),
+  );
 
   const res = await app.request(
     "/session",
     { method: "DELETE", headers: { Cookie: phone } },
-    testEnv,
+    env,
   );
   expect(res.status).toBe(204);
   expect(res.headers.get("set-cookie")).toContain("Max-Age=0");
 
-  expect(await (await getSession(app, phone)).json()).toEqual({ user: null });
-  expect(await (await getSession(app, tablet)).json()).toEqual({
+  expect(await (await getSession(app, env, phone)).json()).toEqual({
+    user: null,
+  });
+  expect(await (await getSession(app, env, tablet)).json()).toEqual({
     user: { id: "u1", name: "Tester" },
   });
-  await db.destroy();
 });
 
 test("logout without a session is a 204 no-op", async () => {
-  const { app, db } = await appWithUser();
-  const res = await app.request("/session", { method: "DELETE" }, testEnv);
+  const { app, env } = await appWithUser();
+  const res = await app.request("/session", { method: "DELETE" }, env);
   expect(res.status).toBe(204);
-  await db.destroy();
 });
 
 test("password_hash never stores the raw password and no endpoint returns it", async () => {
-  const { app, db } = await appWithUser();
-  const cookie = cookieOf(await login(app, { username: "u1", password: PASS }));
+  const { app, db, env } = await appWithUser();
+  const cookie = cookieOf(
+    await login(app, env, { username: "u1", password: PASS }),
+  );
 
   const user = await db
     .selectFrom("users")
@@ -157,9 +171,8 @@ test("password_hash never stores the raw password and no endpoint returns it", a
     expect(session.id).toMatch(/^[0-9a-f]{64}$/u);
   }
 
-  const whoami = await getSession(app, cookie);
+  const whoami = await getSession(app, env, cookie);
   const body = await whoami.json();
   expect(JSON.stringify(body)).not.toContain(PASS);
   expect(JSON.stringify(body)).not.toContain("password");
-  await db.destroy();
 });

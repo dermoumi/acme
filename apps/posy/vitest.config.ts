@@ -26,7 +26,7 @@ export default defineConfig({
                 binding: "ASSETS",
                 directory: "./test/fixtures/assets",
               },
-              d1Databases: ["DB"],
+              d1Databases: ["DATABASE"],
             },
           }),
         ],

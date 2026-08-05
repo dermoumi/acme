@@ -3,11 +3,12 @@ import { expect, test } from "vitest";
 import { createApp } from "../app";
 import { noDatabase } from "../testing/no-database";
 
-// Resolving throws, so these prove debug routes never reach the database.
-const app = createApp({ database: noDatabase });
+// The env names no database, so resolving throws: these prove debug routes
+// never reach for one.
+const app = createApp();
 
 function env(overrides: Record<string, string> = {}) {
-  return { ...createBindings(), ...overrides };
+  return { ...createBindings(noDatabase), ...overrides };
 }
 
 test("throwing routes answer 500 off production", async () => {

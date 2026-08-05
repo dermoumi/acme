@@ -1,11 +1,8 @@
 import { createRateLimiter } from "@acme/rate-limiter";
 import { sentryTunnel, type SentryConfig } from "@acme/sentry/hono";
-import { createDbSource, type DbSourceOptions } from "@acme/db";
-import { dbMiddleware } from "@acme/db/hono";
 import { Hono } from "hono";
 import { authRoutes } from "./auth";
-import type { AppEnv, AppBindings } from "./bindings";
-import type { Database } from "./db";
+import type { AppBindings, AppEnv } from "./bindings";
 import { debugRoutes, isDebugEnabled } from "./debug";
 import { gate } from "./gate";
 
@@ -26,11 +23,6 @@ export const RATE_TUNNEL_PERIOD = 60;
 
 export interface AppOptions {
   /**
-   * How to reach the database. Omit it on Workers, where the D1 binding is
-   * found on `env`; node passes a url, and tests pass a ready-made dialect.
-   */
-  database?: DbSourceOptions;
-  /**
    * CIDR ranges whose `x-forwarded-for` may speak for the client behind them;
    * malformed ones throw at startup. Inert on Workers, load-bearing on node,
    * which is why it can look unused here.
@@ -40,13 +32,11 @@ export interface AppOptions {
 
 export function createApp(options: AppOptions = {}): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
-  const db = createDbSource<Database>(options.database);
   const limiter = createRateLimiter<AppBindings>({
     trustedProxies: options.trustedProxies,
   });
 
   app.use(gate());
-  app.use(dbMiddleware(db));
 
   // POST only keeps the per-load GET uncapped; /sentry exact, /* double-charges.
   app.on(

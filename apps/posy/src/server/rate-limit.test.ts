@@ -12,7 +12,7 @@ import { noDatabase } from "./testing/no-database";
 // @acme/rate-limiter tests the limiter itself. These cover only what posy wires:
 // which routes and methods are capped, at which budget, and in which order.
 function testApp() {
-  return createApp({ database: noDatabase });
+  return createApp();
 }
 
 // Unique per test: workerd shares one limiter namespace across the whole file.
@@ -46,7 +46,7 @@ async function post(
 describe("POST /session", () => {
   it("is capped before the handler, and says when to come back", async () => {
     const app = testApp();
-    const env = createBindings();
+    const env = createBindings(noDatabase);
     const headers = client();
 
     // 401 rather than 429 is the limiter running; 429 on the next is the cap.
@@ -64,7 +64,7 @@ describe("POST /session", () => {
 describe("GET and DELETE /session", () => {
   it("are never capped, whatever login has spent", async () => {
     const app = testApp();
-    const env = createBindings();
+    const env = createBindings(noDatabase);
     const headers = client();
 
     const reads = await sequence(RATE_LOGIN_LIMIT * 2, () =>
@@ -82,7 +82,7 @@ describe("GET and DELETE /session", () => {
 describe("POST /sentry", () => {
   it("has its own budget, spent separately from login", async () => {
     const app = testApp();
-    const env = createBindings();
+    const env = createBindings(noDatabase);
     const headers = client();
 
     const allowed = await sequence(RATE_TUNNEL_LIMIT, () =>
@@ -100,15 +100,12 @@ describe("createApp", () => {
   it("throws on a malformed trusted proxy range", () => {
     // Runs at module load on workerd, so a bad range is a worker that fails to
     // boot rather than one silently trusting nobody for its life.
-    expect(() =>
-      createApp({ database: noDatabase, trustedProxies: ["10.0.0.0/"] }),
-    ).toThrow("10.0.0.0/");
+    expect(() => createApp({ trustedProxies: ["10.0.0.0/"] })).toThrow(
+      "10.0.0.0/",
+    );
 
     expect(() =>
-      createApp({
-        database: noDatabase,
-        trustedProxies: ["10.0.0.0/8", "fc00::/7"],
-      }),
+      createApp({ trustedProxies: ["10.0.0.0/8", "fc00::/7"] }),
     ).not.toThrow();
   });
 });

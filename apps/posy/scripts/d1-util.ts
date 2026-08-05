@@ -34,11 +34,11 @@ export async function withDb(
   }
 
   const { env, dispose } = await getPlatformProxy<AppBindings>();
-  if (!env.DB) {
+  if (!env.DATABASE) {
     throw new Error("no DB binding in wrangler config");
   }
 
-  const db = createDb<Database>(d1MigrationDialect(env.DB));
+  const db = createDb<Database>(d1MigrationDialect(env.DATABASE));
   await fn(db);
   await db.destroy();
   await dispose();

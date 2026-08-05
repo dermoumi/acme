@@ -1,14 +1,6 @@
-import SQLite from "better-sqlite3";
-import { SqliteDialect } from "kysely";
 import indexHtml from "../../../../test/fixtures/assets/index.html?raw";
-import { createDb } from "@acme/db";
-import type { Database } from "../../db";
 import type { GateBindings } from "../../gate";
-import type {
-  CreateBindings,
-  CreateEmptyDb,
-  CreateEmptyDialect,
-} from "./contract";
+import type { CreateBindings } from "./contract";
 
 // workerd hands back binding responses with immutable headers; reproduce that
 // here so the node run holds the worker to the same contract.
@@ -45,14 +37,3 @@ export const createBindings: CreateBindings = (overrides = {}) => ({
   ASSETS: assets(),
   ...overrides,
 });
-
-// A private in-memory database is empty by construction.
-export const createEmptyDialect: CreateEmptyDialect = () => {
-  return Promise.resolve(
-    new SqliteDialect({ database: new SQLite(":memory:") }),
-  );
-};
-
-export const createEmptyDb: CreateEmptyDb = async () => {
-  return createDb<Database>(await createEmptyDialect());
-};

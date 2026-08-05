@@ -1,16 +1,22 @@
 import { jsonText, parseJsonText } from "@acme/db";
-import { createEmptyDb } from "#testing/runtime";
+import { emptyDbEnv, resetDb } from "@acme/db/testing";
 import { type Kysely, sql } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
-import { describe, expect, it } from "vitest";
-import { createMigrator } from "./index";
+import { beforeEach, describe, expect, it } from "vitest";
+import { createMigrator, getDb } from "./index";
 import type { Database } from "./schema";
 
 // @acme/db proves the migrator works, against tables it invents. Only these
 // prove posy's migrations build what schema.ts declares, which nothing checks.
 
+beforeEach(() => resetDb(getDb));
+
+async function emptyDb(): Promise<Kysely<Database>> {
+  return getDb({ env: await emptyDbEnv("DATABASE") });
+}
+
 async function migratedDb(): Promise<Kysely<Database>> {
-  const db = await createEmptyDb();
+  const db = await emptyDb();
   const { error } = await createMigrator(db).migrateToLatest();
   if (error) throw new Error("migration failed", { cause: error });
   return db;
@@ -51,7 +57,7 @@ async function seedItem(db: Kysely<Database>, id: string): Promise<void> {
 
 describe("posy's migration set", () => {
   it("builds every table the schema declares", async () => {
-    const db = await createEmptyDb();
+    const db = await emptyDb();
     const { error, results } = await createMigrator(db).migrateToLatest();
     expect(error).toBeUndefined();
     expect(results?.map((result) => result.status)).toEqual([
@@ -66,7 +72,6 @@ describe("posy's migration set", () => {
       "sessions",
       "users",
     ]);
-    await db.destroy();
   });
 
   it("reverts to nothing, so a rollback leaves no table behind", async () => {
@@ -74,7 +79,6 @@ describe("posy's migration set", () => {
     const { error } = await createMigrator(db).migrateTo(NO_MIGRATIONS);
     expect(error).toBeUndefined();
     expect(await tableNames(db)).toEqual([]);
-    await db.destroy();
   });
 });
 
@@ -106,7 +110,6 @@ describe("posy's schema", () => {
         created_at: 1000,
       },
     ]);
-    await db.destroy();
   });
 
   it("leaves sessions.client_version null when it is not set", async () => {
@@ -133,7 +136,6 @@ describe("posy's schema", () => {
       last_seen_at: 2000,
       client_version: null,
     });
-    await db.destroy();
   });
 
   it("keeps items.tags as JSON, with color and art_key nullable", async () => {
@@ -160,7 +162,6 @@ describe("posy's schema", () => {
     expect(row.color).toBeNull();
     expect(row.art_key).toBeNull();
     expect(parseJsonText(row.tags)).toEqual(["pink", "spring"]);
-    await db.destroy();
   });
 
   // Both columns, not just the first: a key on user_id alone would still reject
@@ -184,7 +185,6 @@ describe("posy's schema", () => {
     ).toHaveLength(2);
 
     await expect(discover("rose", 2000)).rejects.toThrow();
-    await db.destroy();
   });
 
   it("defaults inventory.count to zero", async () => {
@@ -201,7 +201,6 @@ describe("posy's schema", () => {
       .selectAll()
       .executeTakeFirstOrThrow();
     expect(row).toEqual({ user_id: "u1", item_id: "rose", count: 0 });
-    await db.destroy();
   });
 
   it("round-trips every ledger column, including a negative delta", async () => {
@@ -248,6 +247,5 @@ describe("posy's schema", () => {
         created_at: 2000,
       },
     ]);
-    await db.destroy();
   });
 });

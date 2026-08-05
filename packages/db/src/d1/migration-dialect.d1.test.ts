@@ -9,7 +9,7 @@ import { d1MigrationDialect } from "./migration-dialect";
 // internal/migrator and internal/database.
 
 function database(): D1Database {
-  return env.DB as D1Database;
+  return env.DATABASE as D1Database;
 }
 
 describe("d1MigrationDialect", () => {

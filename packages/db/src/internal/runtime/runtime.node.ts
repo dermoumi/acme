@@ -1,25 +1,13 @@
-import type { Dialect } from "kysely";
+import { urlVarFor } from "../db/url-var.node";
 import { dialectFromUrl } from "../uri/uri.node";
-import type { CreateDialectResolver } from "./contract";
+import type { ResolveDialect } from "./contract";
 
-export const createDialectResolver: CreateDialectResolver = (options) => {
-  let cached: Promise<Dialect> | undefined;
+export const resolveDialect: ResolveDialect = (env, binding, urlVar) => {
+  const name = urlVarFor(binding, urlVar);
+  const url = (env as Record<string, unknown>)[name];
+  if (typeof url !== "string" || !url) {
+    throw new Error(`no database url: set ${name} on the environment`);
+  }
 
-  return () => {
-    if (cached) {
-      return cached;
-    }
-
-    const { url } = options;
-    if (!url) {
-      throw new Error("no database url: pass `url` to createDbSource");
-    }
-
-    // Cleared on failure, so a transient one cannot poison the source for good.
-    cached = dialectFromUrl(url).catch((error: unknown) => {
-      cached = undefined;
-      throw error;
-    });
-    return cached;
-  };
+  return dialectFromUrl(url);
 };

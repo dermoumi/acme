@@ -53,7 +53,7 @@ export default defineConfig({
           cloudflareTest({
             miniflare: {
               compatibilityDate: "2026-07-01",
-              d1Databases: ["DB"],
+              d1Databases: ["DATABASE"],
             },
           }),
         ],
