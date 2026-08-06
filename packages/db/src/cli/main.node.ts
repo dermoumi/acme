@@ -5,89 +5,155 @@ import { createMigrator } from "../internal/migrator";
 import {
   type AnyDatabaseConfig,
   CONFIG_FILE,
+  databases,
   loadAcmeConfig,
 } from "./config.node";
 import { withDb } from "./open.node";
 
-const USAGE = `usage: acme-db <command> [database-id] [options]
+const USAGE = `usage: acme-db <command> [migration] [options]
 
-  migrate [--target <migration>]  move the database to a migration, applying
-                                  or rolling back as needed. Defaults to the
-                                  last one declared.
-  migrate --revert-all            roll every migration back.
-  seed                            insert the rows an empty deployment needs
+  migrate [migration]    move a database to a migration, applying or rolling
+                         back as needed. Defaults to the last one declared.
+  migrate --revert-all   roll every migration back.
+  seed                   insert the rows an empty deployment needs
 
-  omit the database id to use the local D1, or set the url env var to reach
-  a node database instead`;
+  --db <binding>         one database ${CONFIG_FILE} declares, on this machine
+  --remote-db <binding>  the same database deployed on Cloudflare, taking its
+                         D1 id from wrangler.jsonc. CLOUDFLARE_ENV picks the
+                         environment.
 
-interface Target {
-  target?: string;
+  with neither, every declared database is used, on this machine.`;
+
+interface Flags {
+  db?: string;
+  remoteDb?: string;
   revertAll?: boolean;
 }
 
-async function dbConfig(): Promise<AnyDatabaseConfig> {
-  const { db } = await loadAcmeConfig();
-  if (!db) {
-    throw new Error(`${CONFIG_FILE} has no \`db\` section`);
+async function select(flags: Flags): Promise<AnyDatabaseConfig[]> {
+  if (flags.db !== undefined && flags.remoteDb !== undefined) {
+    throw new Error("--db and --remote-db are exclusive");
+  }
+  const binding = flags.db ?? flags.remoteDb;
+  const db = databases(await loadAcmeConfig());
+  if (db.length === 0) {
+    throw new Error(`${CONFIG_FILE} declares no databases`);
   }
 
-  return db;
+  const bindings = db.map((entry) => entry.binding);
+  const duplicate = bindings.find((name, at) => bindings.indexOf(name) !== at);
+  if (duplicate) {
+    throw new Error(`${CONFIG_FILE} declares ${duplicate} twice`);
+  }
+  if (binding === undefined) {
+    return db;
+  }
+
+  const one = db.find((entry) => entry.binding === binding);
+  if (!one) {
+    throw new Error(`no database bound to ${binding}: ${bindings.join(", ")}`);
+  }
+
+  return [one];
+}
+
+// A migration name means nothing across two schemas.
+function requireOne(chosen: AnyDatabaseConfig[], what: string) {
+  if (chosen.length > 1) {
+    throw new Error(`--db is required: ${what} acts on one database`);
+  }
+}
+
+// Sequential on purpose: one connection, and one wrangler proxy, at a time.
+async function forEach(
+  chosen: AnyDatabaseConfig[],
+  run: (entry: AnyDatabaseConfig) => Promise<void>,
+) {
+  for (const entry of chosen) {
+    // oxlint-disable-next-line no-await-in-loop
+    await run(entry);
+  }
 }
 
 async function migrate(
-  config: AnyDatabaseConfig,
-  id: string | undefined,
-  { target, revertAll }: Target,
+  chosen: AnyDatabaseConfig[],
+  migration: string | undefined,
+  flags: Flags,
 ) {
-  const { migrations } = config;
-  const names = Object.keys(migrations ?? {}).toSorted();
-  const last = names.at(-1);
-  if (!migrations || !last) {
-    throw new Error(`${CONFIG_FILE} declares no migrations for db`);
+  if (migration !== undefined && flags.revertAll) {
+    throw new Error("a migration and --revert-all are exclusive");
   }
-  if (target !== undefined && revertAll) {
-    throw new Error("--target and --revert-all are exclusive");
+  if (migration !== undefined) {
+    requireOne(chosen, "a migration");
   }
-  // No name is reserved: every --target is a migration, and reverting
-  // everything has its own flag, so a migration may be called anything.
-  if (target !== undefined && !names.includes(target)) {
-    throw new Error(`no migration named "${target}": ${names.join(", ")}`);
+  if (flags.revertAll) {
+    requireOne(chosen, "--revert-all");
   }
+  const remote = flags.remoteDb !== undefined;
 
-  await withDb(config, id, async (db) => {
-    // Both directions: kysely rolls back when the target is behind.
-    const { error, results } = await createMigrator(db, migrations).migrateTo(
-      revertAll ? NO_MIGRATIONS : (target ?? last),
-    );
-    for (const result of results ?? []) {
-      console.log(
-        `${result.status}: ${result.direction} ${result.migrationName}`,
+  await forEach(chosen, async (entry) => {
+    const { binding, migrations } = entry;
+    const names = Object.keys(migrations ?? {}).toSorted();
+    const last = names.at(-1);
+    if (!migrations || !last) {
+      if (chosen.length === 1) {
+        throw new Error(`${binding} declares no migrations`);
+      }
+      return;
+    }
+    if (migration !== undefined && !names.includes(migration)) {
+      throw new Error(
+        `${binding} has no migration named "${migration}": ${names.join(", ")}`,
       );
     }
-    if (error) {
-      throw error instanceof Error
-        ? error
-        : new Error("migration failed", { cause: error });
-    }
+
+    await withDb(entry.binding, { remote }, async (db) => {
+      // Both directions: kysely rolls back when the target is behind.
+      const { error, results } = await createMigrator(db, migrations).migrateTo(
+        flags.revertAll ? NO_MIGRATIONS : (migration ?? last),
+      );
+      for (const result of results ?? []) {
+        console.log(
+          `${binding}: ${result.status} ${result.direction} ${result.migrationName}`,
+        );
+      }
+      if (error) {
+        throw error instanceof Error
+          ? error
+          : new Error(`${binding}: migration failed`, { cause: error });
+      }
+    });
   });
 }
 
-async function seed(config: AnyDatabaseConfig, id?: string) {
-  const { seed: run } = config;
-  if (!run) {
-    throw new Error(`${CONFIG_FILE} declares no seed for db`);
-  }
+async function seed(chosen: AnyDatabaseConfig[], flags: Flags) {
+  const remote = flags.remoteDb !== undefined;
 
-  // The schema is the app's business: `defineDbConfig` already checked the
-  // seed against it, and nothing here can know it.
-  await withDb(config, id, run as (db: Kysely<unknown>) => Promise<void>);
+  await forEach(chosen, async (entry) => {
+    const run = entry.seed;
+    if (!run) {
+      if (chosen.length === 1) {
+        throw new Error(`${entry.binding} declares no seed`);
+      }
+      return;
+    }
+
+    // The schema is the app's business: `defineDbConfig` already checked the
+    // seed against it, and nothing here can know it.
+    await withDb(
+      entry.binding,
+      { remote },
+      run as (db: Kysely<unknown>) => Promise<void>,
+    );
+  });
 }
 
 function parse() {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
     options: {
-      target: { type: "string" },
+      db: { type: "string" },
+      "remote-db": { type: "string" },
       "revert-all": { type: "boolean" },
     },
     allowPositionals: true,
@@ -95,23 +161,26 @@ function parse() {
   if (positionals.length > 2) {
     throw new Error("too many arguments");
   }
-  const [command, databaseId] = positionals;
+  const [command, migration] = positionals;
 
   return {
     command,
-    databaseId,
-    target: values.target,
-    revertAll: values["revert-all"],
+    migration,
+    flags: {
+      db: values.db,
+      remoteDb: values["remote-db"],
+      revertAll: values["revert-all"],
+    },
   };
 }
 
 try {
-  const { command, databaseId, target, revertAll } = parse();
-  const plain = target === undefined && !revertAll;
+  const { command, migration, flags } = parse();
+  const migrateOnly = migration !== undefined || flags.revertAll;
   if (command === "migrate") {
-    await migrate(await dbConfig(), databaseId, { target, revertAll });
-  } else if (command === "seed" && plain) {
-    await seed(await dbConfig(), databaseId);
+    await migrate(await select(flags), migration, flags);
+  } else if (command === "seed" && !migrateOnly) {
+    await seed(await select(flags), flags);
   } else {
     console.error(USAGE);
     process.exitCode = 1;

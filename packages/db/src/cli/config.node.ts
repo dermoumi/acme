@@ -21,7 +21,7 @@ export interface DatabaseConfig<DB> extends DatabaseTarget {
 }
 
 /**
- * The `db` section with its schema erased, which is all a CLI can see.
+ * A declared database with its schema erased, which is all a CLI can see.
  *
  * Not `DatabaseConfig<unknown>`: `seed` takes the schema, so it is
  * contravariant, and that type would refuse every real config.
@@ -38,14 +38,25 @@ export interface AnyDatabaseConfig extends DatabaseTarget {
  * so plainly when `db` is missing rather than failing further in.
  */
 export interface AcmeConfig {
-  db?: AnyDatabaseConfig;
+  /** The app's database, or all of them in the order they migrate. */
+  db?: AnyDatabaseConfig | AnyDatabaseConfig[];
 }
 
-/** Identity, but it types the `db` section without the app naming a type. */
+/** Identity, but it types a database without the app naming a type. */
 export function defineDbConfig<DB>(
   config: DatabaseConfig<DB>,
 ): DatabaseConfig<DB> {
   return config;
+}
+
+/** The `db` section as a list, however the app chose to write it. */
+export function databases(config: AcmeConfig): AnyDatabaseConfig[] {
+  const { db } = config;
+  if (!db) {
+    return [];
+  }
+
+  return Array.isArray(db) ? db : [db];
 }
 
 /** Reads the app's `acme.config.ts`. Shared by every kit's CLI. */
@@ -62,4 +73,21 @@ export async function loadAcmeConfig(cwd = process.cwd()): Promise<AcmeConfig> {
   }
 
   return loaded.default;
+}
+
+/** Finds a declared database by its binding, reading the config if not given. */
+export async function databaseTarget(
+  binding: string,
+  config?: AcmeConfig,
+): Promise<DatabaseTarget> {
+  const db = databases(config ?? (await loadAcmeConfig()));
+  const declared = db.find((entry) => entry.binding === binding);
+  if (!declared) {
+    const known = db.map((entry) => entry.binding).join(", ");
+    throw new Error(
+      `${CONFIG_FILE} declares no database bound to ${binding}${known ? `: ${known}` : ""}`,
+    );
+  }
+
+  return declared;
 }

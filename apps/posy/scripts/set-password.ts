@@ -1,6 +1,5 @@
 import { createInterface } from "node:readline";
 import { withDb } from "@acme/db/cli";
-import config from "../acme.config";
 import { hashPassword } from "../src/server/auth";
 import type { Database } from "../src/server/db";
 
@@ -15,13 +14,14 @@ async function readPassword(): Promise<string> {
 }
 
 const args = process.argv.slice(2).filter((arg) => arg !== "--");
-const [username, target] = args;
+const remote = args.includes("--remote");
+const username = args.find((arg) => !arg.startsWith("-"));
 
 if (username) {
   const password = await readPassword();
   if (password) {
     const hash = await hashPassword(password);
-    await withDb<Database>(config.db, target, async (db) => {
+    await withDb<Database>("DATABASE", { remote }, async (db) => {
       await db
         .insertInto("users")
         .values({
@@ -41,7 +41,7 @@ if (username) {
     process.exitCode = 1;
   }
 } else {
-  console.error("usage: pnpm set-password -- <username> [database-id]");
-  console.error("  omit database-id for local D1, provide it for remote");
+  console.error("usage: pnpm set-password -- <username> [--remote]");
+  console.error("  --remote reaches the deployed D1 instead of the local one");
   process.exitCode = 1;
 }

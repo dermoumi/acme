@@ -3,7 +3,7 @@ import { d1MigrationDialect, remoteD1Dialect } from "../d1";
 import { createDb } from "../internal/database";
 import { urlVarFor } from "../internal/db/url-var.node";
 import { dialectFromUrl } from "../internal/uri/uri.node";
-import type { DatabaseTarget } from "./config.node";
+import { databaseTarget } from "./config.node";
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -14,11 +14,11 @@ function requireEnv(key: string): string {
   return value;
 }
 
-// Only the local-D1 path needs wrangler, so an app that never takes it does not
+// Only the D1 paths need wrangler, so an app that never takes one does not
 // have to install it.
 async function localD1<DB>(binding: string) {
   const wrangler = await import("wrangler").catch((cause: unknown) => {
-    throw new Error("acme-db needs wrangler to reach a local D1", { cause });
+    throw new Error("acme-db needs wrangler to reach a D1", { cause });
   });
   const platform = await wrangler.getPlatformProxy();
   const database = platform.env[binding];
@@ -32,26 +32,58 @@ async function localD1<DB>(binding: string) {
   };
 }
 
+interface D1Declaration {
+  binding: string;
+  database_id?: string;
+}
+
+// Restated, and taken through `unknown`: wrangler is an optional peer, so a
+// project without its types sees the config as `any`.
+function d1Databases(config: unknown): D1Declaration[] {
+  return (config as { d1_databases?: D1Declaration[] }).d1_databases ?? [];
+}
+
+// The id belongs to wrangler.jsonc, one per environment. CLOUDFLARE_ENV picks
+// the environment, the same variable wrangler itself reads.
+async function remoteD1Id(binding: string): Promise<string> {
+  const wrangler = await import("wrangler").catch((cause: unknown) => {
+    throw new Error("acme-db needs wrangler to reach a D1", { cause });
+  });
+  const env = process.env.CLOUDFLARE_ENV;
+  const declared = d1Databases(wrangler.unstable_readConfig({ env })).find(
+    (database) => database.binding === binding,
+  );
+  if (!declared?.database_id) {
+    throw new Error(
+      `wrangler declares no D1 bound to ${binding}${env ? ` for ${env}` : ""}`,
+    );
+  }
+
+  return declared.database_id;
+}
+
+export interface OpenOptions {
+  /** Reach the deployed D1 rather than anything on this machine. */
+  remote?: boolean;
+}
+
 /**
- * Opens the database a command should act on, and closes it afterwards.
+ * Opens the database named by a binding, and closes it afterwards.
  *
- * Three ways in, in order: a database id names a remote D1 over the HTTP API;
- * otherwise the url env var wins, which is how a node deployment migrates; and
- * failing both it falls back to the local D1 wrangler serves.
- *
- * Exported so other kits' CLIs reach a database the same way.
+ * Remote takes the D1 id from wrangler.jsonc. Local prefers the url env var,
+ * which is how a node deployment migrates, then the D1 wrangler serves.
  */
 export async function withDb<DB>(
-  target: DatabaseTarget,
-  databaseId: string | undefined,
+  binding: string,
+  options: OpenOptions,
   run: (db: Kysely<DB>) => Promise<void>,
 ): Promise<void> {
-  if (databaseId) {
+  if (options.remote) {
     const db = createDb<DB>(
       remoteD1Dialect({
         accountId: requireEnv("CLOUDFLARE_ACCOUNT_ID"),
         apiToken: requireEnv("CLOUDFLARE_API_TOKEN"),
-        databaseId,
+        databaseId: await remoteD1Id(binding),
       }),
     );
     await run(db);
@@ -59,7 +91,8 @@ export async function withDb<DB>(
     return;
   }
 
-  const url = process.env[urlVarFor(target.binding, target.urlVar)];
+  const target = await databaseTarget(binding);
+  const url = process.env[urlVarFor(binding, target.urlVar)];
   if (url) {
     const db = createDb<DB>(await dialectFromUrl(url));
     await run(db);
@@ -67,7 +100,7 @@ export async function withDb<DB>(
     return;
   }
 
-  const { db, dispose } = await localD1<DB>(target.binding);
+  const { db, dispose } = await localD1<DB>(binding);
   await run(db);
   await db.destroy();
   await dispose();
