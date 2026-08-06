@@ -45,25 +45,23 @@ function d1Databases(config: unknown): D1Declaration[] {
 
 // `${binding}_ID` wins because a deploy resolves the id itself, and may patch
 // it into a built config wrangler.jsonc knows nothing about.
-async function remoteD1Id(binding: string): Promise<string> {
+async function remoteD1Id(binding: string, env: string): Promise<string> {
   const fromEnv = process.env[`${binding.toUpperCase()}_ID`];
   if (fromEnv) {
     return fromEnv;
   }
 
-  // Otherwise wrangler.jsonc holds it, one per environment, with CLOUDFLARE_ENV
-  // picking the environment as wrangler itself does.
+  // Otherwise wrangler.jsonc holds it, one per environment.
   const wrangler = await import("wrangler").catch((cause: unknown) => {
     throw new Error("acme-db needs wrangler to reach a D1", { cause });
   });
-  const env = process.env.CLOUDFLARE_ENV;
   const declared = d1Databases(wrangler.unstable_readConfig({ env })).find(
     (database) => database.binding === binding,
   );
   if (!declared?.database_id) {
     throw new Error(
       `no id for ${binding}: set ${binding.toUpperCase()}_ID, or declare the` +
-        ` D1 in wrangler.jsonc${env ? ` for ${env}` : ""}`,
+        ` D1 in wrangler.jsonc for ${env}`,
     );
   }
 
@@ -71,8 +69,8 @@ async function remoteD1Id(binding: string): Promise<string> {
 }
 
 export interface OpenOptions {
-  /** Reach the deployed D1 rather than anything on this machine. */
-  remote?: boolean;
+  /** Wrangler environment to reach. Its absence means act locally. */
+  wranglerEnv?: string;
   /** Where acme.config.ts lives. Defaults to where the command was run. */
   cwd?: string;
 }
@@ -80,20 +78,22 @@ export interface OpenOptions {
 /**
  * Opens the database named by a binding, and closes it afterwards.
  *
- * Remote takes the D1 id from wrangler.jsonc. Local prefers the url env var,
- * which is how a node deployment migrates, then the D1 wrangler serves.
+ * A wrangler environment takes the D1 id from wrangler.jsonc. Without one it
+ * is local: the url env var first, which is how a node deployment migrates,
+ * then the D1 wrangler serves.
  */
 export async function withDb<DB>(
   binding: string,
   options: OpenOptions,
   run: (db: Kysely<DB>) => Promise<void>,
 ): Promise<void> {
-  if (options.remote) {
+  const { wranglerEnv } = options;
+  if (wranglerEnv !== undefined) {
     const db = createDb<DB>(
       remoteD1Dialect({
         accountId: requireEnv("CLOUDFLARE_ACCOUNT_ID"),
         apiToken: requireEnv("CLOUDFLARE_API_TOKEN"),
-        databaseId: await remoteD1Id(binding),
+        databaseId: await remoteD1Id(binding, wranglerEnv),
       }),
     );
     await run(db);

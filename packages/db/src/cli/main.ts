@@ -12,31 +12,27 @@ import { withDb } from "./open";
 
 const USAGE = `usage: acme-db <command> [migration] [options]
 
-  migrate [migration]    move a database to a migration, applying or rolling
-                         back as needed. Defaults to the last one declared.
-  migrate --revert-all   roll every migration back.
-  seed                   insert the rows an empty deployment needs
+  migrate [migration]   move a database to a migration, applying or rolling
+                        back as needed. Defaults to the last one declared.
+  migrate --revert-all  roll every migration back.
+  seed                  insert the rows an empty deployment needs
 
-  --db <binding>         one database ${CONFIG_FILE} declares, on this machine
-  --remote-db <binding>  the same database deployed on Cloudflare, taking its
-                         D1 id from wrangler.jsonc. CLOUDFLARE_ENV picks the
-                         environment.
-
-  with neither, every declared database is used, on this machine.`;
+  --db <binding>        one database ${CONFIG_FILE} declares, rather than
+                        every one of them
+  --wrangler-env <env>  act on what is deployed to that wrangler environment,
+                        taking each D1 id from wrangler.jsonc. Without it,
+                        everything is local.`;
 
 interface Flags {
   db?: string;
-  remoteDb?: string;
+  wranglerEnv?: string;
   revertAll?: boolean;
   /** Where acme.config.ts lives. Defaults to where the command was run. */
   cwd?: string;
 }
 
 async function select(flags: Flags): Promise<AnyDatabaseConfig[]> {
-  if (flags.db !== undefined && flags.remoteDb !== undefined) {
-    throw new Error("--db and --remote-db are exclusive");
-  }
-  const binding = flags.db ?? flags.remoteDb;
+  const binding = flags.db;
   const db = databases(await loadAcmeConfig(flags.cwd));
   if (db.length === 0) {
     throw new Error(`${CONFIG_FILE} declares no databases`);
@@ -91,7 +87,6 @@ async function migrate(
   if (flags.revertAll) {
     requireOne(chosen, "--revert-all");
   }
-  const remote = flags.remoteDb !== undefined;
 
   await forEach(chosen, async (entry) => {
     const { binding, migrations } = entry;
@@ -109,15 +104,13 @@ async function migrate(
       );
     }
 
-    await withDb(entry.binding, { remote, cwd: flags.cwd }, async (db) => {
+    await withDb(entry.binding, flags, async (db) => {
       // Both directions: kysely rolls back when the target is behind.
       const { error, results } = await createMigrator(db, migrations).migrateTo(
         flags.revertAll ? NO_MIGRATIONS : (migration ?? last),
       );
-      for (const result of results ?? []) {
-        console.log(
-          `${binding}: ${result.status} ${result.direction} ${result.migrationName}`,
-        );
+      for (const { status, direction, migrationName } of results ?? []) {
+        console.log(`${binding}: ${status} ${direction} ${migrationName}`);
       }
       if (error) {
         throw error instanceof Error
@@ -129,8 +122,6 @@ async function migrate(
 }
 
 async function seed(chosen: AnyDatabaseConfig[], flags: Flags) {
-  const remote = flags.remoteDb !== undefined;
-
   await forEach(chosen, async (entry) => {
     const seeder = entry.seed;
     if (!seeder) {
@@ -144,7 +135,7 @@ async function seed(chosen: AnyDatabaseConfig[], flags: Flags) {
     // seed against it, and nothing here can know it.
     await withDb(
       entry.binding,
-      { remote, cwd: flags.cwd },
+      flags,
       seeder as (db: Kysely<unknown>) => Promise<void>,
     );
   });
@@ -154,8 +145,8 @@ function parse(argv: string[]) {
   const { values, positionals } = parseArgs({
     args: argv,
     options: {
+      "wrangler-env": { type: "string" },
       db: { type: "string" },
-      "remote-db": { type: "string" },
       "revert-all": { type: "boolean" },
     },
     allowPositionals: true,
@@ -169,8 +160,8 @@ function parse(argv: string[]) {
     command,
     migration,
     flags: {
+      wranglerEnv: values["wrangler-env"],
       db: values.db,
-      remoteDb: values["remote-db"],
       revertAll: values["revert-all"],
     },
   };

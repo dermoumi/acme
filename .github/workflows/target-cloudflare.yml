@@ -46,7 +46,7 @@ on:
         default: false
       seed:
         description: >-
-          Run "pnpm seed --remote-db <binding>" on first database creation for
+          Run "pnpm seed --db <binding> --wrangler-env <env>" on first creation for
           non-production environments. The app must expose the script.
         required: false
         type: boolean
@@ -249,12 +249,14 @@ jobs:
         env:
           DB_BINDING: ${{ steps.d1.outputs.binding }}
           DB_ID: ${{ steps.d1.outputs.id }}
+          # the environment the build used, so the D1 looked up is the one deployed
+          WRANGLER_ENV: ${{ inputs.environment == 'production' && 'production' || 'staging' }}
         run: |
           set -euo pipefail
           # the id was resolved above and patched into the BUILT config, which
           # the wrangler.jsonc acme-db would otherwise read knows nothing about
           export "${DB_BINDING}_ID=$DB_ID"
-          pnpm migrate --remote-db "$DB_BINDING"
+          pnpm migrate --db "$DB_BINDING" --wrangler-env "$WRANGLER_ENV"
 
       - name: Seed D1 database
         if: inputs.seed && steps.d1.outputs.created == 'true' && env.CLOUDFLARE_API_TOKEN != ''
@@ -262,12 +264,14 @@ jobs:
         env:
           DB_BINDING: ${{ steps.d1.outputs.binding }}
           DB_ID: ${{ steps.d1.outputs.id }}
+          # the environment the build used, so the D1 looked up is the one deployed
+          WRANGLER_ENV: ${{ inputs.environment == 'production' && 'production' || 'staging' }}
         run: |
           set -euo pipefail
           # the id was resolved above and patched into the BUILT config, which
           # the wrangler.jsonc acme-db would otherwise read knows nothing about
           export "${DB_BINDING}_ID=$DB_ID"
-          pnpm seed --remote-db "$DB_BINDING"
+          pnpm seed --db "$DB_BINDING" --wrangler-env "$WRANGLER_ENV"
 
       - name: Deploy
         id: deploy

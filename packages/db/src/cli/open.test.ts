@@ -42,15 +42,23 @@ describe("withDb", () => {
   });
 
   // Reaching Cloudflare needs credentials, so failing on the missing one is
-  // what proves remote was chosen over the url sitting right there.
-  it("prefers remote over the url env var", async () => {
+  // what proves the environment beat the url sitting right there.
+  it("prefers a named wrangler environment over the url env var", async () => {
     vi.stubEnv("MAIN_ID", "an-id");
     vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
     await expect(
-      withDb<never>("MAIN", { remote: true, cwd: app }, () =>
+      withDb<never>("MAIN", { wranglerEnv: "production", cwd: app }, () =>
         Promise.resolve(),
       ),
     ).rejects.toThrow(/CLOUDFLARE_ACCOUNT_ID must be set/u);
+  });
+
+  it("stays local when no environment is named", async () => {
+    vi.stubEnv("MAIN_ID", "an-id");
+    vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
+    await expect(
+      withDb<never>("MAIN", { cwd: app }, () => Promise.resolve()),
+    ).resolves.toBeUndefined();
   });
 
   it("refuses a binding the config does not declare", async () => {

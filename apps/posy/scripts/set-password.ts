@@ -14,14 +14,16 @@ async function readPassword(): Promise<string> {
 }
 
 const args = process.argv.slice(2).filter((arg) => arg !== "--");
-const remote = args.includes("--remote");
-const username = args.find((arg) => !arg.startsWith("-"));
+const at = args.indexOf("--wrangler-env");
+const wranglerEnv = at === -1 ? undefined : args[at + 1];
+const rest = at === -1 ? args : [...args.slice(0, at), ...args.slice(at + 2)];
+const username = rest.find((arg) => !arg.startsWith("-"));
 
 if (username) {
   const password = await readPassword();
   if (password) {
     const hash = await hashPassword(password);
-    await withDb<Database>("DATABASE", { remote }, async (db) => {
+    await withDb<Database>("DATABASE", { wranglerEnv }, async (db) => {
       await db
         .insertInto("users")
         .values({
@@ -41,7 +43,11 @@ if (username) {
     process.exitCode = 1;
   }
 } else {
-  console.error("usage: pnpm set-password -- <username> [--remote]");
-  console.error("  --remote reaches the deployed D1 instead of the local one");
+  console.error(
+    "usage: pnpm set-password -- <username> [--wrangler-env <env>]",
+  );
+  console.error(
+    "  naming an environment reaches its deployed D1, not a local one",
+  );
   process.exitCode = 1;
 }

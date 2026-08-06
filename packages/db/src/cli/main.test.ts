@@ -97,10 +97,18 @@ describe("run", () => {
       expect(await tables(main)).toEqual([]);
     });
 
-    it("rejects --db together with --remote-db", async () => {
+    // No credentials, so the reason it fails is proof it went remote rather
+    // than to the url env var that is set.
+    it("goes to Cloudflare when an environment is named", async () => {
+      vi.stubEnv("MAIN_ID", "an-id");
+      vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
       expect(
-        await run(["migrate", "--db", "MAIN", "--remote-db", "MAIN"], app),
+        await run(
+          ["migrate", "--db", "MAIN", "--wrangler-env", "production"],
+          app,
+        ),
       ).toBe(1);
+      expect(await tables(main)).toEqual([]);
     });
   });
 
