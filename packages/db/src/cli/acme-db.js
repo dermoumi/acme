@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-// A loader is unavoidable: the workspace ships TypeScript and imports
-// directories, neither of which node resolves on its own. Registered relative
-// to this file, so an app need not depend on tsx itself.
+// Node resolves neither the barrel nor extensionless imports the workspace
+// uses. Registered relative to this file, so an app needs no tsx of its own.
 import { register } from "tsx/esm/api";
 
 register();
