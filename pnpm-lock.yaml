@@ -231,6 +231,9 @@ importers:
       kysely-d1:
         specifier: 'catalog:'
         version: 0.4.0(kysely@0.29.4)
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.4
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
@@ -268,6 +271,9 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(vite@8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.4))
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.118.0(@cloudflare/workers-types@5.20260801.1)
 
   packages/rate-limiter:
     dependencies:
