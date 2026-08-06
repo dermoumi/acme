@@ -1,9 +1,13 @@
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
 import { defineConfig, type ViteUserConfig } from "vitest/config";
 
-// Two vocabularies that never overlap, so a suffix names its own axis.
-// A plain *.test.ts is the engine contract and runs in every project below.
+// Two vocabularies that never overlap, so a suffix names its own axis. A plain
+// *.test.ts is the engine contract and runs in every engine project below.
 const include = ["src/**/*.test.ts"];
+// One project, not a suffix on every file, and deliberately no engine matrix:
+// the CLI is wiring, and everything it reaches for is proven per engine by the
+// projects below. Keep it that way by keeping engine code out of src/cli.
+const CLI = "src/cli/**";
 const NODE = "src/**/*.node.test.ts";
 const WORKERD = "src/**/*.workerd.test.ts";
 const SQLITE = "src/**/*.sqlite.test.ts";
@@ -20,7 +24,7 @@ const postgres: ViteUserConfig[] = postgresUrl
         test: {
           name: "node:postgres",
           include,
-          exclude: [WORKERD, SQLITE, D1],
+          exclude: [WORKERD, SQLITE, D1, CLI],
           // Serial: parallel files need a schema each, and kysely then finds
           // another worker's tables and skips its own (migrator.js:385).
           fileParallelism: false,
@@ -44,7 +48,7 @@ export default defineConfig({
         test: {
           name: "node:sqlite",
           include,
-          exclude: [WORKERD, POSTGRES, D1],
+          exclude: [WORKERD, POSTGRES, D1, CLI],
           env: { ACME_DB_TEST_URL: ":memory:" },
         },
       },
@@ -60,7 +64,13 @@ export default defineConfig({
         test: {
           name: "workerd:d1",
           include,
-          exclude: [NODE, SQLITE, POSTGRES],
+          exclude: [NODE, SQLITE, POSTGRES, CLI],
+        },
+      },
+      {
+        test: {
+          name: "cli",
+          include: [`${CLI}/*.test.ts`],
         },
       },
       ...postgres,

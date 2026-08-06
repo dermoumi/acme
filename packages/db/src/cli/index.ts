@@ -7,5 +7,5 @@ export {
   databaseTarget,
   defineDbConfig,
   loadAcmeConfig,
-} from "./config.node";
-export { withDb } from "./open.node";
+} from "./config";
+export { withDb } from "./open";

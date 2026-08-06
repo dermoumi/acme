@@ -7,8 +7,8 @@ import {
   CONFIG_FILE,
   databases,
   loadAcmeConfig,
-} from "./config.node";
-import { withDb } from "./open.node";
+} from "./config";
+import { withDb } from "./open";
 
 const USAGE = `usage: acme-db <command> [migration] [options]
 
@@ -28,6 +28,8 @@ interface Flags {
   db?: string;
   remoteDb?: string;
   revertAll?: boolean;
+  /** Where acme.config.ts lives. Defaults to where the command was run. */
+  cwd?: string;
 }
 
 async function select(flags: Flags): Promise<AnyDatabaseConfig[]> {
@@ -35,7 +37,7 @@ async function select(flags: Flags): Promise<AnyDatabaseConfig[]> {
     throw new Error("--db and --remote-db are exclusive");
   }
   const binding = flags.db ?? flags.remoteDb;
-  const db = databases(await loadAcmeConfig());
+  const db = databases(await loadAcmeConfig(flags.cwd));
   if (db.length === 0) {
     throw new Error(`${CONFIG_FILE} declares no databases`);
   }
@@ -67,11 +69,11 @@ function requireOne(chosen: AnyDatabaseConfig[], what: string) {
 // Sequential on purpose: one connection, and one wrangler proxy, at a time.
 async function forEach(
   chosen: AnyDatabaseConfig[],
-  run: (entry: AnyDatabaseConfig) => Promise<void>,
+  each: (entry: AnyDatabaseConfig) => Promise<void>,
 ) {
   for (const entry of chosen) {
     // oxlint-disable-next-line no-await-in-loop
-    await run(entry);
+    await each(entry);
   }
 }
 
@@ -107,7 +109,7 @@ async function migrate(
       );
     }
 
-    await withDb(entry.binding, { remote }, async (db) => {
+    await withDb(entry.binding, { remote, cwd: flags.cwd }, async (db) => {
       // Both directions: kysely rolls back when the target is behind.
       const { error, results } = await createMigrator(db, migrations).migrateTo(
         flags.revertAll ? NO_MIGRATIONS : (migration ?? last),
@@ -130,8 +132,8 @@ async function seed(chosen: AnyDatabaseConfig[], flags: Flags) {
   const remote = flags.remoteDb !== undefined;
 
   await forEach(chosen, async (entry) => {
-    const run = entry.seed;
-    if (!run) {
+    const seeder = entry.seed;
+    if (!seeder) {
       if (chosen.length === 1) {
         throw new Error(`${entry.binding} declares no seed`);
       }
@@ -142,15 +144,15 @@ async function seed(chosen: AnyDatabaseConfig[], flags: Flags) {
     // seed against it, and nothing here can know it.
     await withDb(
       entry.binding,
-      { remote },
-      run as (db: Kysely<unknown>) => Promise<void>,
+      { remote, cwd: flags.cwd },
+      seeder as (db: Kysely<unknown>) => Promise<void>,
     );
   });
 }
 
-function parse() {
+function parse(argv: string[]) {
   const { values, positionals } = parseArgs({
-    args: process.argv.slice(2),
+    args: argv,
     options: {
       db: { type: "string" },
       "remote-db": { type: "string" },
@@ -174,18 +176,31 @@ function parse() {
   };
 }
 
-try {
-  const { command, migration, flags } = parse();
-  const migrateOnly = migration !== undefined || flags.revertAll;
-  if (command === "migrate") {
-    await migrate(await select(flags), migration, flags);
-  } else if (command === "seed" && !migrateOnly) {
-    await seed(await select(flags), flags);
-  } else {
-    console.error(USAGE);
-    process.exitCode = 1;
+/**
+ * Runs one command and answers the exit code, without touching the process.
+ *
+ * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
+ * @param cwd - Where `acme.config.ts` lives. Defaults to the working directory.
+ */
+export async function run(argv: string[], cwd?: string): Promise<number> {
+  try {
+    const { command, migration, flags } = parse(argv);
+    const migrateOnly = migration !== undefined || flags.revertAll;
+    if (command === "migrate") {
+      await migrate(await select({ ...flags, cwd }), migration, {
+        ...flags,
+        cwd,
+      });
+    } else if (command === "seed" && !migrateOnly) {
+      await seed(await select({ ...flags, cwd }), { ...flags, cwd });
+    } else {
+      console.error(USAGE);
+      return 1;
+    }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    return 1;
   }
-} catch (error) {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
+
+  return 0;
 }

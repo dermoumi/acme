@@ -3,7 +3,7 @@ import { d1MigrationDialect, remoteD1Dialect } from "../d1";
 import { createDb } from "../internal/database";
 import { urlVarFor } from "../internal/db/url-var.node";
 import { dialectFromUrl } from "../internal/uri/uri.node";
-import { databaseTarget } from "./config.node";
+import { databaseTarget, loadAcmeConfig } from "./config";
 
 function requireEnv(key: string): string {
   const value = process.env[key];
@@ -73,6 +73,8 @@ async function remoteD1Id(binding: string): Promise<string> {
 export interface OpenOptions {
   /** Reach the deployed D1 rather than anything on this machine. */
   remote?: boolean;
+  /** Where acme.config.ts lives. Defaults to where the command was run. */
+  cwd?: string;
 }
 
 /**
@@ -99,7 +101,10 @@ export async function withDb<DB>(
     return;
   }
 
-  const target = await databaseTarget(binding);
+  const target = await databaseTarget(
+    binding,
+    await loadAcmeConfig(options.cwd),
+  );
   const url = process.env[urlVarFor(binding, target.urlVar)];
   if (url) {
     const db = createDb<DB>(await dialectFromUrl(url));

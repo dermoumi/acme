@@ -4,4 +4,4 @@
 import { register } from "tsx/esm/api";
 
 register();
-await import("./main.node.ts");
+await import("./acme-db.ts");

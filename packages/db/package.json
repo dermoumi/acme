@@ -20,7 +20,7 @@
     ".": "./src/index.ts",
     "./d1": "./src/d1/index.ts",
     "./testing": "./src/testing/index.ts",
-    "./cli": "./src/cli/index.node.ts"
+    "./cli": "./src/cli/index.ts"
   },
   "scripts": {
     "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc -b",
