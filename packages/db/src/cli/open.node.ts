@@ -43,9 +43,16 @@ function d1Databases(config: unknown): D1Declaration[] {
   return (config as { d1_databases?: D1Declaration[] }).d1_databases ?? [];
 }
 
-// The id belongs to wrangler.jsonc, one per environment. CLOUDFLARE_ENV picks
-// the environment, the same variable wrangler itself reads.
+// `${binding}_ID` wins because a deploy resolves the id itself, and may patch
+// it into a built config wrangler.jsonc knows nothing about.
 async function remoteD1Id(binding: string): Promise<string> {
+  const fromEnv = process.env[`${binding.toUpperCase()}_ID`];
+  if (fromEnv) {
+    return fromEnv;
+  }
+
+  // Otherwise wrangler.jsonc holds it, one per environment, with CLOUDFLARE_ENV
+  // picking the environment as wrangler itself does.
   const wrangler = await import("wrangler").catch((cause: unknown) => {
     throw new Error("acme-db needs wrangler to reach a D1", { cause });
   });
@@ -55,7 +62,8 @@ async function remoteD1Id(binding: string): Promise<string> {
   );
   if (!declared?.database_id) {
     throw new Error(
-      `wrangler declares no D1 bound to ${binding}${env ? ` for ${env}` : ""}`,
+      `no id for ${binding}: set ${binding.toUpperCase()}_ID, or declare the` +
+        ` D1 in wrangler.jsonc${env ? ` for ${env}` : ""}`,
     );
   }
 

@@ -39,14 +39,14 @@ on:
         description: >-
           Whether this app has a D1 database; false skips every D1 step. Staging and
           production take the name from the built config, previews use "<app>-<slug>".
-          Apps enabling this must expose a "migrate" script that accepts an optional
-          database id. Production is never created automatically.
+          Apps enabling this must expose a "migrate" script forwarding its flags to
+          acme-db. Production is never created automatically.
         required: false
         type: boolean
         default: false
       seed:
         description: >-
-          Run "pnpm seed <database-id>" on first database creation for
+          Run "pnpm seed --remote-db <binding>" on first database creation for
           non-production environments. The app must expose the script.
         required: false
         type: boolean
@@ -201,8 +201,16 @@ jobs:
             "$config" > "$config.tmp"
           mv "$config.tmp" "$config"
 
+          # acme-db is told which database to act on by binding, not by name
+          binding=$(jq -r '.d1_databases[0].binding // empty' "$config")
+          if [ -z "$binding" ]; then
+            echo "::error::no D1 binding in the built config for '$db_name'"
+            exit 1
+          fi
+
           echo "name=$db_name" >> "$GITHUB_OUTPUT"
           echo "id=$db_id" >> "$GITHUB_OUTPUT"
+          echo "binding=$binding" >> "$GITHUB_OUTPUT"
 
       - name: Capture D1 restore point
         if: inputs.d1 && inputs.environment != 'preview' && env.CLOUDFLARE_API_TOKEN != ''
@@ -239,15 +247,27 @@ jobs:
         if: inputs.d1 && env.CLOUDFLARE_API_TOKEN != ''
         working-directory: apps/${{ inputs.app }}
         env:
+          DB_BINDING: ${{ steps.d1.outputs.binding }}
           DB_ID: ${{ steps.d1.outputs.id }}
-        run: pnpm migrate "$DB_ID"
+        run: |
+          set -euo pipefail
+          # the id was resolved above and patched into the BUILT config, which
+          # the wrangler.jsonc acme-db would otherwise read knows nothing about
+          export "${DB_BINDING}_ID=$DB_ID"
+          pnpm migrate --remote-db "$DB_BINDING"
 
       - name: Seed D1 database
         if: inputs.seed && steps.d1.outputs.created == 'true' && env.CLOUDFLARE_API_TOKEN != ''
         working-directory: apps/${{ inputs.app }}
         env:
+          DB_BINDING: ${{ steps.d1.outputs.binding }}
           DB_ID: ${{ steps.d1.outputs.id }}
-        run: pnpm seed "$DB_ID"
+        run: |
+          set -euo pipefail
+          # the id was resolved above and patched into the BUILT config, which
+          # the wrangler.jsonc acme-db would otherwise read knows nothing about
+          export "${DB_BINDING}_ID=$DB_ID"
+          pnpm seed --remote-db "$DB_BINDING"
 
       - name: Deploy
         id: deploy
