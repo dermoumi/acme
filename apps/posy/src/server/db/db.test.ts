@@ -1,9 +1,9 @@
-import { jsonText, parseJsonText } from "@acme/db";
+import { createMigrator, jsonText, parseJsonText } from "@acme/db";
 import { emptyDbEnv, resetDb } from "@acme/db/testing";
 import { type Kysely, sql } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { beforeEach, describe, expect, it } from "vitest";
-import { createMigrator, getDb } from "./index";
+import { getDb, migrations } from "./index";
 import type { Database } from "./schema";
 
 // @acme/db proves the migrator works, against tables it invents. Only these
@@ -17,7 +17,7 @@ async function emptyDb(): Promise<Kysely<Database>> {
 
 async function migratedDb(): Promise<Kysely<Database>> {
   const db = await emptyDb();
-  const { error } = await createMigrator(db).migrateToLatest();
+  const { error } = await createMigrator(db, migrations).migrateToLatest();
   if (error) throw new Error("migration failed", { cause: error });
   return db;
 }
@@ -58,7 +58,10 @@ async function seedItem(db: Kysely<Database>, id: string): Promise<void> {
 describe("posy's migration set", () => {
   it("builds every table the schema declares", async () => {
     const db = await emptyDb();
-    const { error, results } = await createMigrator(db).migrateToLatest();
+    const { error, results } = await createMigrator(
+      db,
+      migrations,
+    ).migrateToLatest();
     expect(error).toBeUndefined();
     expect(results?.map((result) => result.status)).toEqual([
       "Success",
@@ -76,7 +79,9 @@ describe("posy's migration set", () => {
 
   it("reverts to nothing, so a rollback leaves no table behind", async () => {
     const db = await migratedDb();
-    const { error } = await createMigrator(db).migrateTo(NO_MIGRATIONS);
+    const { error } = await createMigrator(db, migrations).migrateTo(
+      NO_MIGRATIONS,
+    );
     expect(error).toBeUndefined();
     expect(await tableNames(db)).toEqual([]);
   });

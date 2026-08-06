@@ -1,8 +1,9 @@
+import { createMigrator } from "@acme/db";
 import { emptyDbEnv } from "@acme/db/testing";
 import { createBindings } from "#testing/runtime";
 import type { Kysely } from "kysely";
 import type { AppBindings } from "../bindings";
-import { createMigrator, type Database, getDb } from "../db";
+import { type Database, getDb, migrations } from "../db";
 import { hashPassword } from "./password";
 import { DbSessionStore } from "./session-db";
 
@@ -16,7 +17,7 @@ export async function migratedEnv(): Promise<AppBindings> {
   // The one cast: @acme/db cannot know posy's binding types.
   const database = (await emptyDbEnv("DATABASE")) as Partial<AppBindings>;
   const env = createBindings(database);
-  const migrator = createMigrator(await getDb({ env }));
+  const migrator = createMigrator(await getDb({ env }), migrations);
 
   const { error } = await migrator.migrateToLatest();
   if (error) {

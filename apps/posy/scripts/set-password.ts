@@ -1,6 +1,8 @@
 import { createInterface } from "node:readline";
+import { withDb } from "@acme/db/cli";
+import config from "../acme.config";
 import { hashPassword } from "../src/server/auth";
-import { withDb } from "./d1-util";
+import type { Database } from "../src/server/db";
 
 async function readPassword(): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stderr });
@@ -19,7 +21,7 @@ if (username) {
   const password = await readPassword();
   if (password) {
     const hash = await hashPassword(password);
-    await withDb(async (db) => {
+    await withDb<Database>(config.db, target, async (db) => {
       await db
         .insertInto("users")
         .values({
@@ -33,7 +35,7 @@ if (username) {
         )
         .execute();
       console.log(`password set for ${username}`);
-    }, target);
+    });
   } else {
     console.error("password must be provided on stdin");
     process.exitCode = 1;
