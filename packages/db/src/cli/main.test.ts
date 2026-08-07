@@ -164,4 +164,26 @@ describe("run", () => {
   it("answers 1 and prints usage for an unknown command", async () => {
     expect(await cli("frobnicate")).toBe(1);
   });
+
+  describe("help and version", () => {
+    it("answers 0 for --help", async () => {
+      expect(await run(["--help"])).toBe(0);
+    });
+
+    it("answers 0 for a command's own --help", async () => {
+      expect(await run(["migrate", "--help"])).toBe(0);
+    });
+
+    it("answers 0 for --version", async () => {
+      expect(await run(["--version"])).toBe(0);
+    });
+
+    it("answers 1 for an unknown option", async () => {
+      expect(await cli("migrate", "--nope")).toBe(1);
+    });
+
+    it("answers 1 when seed is given a migrate-only option", async () => {
+      expect(await cli("seed", "--revert-all")).toBe(1);
+    });
+  });
 });

@@ -1,4 +1,6 @@
-import { parseArgs } from "node:util";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { type CAC, cac } from "cac";
 import type { Kysely } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { createMigrator } from "../internal/migrator";
@@ -10,19 +12,27 @@ import {
 } from "./config";
 import { withDb } from "./with-db";
 
-const USAGE = `usage: acme-db <command> [migration] [options]
+const { version } = JSON.parse(
+  readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
+) as { version: string };
 
-  migrate [migration]       move a database to a migration, applying or
-                            rolling back as needed. Defaults to the last
-                            one declared.
-  migrate --revert-all      roll every migration back.
-  seed                      insert the rows an empty deployment needs
+/** Anything cac lets you hang an option on: the CLI itself, or one command. */
+interface TakesOptions {
+  option(
+    rawName: string,
+    description: string,
+    config?: { default?: unknown },
+  ): this;
+}
 
-  -c, --config <file>       the config to read, ${CONFIG_FILE} by default
-  -d, --db <binding>        one database it declares, rather than every one
-  -e, --wrangler-env <env>  act on what is deployed to that wrangler
-                            environment, taking each D1 id from
-                            wrangler.jsonc. Without it, everything is local.`;
+/** Adds the `--config` flag, so every kit's CLI names a config the same way. */
+export function configOption<Target extends TakesOptions>(
+  target: Target,
+): Target {
+  return target.option("-c, --config <file>", "the config to read", {
+    default: CONFIG_FILE,
+  });
+}
 
 interface Flags {
   db?: string;
@@ -143,32 +153,52 @@ async function seed(chosen: AnyDatabaseConfig[], flags: Flags) {
   });
 }
 
-function parse(argv: string[]) {
-  const { values, positionals } = parseArgs({
-    args: argv,
-    options: {
-      config: { type: "string", short: "c" },
-      db: { type: "string", short: "d" },
-      "wrangler-env": { type: "string", short: "e" },
-      "revert-all": { type: "boolean" },
-    },
-    allowPositionals: true,
-  });
-  if (positionals.length > 2) {
-    throw new Error("too many arguments");
-  }
-  const [command, migration] = positionals;
+interface Options {
+  config?: string;
+  db?: string;
+  wranglerEnv?: string;
+  revertAll?: boolean;
+}
 
+function flagsOf(options: Options): Flags {
   return {
-    command,
-    migration,
-    flags: {
-      configFile: values.config,
-      db: values.db,
-      wranglerEnv: values["wrangler-env"],
-      revertAll: values["revert-all"],
-    },
+    configFile: options.config,
+    db: options.db,
+    wranglerEnv: options.wranglerEnv,
+    revertAll: options.revertAll,
   };
+}
+
+// Global, because both commands take all three and cac folds global options
+// into each command's help and parsing. --revert-all stays on migrate, which
+// is what makes `seed --revert-all` an error.
+function buildCli(): CAC {
+  const cli = cac("acme-db");
+  configOption(cli)
+    .option("-d, --db <binding>", "one database it declares, not every one")
+    .option(
+      "-e, --wrangler-env <env>",
+      "act on what is deployed to that wrangler environment",
+    );
+
+  cli
+    .command("migrate [migration]", "bring a database to a migration")
+    .option("--revert-all", "roll every migration back")
+    .action(async (migration: string | undefined, options: Options) => {
+      const flags = flagsOf(options);
+      await migrate(await select(flags), migration, flags);
+    });
+
+  cli
+    .command("seed", "insert the rows an empty deployment needs")
+    .action(async (options: Options) => {
+      const flags = flagsOf(options);
+      await seed(await select(flags), flags);
+    });
+
+  cli.help();
+  cli.version(version);
+  return cli;
 }
 
 /**
@@ -177,17 +207,19 @@ function parse(argv: string[]) {
  * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
  */
 export async function run(argv: string[]): Promise<number> {
+  const cli = buildCli();
   try {
-    const { command, migration, flags } = parse(argv);
-    const migrateOnly = migration !== undefined || flags.revertAll;
-    if (command === "migrate") {
-      await migrate(await select(flags), migration, flags);
-    } else if (command === "seed" && !migrateOnly) {
-      await seed(await select(flags), flags);
-    } else {
-      console.error(USAGE);
+    // Parsing prints help or the version itself; running is ours to do, so the
+    // action's promise is awaited rather than left dangling.
+    cli.parse(["node", "acme-db", ...argv], { run: false });
+    if (cli.options.help || cli.options.version) {
+      return 0;
+    }
+    if (!cli.matchedCommand) {
+      cli.outputHelp();
       return 1;
     }
+    await cli.runMatchedCommand();
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
     return 1;

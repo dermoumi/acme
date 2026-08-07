@@ -8,4 +8,5 @@ export {
   defineDbConfig,
   loadAcmeConfig,
 } from "./config";
+export { configOption, run } from "./main";
 export { withDb } from "./with-db";

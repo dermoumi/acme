@@ -29,6 +29,7 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "cac": "catalog:",
     "kysely": "catalog:",
     "kysely-d1": "catalog:",
     "tsx": "catalog:"
