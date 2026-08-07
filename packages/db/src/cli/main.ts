@@ -12,16 +12,17 @@ import { withDb } from "./with-db";
 
 const USAGE = `usage: acme-db <command> [migration] [options]
 
-  migrate [migration]   move a database to a migration, applying or rolling
-                        back as needed. Defaults to the last one declared.
-  migrate --revert-all  roll every migration back.
-  seed                  insert the rows an empty deployment needs
+  migrate [migration]       move a database to a migration, applying or
+                            rolling back as needed. Defaults to the last
+                            one declared.
+  migrate --revert-all      roll every migration back.
+  seed                      insert the rows an empty deployment needs
 
-  -c, --config <file>   the config to read, ${CONFIG_FILE} by default
-  --db <binding>        one database it declares, rather than every one
-  --wrangler-env <env>  act on what is deployed to that wrangler environment,
-                        taking each D1 id from wrangler.jsonc. Without it,
-                        everything is local.`;
+  -c, --config <file>       the config to read, ${CONFIG_FILE} by default
+  -d, --db <binding>        one database it declares, rather than every one
+  -e, --wrangler-env <env>  act on what is deployed to that wrangler
+                            environment, taking each D1 id from
+                            wrangler.jsonc. Without it, everything is local.`;
 
 interface Flags {
   db?: string;
@@ -147,8 +148,8 @@ function parse(argv: string[]) {
     args: argv,
     options: {
       config: { type: "string", short: "c" },
-      db: { type: "string" },
-      "wrangler-env": { type: "string" },
+      db: { type: "string", short: "d" },
+      "wrangler-env": { type: "string", short: "e" },
       "revert-all": { type: "boolean" },
     },
     allowPositionals: true,

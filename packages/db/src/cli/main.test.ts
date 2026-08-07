@@ -75,6 +75,19 @@ describe("run", () => {
       expect(await tables(main)).toEqual([]);
     });
 
+    it("takes -d as --db", async () => {
+      expect(await cli("migrate", "-d", "ANALYTICS")).toBe(0);
+      expect(await tables(main)).toEqual([]);
+      expect(await tables(analytics)).toEqual(["events"]);
+    });
+
+    it("takes -e as --wrangler-env", async () => {
+      vi.stubEnv("MAIN_ID", "an-id");
+      vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
+      expect(await cli("migrate", "-d", "MAIN", "-e", "production")).toBe(1);
+      expect(await tables(main)).toEqual([]);
+    });
+
     it("touches only the database --db names", async () => {
       expect(await cli("migrate", "--db", "ANALYTICS")).toBe(0);
       expect(await tables(main)).toEqual([]);
