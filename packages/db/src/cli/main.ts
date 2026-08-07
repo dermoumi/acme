@@ -17,8 +17,8 @@ const USAGE = `usage: acme-db <command> [migration] [options]
   migrate --revert-all  roll every migration back.
   seed                  insert the rows an empty deployment needs
 
-  --db <binding>        one database ${CONFIG_FILE} declares, rather than
-                        every one of them
+  -c, --config <file>   the config to read, ${CONFIG_FILE} by default
+  --db <binding>        one database it declares, rather than every one
   --wrangler-env <env>  act on what is deployed to that wrangler environment,
                         taking each D1 id from wrangler.jsonc. Without it,
                         everything is local.`;
@@ -27,21 +27,22 @@ interface Flags {
   db?: string;
   wranglerEnv?: string;
   revertAll?: boolean;
-  /** Where acme.config.ts lives. Defaults to where the command was run. */
-  cwd?: string;
+  /** Path to acme.config.ts. Defaults to the one in the working directory. */
+  configFile?: string;
 }
 
 async function select(flags: Flags): Promise<AnyDatabaseConfig[]> {
   const binding = flags.db;
-  const db = databases(await loadAcmeConfig(flags.cwd));
+  const file = flags.configFile ?? CONFIG_FILE;
+  const db = databases(await loadAcmeConfig(flags.configFile));
   if (db.length === 0) {
-    throw new Error(`${CONFIG_FILE} declares no databases`);
+    throw new Error(`${file} declares no databases`);
   }
 
   const bindings = db.map((entry) => entry.binding);
   const duplicate = bindings.find((name, at) => bindings.indexOf(name) !== at);
   if (duplicate) {
-    throw new Error(`${CONFIG_FILE} declares ${duplicate} twice`);
+    throw new Error(`${file} declares ${duplicate} twice`);
   }
   if (binding === undefined) {
     return db;
@@ -145,8 +146,9 @@ function parse(argv: string[]) {
   const { values, positionals } = parseArgs({
     args: argv,
     options: {
-      "wrangler-env": { type: "string" },
+      config: { type: "string", short: "c" },
       db: { type: "string" },
+      "wrangler-env": { type: "string" },
       "revert-all": { type: "boolean" },
     },
     allowPositionals: true,
@@ -160,8 +162,9 @@ function parse(argv: string[]) {
     command,
     migration,
     flags: {
-      wranglerEnv: values["wrangler-env"],
+      configFile: values.config,
       db: values.db,
+      wranglerEnv: values["wrangler-env"],
       revertAll: values["revert-all"],
     },
   };
@@ -171,19 +174,15 @@ function parse(argv: string[]) {
  * Runs one command and answers the exit code, without touching the process.
  *
  * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
- * @param cwd - Where `acme.config.ts` lives. Defaults to the working directory.
  */
-export async function run(argv: string[], cwd?: string): Promise<number> {
+export async function run(argv: string[]): Promise<number> {
   try {
     const { command, migration, flags } = parse(argv);
     const migrateOnly = migration !== undefined || flags.revertAll;
     if (command === "migrate") {
-      await migrate(await select({ ...flags, cwd }), migration, {
-        ...flags,
-        cwd,
-      });
+      await migrate(await select(flags), migration, flags);
     } else if (command === "seed" && !migrateOnly) {
-      await seed(await select({ ...flags, cwd }), { ...flags, cwd });
+      await seed(await select(flags), flags);
     } else {
       console.error(USAGE);
       return 1;

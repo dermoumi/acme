@@ -71,8 +71,8 @@ async function remoteD1Id(binding: string, env: string): Promise<string> {
 export interface OpenOptions {
   /** Wrangler environment to reach. Its absence means act locally. */
   wranglerEnv?: string;
-  /** Where acme.config.ts lives. Defaults to where the command was run. */
-  cwd?: string;
+  /** Path to acme.config.ts. Defaults to the one in the working directory. */
+  configFile?: string;
 }
 
 /**
@@ -103,7 +103,7 @@ export async function withDb<DB>(
 
   const target = await databaseTarget(
     binding,
-    await loadAcmeConfig(options.cwd),
+    await loadAcmeConfig(options.configFile),
   );
   const url = process.env[urlVarFor(binding, target.urlVar)];
   if (url) {

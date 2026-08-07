@@ -59,17 +59,21 @@ export function databases(config: AcmeConfig): AnyDatabaseConfig[] {
   return Array.isArray(db) ? db : [db];
 }
 
-/** Reads the app's `acme.config.ts`. Shared by every kit's CLI. */
-export async function loadAcmeConfig(cwd = process.cwd()): Promise<AcmeConfig> {
-  const file = path.resolve(cwd, CONFIG_FILE);
-  const loaded = (await import(pathToFileURL(file).href).catch(
+/**
+ * Reads an app's config. Shared by every kit's CLI.
+ *
+ * @param file - Path to the config. Defaults to `acme.config.ts` here.
+ */
+export async function loadAcmeConfig(file?: string): Promise<AcmeConfig> {
+  const resolved = path.resolve(file ?? CONFIG_FILE);
+  const loaded = (await import(pathToFileURL(resolved).href).catch(
     (cause: unknown) => {
-      throw new Error(`could not read ${file}`, { cause });
+      throw new Error(`could not read ${resolved}`, { cause });
     },
   )) as { default?: AcmeConfig };
 
   if (!loaded.default) {
-    throw new Error(`${file} must export a config as its default`);
+    throw new Error(`${resolved} must export a config as its default`);
   }
 
   return loaded.default;

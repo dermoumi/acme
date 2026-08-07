@@ -8,7 +8,14 @@ import { run } from "./main";
 
 // One engine is enough: this proves the CLI wires the migrator to a database,
 // not that the migrator works, which every engine project already covers.
-const app = path.join(import.meta.dirname, "fixtures", "app");
+const config = path.join(
+  import.meta.dirname,
+  "fixtures",
+  "app",
+  "acme.config.ts",
+);
+
+const cli = (...argv: string[]) => run([...argv, "-c", config]);
 
 async function tables(url: string): Promise<string[]> {
   const db = createDb<never>(await dialectFromUrl(url));
@@ -40,60 +47,58 @@ describe("run", () => {
 
   describe("migrate", () => {
     it("applies every declared migration of every database", async () => {
-      expect(await run(["migrate"], app)).toBe(0);
+      expect(await cli("migrate")).toBe(0);
       expect(await tables(main)).toEqual(["posts", "users"]);
       expect(await tables(analytics)).toEqual(["events"]);
     });
 
     it("is a no-op when rerun", async () => {
-      await run(["migrate"], app);
-      expect(await run(["migrate"], app)).toBe(0);
+      await cli("migrate");
+      expect(await cli("migrate")).toBe(0);
       expect(await tables(main)).toEqual(["posts", "users"]);
     });
 
     it("stops at the migration it is given", async () => {
-      expect(await run(["migrate", "0001_users", "--db", "MAIN"], app)).toBe(0);
+      expect(await cli("migrate", "0001_users", "--db", "MAIN")).toBe(0);
       expect(await tables(main)).toEqual(["users"]);
     });
 
     it("rolls back when the migration is behind", async () => {
-      await run(["migrate", "--db", "MAIN"], app);
-      expect(await run(["migrate", "0001_users", "--db", "MAIN"], app)).toBe(0);
+      await cli("migrate", "--db", "MAIN");
+      expect(await cli("migrate", "0001_users", "--db", "MAIN")).toBe(0);
       expect(await tables(main)).toEqual(["users"]);
     });
 
     it("leaves no table behind with --revert-all", async () => {
-      await run(["migrate", "--db", "MAIN"], app);
-      expect(await run(["migrate", "--revert-all", "--db", "MAIN"], app)).toBe(
-        0,
-      );
+      await cli("migrate", "--db", "MAIN");
+      expect(await cli("migrate", "--revert-all", "--db", "MAIN")).toBe(0);
       expect(await tables(main)).toEqual([]);
     });
 
     it("touches only the database --db names", async () => {
-      expect(await run(["migrate", "--db", "ANALYTICS"], app)).toBe(0);
+      expect(await cli("migrate", "--db", "ANALYTICS")).toBe(0);
       expect(await tables(main)).toEqual([]);
       expect(await tables(analytics)).toEqual(["events"]);
     });
 
     it("refuses a migration name across several databases", async () => {
-      expect(await run(["migrate", "0001_users"], app)).toBe(1);
+      expect(await cli("migrate", "0001_users")).toBe(1);
       expect(await tables(main)).toEqual([]);
     });
 
     it("refuses --revert-all across several databases", async () => {
-      await run(["migrate"], app);
-      expect(await run(["migrate", "--revert-all"], app)).toBe(1);
+      await cli("migrate");
+      expect(await cli("migrate", "--revert-all")).toBe(1);
       expect(await tables(main)).toEqual(["posts", "users"]);
     });
 
     it("rejects an unknown migration before opening anything", async () => {
-      expect(await run(["migrate", "0009_nope", "--db", "MAIN"], app)).toBe(1);
+      expect(await cli("migrate", "0009_nope", "--db", "MAIN")).toBe(1);
       expect(await tables(main)).toEqual([]);
     });
 
     it("rejects an unknown binding", async () => {
-      expect(await run(["migrate", "--db", "NOPE"], app)).toBe(1);
+      expect(await cli("migrate", "--db", "NOPE")).toBe(1);
       expect(await tables(main)).toEqual([]);
     });
 
@@ -103,10 +108,7 @@ describe("run", () => {
       vi.stubEnv("MAIN_ID", "an-id");
       vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
       expect(
-        await run(
-          ["migrate", "--db", "MAIN", "--wrangler-env", "production"],
-          app,
-        ),
+        await cli("migrate", "--db", "MAIN", "--wrangler-env", "production"),
       ).toBe(1);
       expect(await tables(main)).toEqual([]);
     });
@@ -114,8 +116,8 @@ describe("run", () => {
 
   describe("seed", () => {
     it("runs the seed a database declares", async () => {
-      await run(["migrate", "--db", "MAIN"], app);
-      expect(await run(["seed", "--db", "MAIN"], app)).toBe(0);
+      await cli("migrate", "--db", "MAIN");
+      expect(await cli("seed", "--db", "MAIN")).toBe(0);
 
       const db = createDb<never>(await dialectFromUrl(main));
       const rows = await db.selectFrom("users").selectAll().execute();
@@ -124,17 +126,29 @@ describe("run", () => {
     });
 
     it("skips a database that declares none when it was not named", async () => {
-      await run(["migrate"], app);
-      expect(await run(["seed"], app)).toBe(0);
+      await cli("migrate");
+      expect(await cli("seed")).toBe(0);
     });
 
     it("says so when the database it names declares none", async () => {
-      await run(["migrate"], app);
-      expect(await run(["seed", "--db", "ANALYTICS"], app)).toBe(1);
+      await cli("migrate");
+      expect(await cli("seed", "--db", "ANALYTICS")).toBe(1);
+    });
+  });
+
+  describe("--config", () => {
+    it("takes the long form as well as -c", async () => {
+      expect(await run(["migrate", "--config", config])).toBe(0);
+      expect(await tables(main)).toEqual(["posts", "users"]);
+    });
+
+    it("names a config it cannot read", async () => {
+      expect(await run(["migrate", "-c", path.join(dir, "nope.ts")])).toBe(1);
+      expect(await tables(main)).toEqual([]);
     });
   });
 
   it("answers 1 and prints usage for an unknown command", async () => {
-    expect(await run(["frobnicate"], app)).toBe(1);
+    expect(await cli("frobnicate")).toBe(1);
   });
 });

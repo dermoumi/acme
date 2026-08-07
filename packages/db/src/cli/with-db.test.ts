@@ -5,7 +5,12 @@ import type { Kysely } from "kysely";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withDb } from "./with-db";
 
-const app = path.join(import.meta.dirname, "fixtures", "app");
+const configFile = path.join(
+  import.meta.dirname,
+  "fixtures",
+  "app",
+  "acme.config.ts",
+);
 
 describe("withDb", () => {
   let dir = "";
@@ -21,7 +26,7 @@ describe("withDb", () => {
 
   it("opens the database the url env var names", async () => {
     let opened: Kysely<never> | undefined;
-    await withDb<never>("MAIN", { cwd: app }, async (db) => {
+    await withDb<never>("MAIN", { configFile }, async (db) => {
       opened = db;
       await db.schema.createTable("proof").addColumn("id", "text").execute();
     });
@@ -37,7 +42,7 @@ describe("withDb", () => {
     vi.stubEnv("MAIN_URL", "");
     vi.stubEnv("RENAMED_DSN", url);
     await expect(
-      withDb<never>("RENAMED", { cwd: app }, () => Promise.resolve()),
+      withDb<never>("RENAMED", { configFile }, () => Promise.resolve()),
     ).resolves.toBeUndefined();
   });
 
@@ -47,7 +52,7 @@ describe("withDb", () => {
     vi.stubEnv("MAIN_ID", "an-id");
     vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
     await expect(
-      withDb<never>("MAIN", { wranglerEnv: "production", cwd: app }, () =>
+      withDb<never>("MAIN", { wranglerEnv: "production", configFile }, () =>
         Promise.resolve(),
       ),
     ).rejects.toThrow(/CLOUDFLARE_ACCOUNT_ID must be set/u);
@@ -57,13 +62,13 @@ describe("withDb", () => {
     vi.stubEnv("MAIN_ID", "an-id");
     vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
     await expect(
-      withDb<never>("MAIN", { cwd: app }, () => Promise.resolve()),
+      withDb<never>("MAIN", { configFile }, () => Promise.resolve()),
     ).resolves.toBeUndefined();
   });
 
   it("refuses a binding the config does not declare", async () => {
     await expect(
-      withDb<never>("NOPE", { cwd: app }, () => Promise.resolve()),
+      withDb<never>("NOPE", { configFile }, () => Promise.resolve()),
     ).rejects.toThrow(/no database bound to NOPE: MAIN, ANALYTICS, RENAMED/u);
   });
 });

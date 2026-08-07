@@ -8,7 +8,7 @@ import {
 } from "./config";
 
 const fixture = (name: string) =>
-  path.join(import.meta.dirname, "fixtures", name);
+  path.join(import.meta.dirname, "fixtures", name, "acme.config.ts");
 
 describe("databases", () => {
   it("takes a single database", () => {
@@ -61,7 +61,7 @@ describe("loadAcmeConfig", () => {
   it("names the file it could not read", async () => {
     const missing = fixture("nowhere");
     await expect(loadAcmeConfig(missing)).rejects.toThrow(
-      `could not read ${path.join(missing, "acme.config.ts")}`,
+      `could not read ${missing}`,
     );
   });
 
