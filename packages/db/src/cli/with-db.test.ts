@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import type { Kysely } from "kysely";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { withDb } from "./open";
+import { withDb } from "./with-db";
 
 const app = path.join(import.meta.dirname, "fixtures", "app");
 

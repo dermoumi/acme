@@ -8,7 +8,7 @@ import {
   databases,
   loadAcmeConfig,
 } from "./config";
-import { withDb } from "./open";
+import { withDb } from "./with-db";
 
 const USAGE = `usage: acme-db <command> [migration] [options]
 
