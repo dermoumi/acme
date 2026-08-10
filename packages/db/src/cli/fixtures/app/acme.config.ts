@@ -1,10 +1,14 @@
 import type { Kysely } from "kysely";
+import type { Migration } from "kysely/migration";
+import type { AcmeConfig } from "../../config";
 
-const table = (name: string) => ({
-  up: async (db: Kysely<never>) => {
+// Typed by what a migration is, so the schema calls below are checked against
+// the same contract the migrator will hold them to.
+const table = (name: string): Migration => ({
+  up: async (db) => {
     await db.schema.createTable(name).addColumn("id", "text").execute();
   },
-  down: async (db: Kysely<never>) => {
+  down: async (db) => {
     await db.schema.dropTable(name).execute();
   },
 });
@@ -24,6 +28,6 @@ const config = {
     { binding: "ANALYTICS", migrations: { "0001_events": table("events") } },
     { binding: "RENAMED", urlVar: "RENAMED_DSN", migrations: {} },
   ],
-};
+} satisfies AcmeConfig;
 
 export default config;

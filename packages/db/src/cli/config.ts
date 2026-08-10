@@ -60,34 +60,49 @@ export function databases(config: AcmeConfig): AnyDatabaseConfig[] {
 }
 
 /**
- * Reads an app's config. Shared by every kit's CLI.
+ * Checks a config is usable, whoever assembled it.
+ *
+ * @param config - The config to check.
+ * @param source - Where it came from, for the message. Defaults to the file
+ *   an app would normally keep it in.
+ */
+export function validateAcmeConfig(
+  config: AcmeConfig,
+  source: string = CONFIG_FILE,
+): AcmeConfig {
+  // Every reader, not just those that go on to pick a database: a duplicate
+  // would otherwise resolve silently to whichever came first.
+  const bindings = databases(config).map((entry) => entry.binding);
+  const duplicate = bindings.find((name, at) => bindings.indexOf(name) !== at);
+  if (duplicate) {
+    throw new Error(`${source} declares ${duplicate} twice`);
+  }
+
+  return config;
+}
+
+/**
+ * Reads an app's config from a file. Shared by every kit's CLI.
  *
  * @param file - Path to the config. Defaults to `acme.config.ts` here.
  */
 export async function loadAcmeConfig(file?: string): Promise<AcmeConfig> {
   const resolved = path.resolve(file ?? CONFIG_FILE);
-  const loaded = (await import(pathToFileURL(resolved).href).catch(
-    (cause: unknown) => {
-      throw new Error(`could not read ${resolved}`, { cause });
-    },
-  )) as { default?: AcmeConfig };
+  const filePath = pathToFileURL(resolved).href;
+  const loaded = (await import(filePath).catch((cause: unknown) => {
+    throw new Error(`could not read ${resolved}`, { cause });
+  })) as { default?: AcmeConfig };
 
   if (!loaded.default) {
     throw new Error(`${resolved} must export a config as its default`);
   }
 
-  // Every reader, not just those that go on to pick a database: a duplicate
-  // would otherwise resolve silently to whichever came first.
-  const bindings = databases(loaded.default).map((entry) => entry.binding);
-  const duplicate = bindings.find((name, at) => bindings.indexOf(name) !== at);
-  if (duplicate) {
-    throw new Error(`${resolved} declares ${duplicate} twice`);
-  }
-
-  return loaded.default;
+  return validateAcmeConfig(loaded.default, resolved);
 }
 
-/** Finds a declared database by its binding, reading the config if not given. */
+/**
+ * Finds a declared database by its binding, reading the config if not given.
+ */
 export async function databaseTarget(
   binding: string,
   config?: AcmeConfig,

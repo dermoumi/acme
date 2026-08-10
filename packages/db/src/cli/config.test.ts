@@ -1,14 +1,14 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   type AcmeConfig,
   databaseTarget,
   databases,
   loadAcmeConfig,
+  validateAcmeConfig,
 } from "./config";
-
-const fixture = (name: string) =>
-  path.join(import.meta.dirname, "fixtures", name, "acme.config.ts");
 
 describe("databases", () => {
   it("takes a single database", () => {
@@ -23,6 +23,31 @@ describe("databases", () => {
 
   it("takes none", () => {
     expect(databases({})).toEqual([]);
+  });
+});
+
+describe("validateAcmeConfig", () => {
+  it("hands back a config it is happy with", () => {
+    const config: AcmeConfig = { db: [{ binding: "MAIN" }] };
+    expect(validateAcmeConfig(config)).toBe(config);
+  });
+
+  it("rejects a binding declared twice", () => {
+    expect(() =>
+      validateAcmeConfig({
+        db: [{ binding: "SAME" }, { binding: "OTHER" }, { binding: "SAME" }],
+      }),
+    ).toThrow(/declares SAME twice/u);
+  });
+
+  it("names where the config came from", () => {
+    expect(() =>
+      validateAcmeConfig({ db: [{ binding: "X" }, { binding: "X" }] }, "/w/e"),
+    ).toThrow("/w/e declares X twice");
+  });
+
+  it("takes a config with no databases at all", () => {
+    expect(validateAcmeConfig({})).toEqual({});
   });
 });
 
@@ -43,37 +68,54 @@ describe("databaseTarget", () => {
       /no database bound to NOPE: MAIN, ANALYTICS/u,
     );
   });
-
-  it("reads the config itself when it is not given one", async () => {
-    await expect(
-      databaseTarget("MAIN", await loadAcmeConfig(fixture("one"))),
-    ).resolves.toMatchObject({ binding: "MAIN", urlVar: "MAIN_DSN" });
-  });
 });
 
 describe("loadAcmeConfig", () => {
+  let dir = "";
+
+  // Written per test rather than checked in: only the loader needs a real
+  // file, and plain ESM keeps these readable next to what they assert.
+  async function config(source: string): Promise<string> {
+    const file = path.join(dir, "acme.config.mjs");
+    await writeFile(file, source);
+    return file;
+  }
+
+  beforeEach(async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "acme-db-config-"));
+  });
+
+  afterEach(() => rm(dir, { recursive: true, force: true }));
+
   it("reads the default export", async () => {
-    await expect(loadAcmeConfig(fixture("one"))).resolves.toEqual({
+    const file = await config(
+      'export default { db: { binding: "MAIN", urlVar: "MAIN_DSN" } };',
+    );
+    await expect(loadAcmeConfig(file)).resolves.toEqual({
       db: { binding: "MAIN", urlVar: "MAIN_DSN" },
     });
   });
 
   it("names the file it could not read", async () => {
-    const missing = fixture("nowhere");
+    const missing = path.join(dir, "nowhere.mjs");
     await expect(loadAcmeConfig(missing)).rejects.toThrow(
       `could not read ${missing}`,
     );
   });
 
-  it("rejects a binding declared twice, whoever is reading", async () => {
-    await expect(loadAcmeConfig(fixture("duplicate"))).rejects.toThrow(
-      /declares SAME twice/u,
+  it("rejects a config that exports no default", async () => {
+    const file = await config("export const notTheDefault = 1;");
+    await expect(loadAcmeConfig(file)).rejects.toThrow(
+      /must export a config as its default/u,
     );
   });
 
-  it("rejects a config that exports no default", async () => {
-    await expect(loadAcmeConfig(fixture("no-default"))).rejects.toThrow(
-      /must export a config as its default/u,
+  it("validates what it loaded, naming the file", async () => {
+    const file = await config(
+      'export default { db: [{ binding: "SAME" }, { binding: "SAME" }] };',
+    );
+    await expect(loadAcmeConfig(file)).rejects.toThrow(
+      `${file} declares SAME twice`,
     );
   });
 });

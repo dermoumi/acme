@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { Kysely } from "kysely";
@@ -67,11 +67,10 @@ describe("withDb", () => {
   });
 
   it("refuses a config declaring a binding twice", async () => {
-    const duplicate = path.join(
-      import.meta.dirname,
-      "fixtures",
-      "duplicate",
-      "acme.config.ts",
+    const duplicate = path.join(dir, "duplicate.mjs");
+    await writeFile(
+      duplicate,
+      'export default { db: [{ binding: "SAME" }, { binding: "SAME" }] };',
     );
     await expect(
       withDb<never>("SAME", { configFile: duplicate }, () => Promise.resolve()),
