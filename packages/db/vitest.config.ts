@@ -71,6 +71,12 @@ export default defineConfig({
         test: {
           name: "cli",
           include: [`${CLI}/*.test.ts`],
+          // These tests stub env vars; without this they leak into whatever
+          // vitest runs next in the same worker.
+          unstubEnvs: true,
+          // They migrate real files, which costs a second or so each and
+          // several times that when the whole repo's suites run at once.
+          testTimeout: 30_000,
         },
       },
       ...postgres,

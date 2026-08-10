@@ -65,6 +65,12 @@ describe("loadAcmeConfig", () => {
     );
   });
 
+  it("rejects a binding declared twice, whoever is reading", async () => {
+    await expect(loadAcmeConfig(fixture("duplicate"))).rejects.toThrow(
+      /declares SAME twice/u,
+    );
+  });
+
   it("rejects a config that exports no default", async () => {
     await expect(loadAcmeConfig(fixture("no-default"))).rejects.toThrow(
       /must export a config as its default/u,

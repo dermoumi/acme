@@ -50,18 +50,14 @@ async function select(flags: Flags): Promise<AnyDatabaseConfig[]> {
     throw new Error(`${file} declares no databases`);
   }
 
-  const bindings = db.map((entry) => entry.binding);
-  const duplicate = bindings.find((name, at) => bindings.indexOf(name) !== at);
-  if (duplicate) {
-    throw new Error(`${file} declares ${duplicate} twice`);
-  }
   if (binding === undefined) {
     return db;
   }
 
   const one = db.find((entry) => entry.binding === binding);
   if (!one) {
-    throw new Error(`no database bound to ${binding}: ${bindings.join(", ")}`);
+    const bindings = db.map((entry) => entry.binding).join(", ");
+    throw new Error(`no database bound to ${binding}: ${bindings}`);
   }
 
   return [one];
@@ -169,9 +165,8 @@ function flagsOf(options: Options): Flags {
   };
 }
 
-// Global, because both commands take all three and cac folds global options
-// into each command's help and parsing. --revert-all stays on migrate, which
-// is what makes `seed --revert-all` an error.
+// cac folds global options into every command's help and parsing. --revert-all
+// stays on migrate, which is what makes `seed --revert-all` an error.
 function buildCli(): CAC {
   const cli = cac("acme-db");
   configOption(cli)

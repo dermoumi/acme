@@ -76,6 +76,14 @@ export async function loadAcmeConfig(file?: string): Promise<AcmeConfig> {
     throw new Error(`${resolved} must export a config as its default`);
   }
 
+  // Every reader, not just those that go on to pick a database: a duplicate
+  // would otherwise resolve silently to whichever came first.
+  const bindings = databases(loaded.default).map((entry) => entry.binding);
+  const duplicate = bindings.find((name, at) => bindings.indexOf(name) !== at);
+  if (duplicate) {
+    throw new Error(`${resolved} declares ${duplicate} twice`);
+  }
+
   return loaded.default;
 }
 

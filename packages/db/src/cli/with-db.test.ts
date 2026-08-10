@@ -66,6 +66,18 @@ describe("withDb", () => {
     ).resolves.toBeUndefined();
   });
 
+  it("refuses a config declaring a binding twice", async () => {
+    const duplicate = path.join(
+      import.meta.dirname,
+      "fixtures",
+      "duplicate",
+      "acme.config.ts",
+    );
+    await expect(
+      withDb<never>("SAME", { configFile: duplicate }, () => Promise.resolve()),
+    ).rejects.toThrow(/declares SAME twice/u);
+  });
+
   it("refuses a binding the config does not declare", async () => {
     await expect(
       withDb<never>("NOPE", { configFile }, () => Promise.resolve()),
