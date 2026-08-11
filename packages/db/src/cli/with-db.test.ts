@@ -55,7 +55,20 @@ describe("withDb", () => {
       withDb<never>("MAIN", { wranglerEnv: "production", configFile }, () =>
         Promise.resolve(),
       ),
-    ).rejects.toThrow(/CLOUDFLARE_ACCOUNT_ID must be set/u);
+    ).rejects.toThrow(
+      "CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN must be set",
+    );
+  });
+
+  it("names only the credential that is actually missing", async () => {
+    vi.stubEnv("MAIN_ID", "an-id");
+    vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "acct");
+    vi.stubEnv("CLOUDFLARE_API_TOKEN", "");
+    await expect(
+      withDb<never>("MAIN", { wranglerEnv: "production", configFile }, () =>
+        Promise.resolve(),
+      ),
+    ).rejects.toThrow("CLOUDFLARE_API_TOKEN must be set");
   });
 
   it("stays local when no environment is named", async () => {

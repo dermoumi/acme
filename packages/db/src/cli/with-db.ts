@@ -5,13 +5,18 @@ import { urlVarFor } from "../internal/db/url-var.node";
 import { dialectFromUrl } from "../internal/uri/uri.node";
 import { databaseTarget, loadAcmeConfig } from "./config";
 
-function requireEnv(key: string): string {
-  const value = process.env[key];
-  if (!value) {
-    throw new Error(`${key} must be set`);
+/** One value per name, in the same positions, so a caller can destructure. */
+type EnvValues<Keys extends string[]> = { [Index in keyof Keys]: string };
+
+// All of them at once: being told about the second only after fixing the first
+// is a round trip the user should not have to make.
+function requireEnvVars<Keys extends string[]>(...keys: Keys): EnvValues<Keys> {
+  const missing = keys.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    throw new Error(`${missing.join(" and ")} must be set`);
   }
 
-  return value;
+  return keys.map((key) => process.env[key]) as EnvValues<Keys>;
 }
 
 // Only the D1 paths need wrangler, so an app that never takes one does not
@@ -89,10 +94,14 @@ export async function withDb<DB>(
 ): Promise<void> {
   const { wranglerEnv } = options;
   if (wranglerEnv !== undefined) {
+    const [accountId, apiToken] = requireEnvVars(
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_API_TOKEN",
+    );
     const db = createDb<DB>(
       remoteD1Dialect({
-        accountId: requireEnv("CLOUDFLARE_ACCOUNT_ID"),
-        apiToken: requireEnv("CLOUDFLARE_API_TOKEN"),
+        accountId,
+        apiToken,
         databaseId: await remoteD1Id(binding, wranglerEnv),
       }),
     );
