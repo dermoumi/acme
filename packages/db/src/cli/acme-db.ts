@@ -64,13 +64,6 @@ async function select(flags: Flags): Promise<AnyDatabaseConfig[]> {
   return [one];
 }
 
-// A migration name means nothing across two schemas.
-function requireOne(chosen: AnyDatabaseConfig[], what: string) {
-  if (chosen.length > 1) {
-    throw new Error(`--db is required: ${what} acts on one database`);
-  }
-}
-
 // Sequential on purpose: one connection, and one wrangler proxy, at a time.
 async function forEach(
   chosen: AnyDatabaseConfig[],
@@ -90,11 +83,10 @@ async function migrate(
   if (migration !== undefined && flags.revertAll) {
     throw new Error("a migration and --revert-all are exclusive");
   }
-  if (migration !== undefined) {
-    requireOne(chosen, "a migration");
-  }
-  if (flags.revertAll) {
-    requireOne(chosen, "--revert-all");
+  // Only a name: it may not exist in the next database, or may mean something
+  // else there. --revert-all is NO_MIGRATIONS, which every schema understands.
+  if (migration !== undefined && chosen.length > 1) {
+    throw new Error("--db is required: a migration acts on one database");
   }
 
   await forEach(chosen, async (entry) => {
@@ -107,6 +99,7 @@ async function migrate(
       }
       return;
     }
+
     if (migration !== undefined && !names.includes(migration)) {
       throw new Error(
         `${binding} has no migration named "${migration}": ${names.join(", ")}`,

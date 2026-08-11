@@ -99,10 +99,14 @@ describe("run", () => {
       expect(await tables(main)).toEqual([]);
     });
 
-    it("refuses --revert-all across several databases", async () => {
+    it("reverts every database at once, needing no --db", async () => {
       await cli("migrate");
-      expect(await cli("migrate", "--revert-all")).toBe(1);
       expect(await tables(main)).toEqual(["posts", "users"]);
+      expect(await tables(analytics)).toEqual(["events"]);
+
+      expect(await cli("migrate", "--revert-all")).toBe(0);
+      expect(await tables(main)).toEqual([]);
+      expect(await tables(analytics)).toEqual([]);
     });
 
     it("rejects an unknown migration before opening anything", async () => {
