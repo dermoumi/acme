@@ -208,9 +208,11 @@ jobs:
             exit 1
           fi
 
-          echo "name=$db_name" >> "$GITHUB_OUTPUT"
-          echo "id=$db_id" >> "$GITHUB_OUTPUT"
-          echo "binding=$binding" >> "$GITHUB_OUTPUT"
+          {
+            echo "name=$db_name"
+            echo "id=$db_id"
+            echo "binding=$binding"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Capture D1 restore point
         if: inputs.d1 && inputs.environment != 'preview' && env.CLOUDFLARE_API_TOKEN != ''
