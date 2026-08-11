@@ -90,10 +90,10 @@ async function migrate(
   }
 
   await forEach(chosen, async (entry) => {
-    const { binding, migrations } = entry;
-    const names = Object.keys(migrations ?? {}).toSorted();
+    const { binding, migrations = {} } = entry;
+    const names = Object.keys(migrations).toSorted();
     const last = names.at(-1);
-    if (!migrations || !last) {
+    if (!last) {
       if (chosen.length === 1) {
         throw new Error(`${binding} declares no migrations`);
       }
