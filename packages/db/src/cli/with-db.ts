@@ -80,6 +80,54 @@ export interface OpenOptions {
   configFile?: string;
 }
 
+/** Answers what went wrong rather than throwing, so cleanup can carry on. */
+async function failureGuard(work: Promise<void> | undefined): Promise<unknown> {
+  try {
+    await work;
+
+    return undefined;
+  } catch (error) {
+    return error;
+  }
+}
+
+interface Opened<DB> {
+  db: Kysely<DB>;
+  /** Only the local D1 has anything to tear down beyond the connection. */
+  dispose?: () => Promise<void>;
+}
+
+async function open<DB>(
+  binding: string,
+  options: OpenOptions,
+): Promise<Opened<DB>> {
+  // If there's a wrangler environment, then we're targetting a remote D1
+  const { wranglerEnv } = options;
+  if (wranglerEnv !== undefined) {
+    const [accountId, apiToken] = requireEnvVars(
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_API_TOKEN",
+    );
+
+    const databaseId = await remoteD1Id(binding, wranglerEnv);
+    const dialect = remoteD1Dialect({ accountId, apiToken, databaseId });
+    return { db: createDb<DB>(dialect) };
+  }
+
+  // If not and there's a url env var, then we're targetting that database
+  const { configFile } = options;
+  const config = await loadAcmeConfig(configFile);
+  const target = await databaseTarget(binding, config);
+  const url = process.env[urlVarFor(binding, target.urlVar)];
+  if (url) {
+    const dialect = await dialectFromUrl(url);
+    return { db: createDb<DB>(dialect) };
+  }
+
+  // Otherwise we're targetting a local D1, served by miniflare
+  return localD1<DB>(binding);
+}
+
 /**
  * Opens the database named by a binding, and closes it afterwards.
  *
@@ -92,38 +140,23 @@ export async function withDb<DB>(
   options: OpenOptions,
   run: (db: Kysely<DB>) => Promise<void>,
 ): Promise<void> {
-  const { wranglerEnv } = options;
-  if (wranglerEnv !== undefined) {
-    const [accountId, apiToken] = requireEnvVars(
-      "CLOUDFLARE_ACCOUNT_ID",
-      "CLOUDFLARE_API_TOKEN",
-    );
-    const db = createDb<DB>(
-      remoteD1Dialect({
-        accountId,
-        apiToken,
-        databaseId: await remoteD1Id(binding, wranglerEnv),
-      }),
-    );
+  const { db, dispose } = await open<DB>(binding, options);
+
+  let failed: unknown;
+  try {
     await run(db);
-    await db.destroy();
-    return;
+  } catch (error) {
+    failed = error;
   }
 
-  const target = await databaseTarget(
-    binding,
-    await loadAcmeConfig(options.configFile),
-  );
-  const url = process.env[urlVarFor(binding, target.urlVar)];
-  if (url) {
-    const db = createDb<DB>(await dialectFromUrl(url));
-    await run(db);
-    await db.destroy();
-    return;
+  // Every step regardless of the ones before it: skipping dispose leaves the
+  // workerd process it owns holding the command open.
+  const closed = await failureGuard(db.destroy());
+  const disposed = await failureGuard(dispose?.());
+  const error = failed ?? closed ?? disposed;
+  if (error !== undefined) {
+    throw error instanceof Error
+      ? error
+      : new Error("the database could not be used", { cause: error });
   }
-
-  const { db, dispose } = await localD1<DB>(binding);
-  await run(db);
-  await db.destroy();
-  await dispose();
 }

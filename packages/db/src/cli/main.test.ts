@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -153,6 +153,21 @@ describe("run", () => {
     it("takes the long form as well as -c", async () => {
       expect(await run(["migrate", "--config", config])).toBe(0);
       expect(await tables(main)).toEqual(["posts", "users"]);
+    });
+
+    it("says what actually went wrong inside the config", async () => {
+      const broken = path.join(dir, "broken.mjs");
+      await writeFile(broken, "export default { db: { binding: 'X' } \n");
+      const said: string[] = [];
+      vi.mocked(console.error).mockImplementation((line: unknown) => {
+        said.push(String(line));
+      });
+
+      // The wording of the cause is node's or vite's, not ours; what this
+      // pins is that we pass it on instead of printing only our own message.
+      expect(await run(["migrate", "-c", broken])).toBe(1);
+      expect(said.join("\n")).toMatch(/could not read .*broken\.mjs/u);
+      expect(said.join("\n")).toMatch(/\n {2}caused by: .+/u);
     });
 
     it("names a config it cannot read", async () => {

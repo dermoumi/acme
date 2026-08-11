@@ -196,6 +196,17 @@ function buildCli(): CAC {
   return cli;
 }
 
+// Errors are wrapped to say which step failed, so the message alone hides the
+// syntax error or missing module that actually explains it.
+function reasons(error: unknown): string {
+  const chain: string[] = [];
+  for (let at = error; at instanceof Error; at = at.cause) {
+    chain.push(at.message);
+  }
+
+  return chain.join("\n  caused by: ");
+}
+
 /**
  * Runs one command and answers the exit code, without touching the process.
  *
@@ -216,7 +227,7 @@ export async function run(argv: string[]): Promise<number> {
     }
     await cli.runMatchedCommand();
   } catch (error) {
-    console.error(error instanceof Error ? error.message : error);
+    console.error(error instanceof Error ? reasons(error) : error);
     return 1;
   }
 

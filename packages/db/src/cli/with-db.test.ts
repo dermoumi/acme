@@ -38,6 +38,47 @@ describe("withDb", () => {
     ).rejects.toThrow();
   });
 
+  it("closes the database even when the callback throws", async () => {
+    let opened: Kysely<never> | undefined;
+    await expect(
+      withDb<never>("MAIN", { configFile }, async (db) => {
+        opened = db;
+        await db.schema.createTable("proof").addColumn("id", "text").execute();
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
+
+    await expect(
+      opened?.selectFrom("proof").selectAll().execute(),
+    ).rejects.toThrow();
+  });
+
+  // A second destroy resolves, so nothing makes a real close fail on demand:
+  // the handle's own is replaced with one that rejects.
+  function breakClose(db: Kysely<never>): void {
+    Object.defineProperty(db, "destroy", {
+      value: () => Promise.reject(new Error("close exploded")),
+    });
+  }
+
+  it("keeps the caller's error when closing fails too", async () => {
+    await expect(
+      withDb<never>("MAIN", { configFile }, (db) => {
+        breakClose(db);
+        return Promise.reject(new Error("what the caller hit"));
+      }),
+    ).rejects.toThrow("what the caller hit");
+  });
+
+  it("surfaces a closing failure when the caller had none", async () => {
+    await expect(
+      withDb<never>("MAIN", { configFile }, (db) => {
+        breakClose(db);
+        return Promise.resolve();
+      }),
+    ).rejects.toThrow("close exploded");
+  });
+
   it("takes the url var the config renames it to", async () => {
     vi.stubEnv("MAIN_URL", "");
     vi.stubEnv("RENAMED_DSN", url);
