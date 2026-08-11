@@ -1,8 +1,8 @@
 import type { Kysely } from "kysely";
 import { d1MigrationDialect, remoteD1Dialect } from "../d1";
 import { createDb } from "../internal/database";
-import { urlVarFor } from "../internal/db/url-var.node";
-import { dialectFromUrl } from "../internal/uri/uri.node";
+import { urlVarFor } from "../internal/db/url-var.node.ts";
+import { dialectFromUrl } from "../internal/uri/uri.node.ts";
 import { databaseTarget, loadAcmeConfig } from "./config";
 
 // One value per name, in the same positions, so a caller can destructure.

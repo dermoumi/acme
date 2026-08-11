@@ -1,6 +1,6 @@
-import { urlVarFor } from "../../db/url-var.node";
-import { dialectFromUrl } from "../../uri/uri.node";
-import { resetPostgres } from "../postgres.node";
+import { urlVarFor } from "../../db/url-var.node.ts";
+import { dialectFromUrl } from "../../uri/uri.node.ts";
+import { resetPostgres } from "../postgres.node.ts";
 import type { CreateEmptyDialect, CreateEmptyEnv } from "./contract";
 
 // The vitest project declares the url it tests, so a suite runs through the same

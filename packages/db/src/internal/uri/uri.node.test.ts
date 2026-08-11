@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { PostgresDialect, SqliteDialect, sql } from "kysely";
 import { afterAll, describe, expect, it } from "vitest";
 import { createDb } from "../database";
-import { dialectFromUrl, toDatabasePath } from "./uri.node";
+import { dialectFromUrl, toDatabasePath } from "./uri.node.ts";
 
 describe("toDatabasePath", () => {
   // Pure string work: these paths are never created, only converted.

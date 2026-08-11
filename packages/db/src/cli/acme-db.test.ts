@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb } from "../internal/database";
-import { dialectFromUrl } from "../internal/uri/uri.node";
+import { dialectFromUrl } from "../internal/uri/uri.node.ts";
 import { run } from "./acme-db";
 
 // One engine is enough: this proves the CLI wires the migrator to a database,

@@ -1,5 +1,5 @@
-import { urlVarFor } from "../db/url-var.node";
-import { dialectFromUrl } from "../uri/uri.node";
+import { urlVarFor } from "../db/url-var.node.ts";
+import { dialectFromUrl } from "../uri/uri.node.ts";
 import type { ResolveDialect } from "./contract";
 
 export const resolveDialect: ResolveDialect = (env, binding, urlVar) => {
