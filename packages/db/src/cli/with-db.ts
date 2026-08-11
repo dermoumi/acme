@@ -80,7 +80,7 @@ export interface OpenOptions {
   configFile?: string;
 }
 
-/** Answers what went wrong rather than throwing, so cleanup can carry on. */
+// Answers what went wrong rather than throwing, so cleanup can carry on.
 async function failureGuard(work: Promise<void> | undefined): Promise<unknown> {
   try {
     await work;

@@ -224,10 +224,12 @@ export async function run(argv: string[]): Promise<number> {
     if (cli.options.help || cli.options.version) {
       return 0;
     }
+
     if (!cli.matchedCommand) {
       cli.outputHelp();
       return 1;
     }
+
     await cli.runMatchedCommand();
   } catch (error) {
     console.error(error instanceof Error ? reasons(error) : error);
