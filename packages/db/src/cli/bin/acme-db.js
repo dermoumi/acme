@@ -4,4 +4,6 @@
 import { register } from "tsx/esm/api";
 
 register();
-await import("./acme-db.ts");
+
+const { run } = await import("../acme-db.ts");
+process.exitCode = await run(process.argv.slice(2));

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "bin": {
-    "acme-db": "./src/cli/acme-db.js"
+    "acme-db": "./src/cli/bin/acme-db.js"
   },
   "type": "module",
   "imports": {

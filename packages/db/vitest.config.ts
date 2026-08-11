@@ -4,6 +4,10 @@ import { defineConfig, type ViteUserConfig } from "vitest/config";
 // Two vocabularies that never overlap, so a suffix names its own axis. A plain
 // *.test.ts is the engine contract and runs in every engine project below.
 const include = ["src/**/*.test.ts"];
+// Several suites open and migrate real files, which takes seconds rather than
+// milliseconds once the whole repo's suites run at once. Per project: a root
+// testTimeout does not reach them.
+const testTimeout = 30_000;
 // One project, not a suffix on every file, and deliberately no engine matrix:
 // the CLI is wiring, and everything it reaches for is proven per engine by the
 // projects below. Keep it that way by keeping engine code out of src/cli.
@@ -24,6 +28,7 @@ const postgres: ViteUserConfig[] = postgresUrl
         test: {
           name: "node:postgres",
           include,
+          testTimeout,
           exclude: [WORKERD, SQLITE, D1, CLI],
           // Serial: parallel files need a schema each, and kysely then finds
           // another worker's tables and skips its own (migrator.js:385).
@@ -48,6 +53,7 @@ export default defineConfig({
         test: {
           name: "node:sqlite",
           include,
+          testTimeout,
           exclude: [WORKERD, POSTGRES, D1, CLI],
           env: { ACME_DB_TEST_URL: ":memory:" },
         },
@@ -64,6 +70,7 @@ export default defineConfig({
         test: {
           name: "workerd:d1",
           include,
+          testTimeout,
           exclude: [NODE, SQLITE, POSTGRES, CLI],
         },
       },
@@ -74,9 +81,7 @@ export default defineConfig({
           // These tests stub env vars; without this they leak into whatever
           // vitest runs next in the same worker.
           unstubEnvs: true,
-          // They migrate real files, which costs a second or so each and
-          // several times that when the whole repo's suites run at once.
-          testTimeout: 30_000,
+          testTimeout,
         },
       },
       ...postgres,

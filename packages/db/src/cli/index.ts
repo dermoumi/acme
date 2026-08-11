@@ -9,5 +9,5 @@ export {
   loadAcmeConfig,
   validateAcmeConfig,
 } from "./config";
-export { configOption, run } from "./main";
+export { configOption, run } from "./acme-db";
 export { withDb } from "./with-db";
