@@ -5,7 +5,7 @@ import { urlVarFor } from "../internal/db/url-var.node";
 import { dialectFromUrl } from "../internal/uri/uri.node";
 import { databaseTarget, loadAcmeConfig } from "./config";
 
-/** One value per name, in the same positions, so a caller can destructure. */
+// One value per name, in the same positions, so a caller can destructure.
 type EnvValues<Keys extends string[]> = { [Index in keyof Keys]: string };
 
 // All of them at once: being told about the second only after fixing the first
@@ -91,17 +91,17 @@ async function failureGuard(work: Promise<void> | undefined): Promise<unknown> {
   }
 }
 
-interface Opened<DB> {
+// Only the local D1 has anything to tear down beyond the connection.
+interface DbHandle<DB> {
   db: Kysely<DB>;
-  /** Only the local D1 has anything to tear down beyond the connection. */
   dispose?: () => Promise<void>;
 }
 
 async function open<DB>(
   binding: string,
   options: OpenOptions,
-): Promise<Opened<DB>> {
-  // If there's a wrangler environment, then we're targetting a remote D1
+): Promise<DbHandle<DB>> {
+  // If there's a wrangler environment, then we're targeting a remote D1
   const { wranglerEnv } = options;
   if (wranglerEnv !== undefined) {
     const [accountId, apiToken] = requireEnvVars(
@@ -114,7 +114,7 @@ async function open<DB>(
     return { db: createDb<DB>(dialect) };
   }
 
-  // If not and there's a url env var, then we're targetting that database
+  // If not and there's a url env var, then we're targeting that database
   const { configFile } = options;
   const config = await loadAcmeConfig(configFile);
   const target = await databaseTarget(binding, config);
@@ -124,7 +124,7 @@ async function open<DB>(
     return { db: createDb<DB>(dialect) };
   }
 
-  // Otherwise we're targetting a local D1, served by miniflare
+  // Otherwise we're targeting a local D1, served by miniflare
   return localD1<DB>(binding);
 }
 

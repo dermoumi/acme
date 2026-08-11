@@ -16,7 +16,7 @@ const { version } = JSON.parse(
   readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
 ) as { version: string };
 
-/** Anything cac lets you hang an option on: the CLI itself, or one command. */
+// Anything cac lets you hang an option on: the CLI itself, or one command.
 interface TakesOptions {
   option(
     rawName: string,
@@ -38,14 +38,15 @@ interface Flags {
   db?: string;
   wranglerEnv?: string;
   revertAll?: boolean;
-  /** Path to acme.config.ts. Defaults to the one in the working directory. */
+  // Path to acme.config.ts. Defaults to the one in the working directory.
   configFile?: string;
 }
 
 async function select(flags: Flags): Promise<AnyDatabaseConfig[]> {
   const binding = flags.db;
   const file = flags.configFile ?? CONFIG_FILE;
-  const db = databases(await loadAcmeConfig(flags.configFile));
+  const config = await loadAcmeConfig(flags.configFile);
+  const db = databases(config);
   if (db.length === 0) {
     throw new Error(`${file} declares no databases`);
   }
@@ -181,14 +182,16 @@ function buildCli(): CAC {
     .option("--revert-all", "roll every migration back")
     .action(async (migration: string | undefined, options: Options) => {
       const flags = flagsOf(options);
-      await migrate(await select(flags), migration, flags);
+      const chosen = await select(flags);
+      await migrate(chosen, migration, flags);
     });
 
   cli
     .command("seed", "insert the rows an empty deployment needs")
     .action(async (options: Options) => {
       const flags = flagsOf(options);
-      await seed(await select(flags), flags);
+      const chosen = await select(flags);
+      await seed(chosen, flags);
     });
 
   cli.help();
