@@ -31,6 +31,20 @@ RUN pnpm exec turbo build:node --filter=@acme/posy
 # acme.config.ts through tsx, so it needs the tree the bundle inlined away.
 RUN pnpm deploy --filter=@acme/posy --prod --legacy /deploy
 
+# Here, not in the runtime stage: a later RUN cannot shrink the COPY below it.
+ARG TARGETARCH
+RUN set -eu; \
+    case "$TARGETARCH" in \
+      amd64) keep=linux-x64 ;; \
+      arm64) keep=linux-arm64 ;; \
+      *) echo "no better-sqlite3 prebuild for TARGETARCH=${TARGETARCH:-unset}" >&2; exit 1 ;; \
+    esac; \
+    for dir in /deploy/node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3; do \
+      rm -rf "$dir/deps" "$dir/src" "$dir/binding.gyp"; \
+      find "$dir/prebuilds" -name '*.node' ! -name "$keep.node" -delete; \
+      test -f "$dir/prebuilds/$keep.node"; \
+    done
+
 FROM node:24.19.0-trixie-slim
 WORKDIR /app
 
