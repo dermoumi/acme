@@ -88,9 +88,9 @@ export default defineConfig(({ mode, isSsrBuild }) => ({
   // The cloudflare plugin owns the build whenever it is loaded, so the target
   // decides whether it applies. A prerender pass would join node here.
   build: mode === "node" ? nodeBuild(Boolean(isSsrBuild)) : undefined,
-  // A native binding cannot be bundled; inlining the rest is what lets the
-  // runtime image ship without a node_modules tree.
-  ssr: { noExternal: true, external: ["better-sqlite3"] },
+  // Drivers external so the bundle and `acme-db migrate`, which runs from
+  // source, load one copy; better-sqlite3 is native and cannot be bundled.
+  ssr: { noExternal: true, external: ["better-sqlite3", "pg"] },
   plugins: [
     react(),
     ...(mode === "node" ? [] : [cloudflare()]),
