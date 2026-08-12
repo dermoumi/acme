@@ -27,12 +27,9 @@ ARG APP_VERSION=dev
 ARG APP_REVISION=dev
 RUN pnpm exec turbo build:node --filter=@acme/posy
 
-# The bundle inlines every dependency except the native binding. -L resolves
-# pnpm's symlink, so this does not depend on the store's layout.
-RUN cp -RL apps/posy/node_modules/better-sqlite3 /runtime-better-sqlite3 \
- && rm -rf /runtime-better-sqlite3/deps \
-           /runtime-better-sqlite3/src \
-           /runtime-better-sqlite3/binding.gyp
+# Source and a prod-only install beside the bundle: `acme-db migrate` loads
+# acme.config.ts through tsx, so it needs the tree the bundle inlined away.
+RUN pnpm deploy --filter=@acme/posy --prod --legacy /deploy
 
 FROM node:24.19.0-trixie-slim
 WORKDIR /app
@@ -51,12 +48,13 @@ ENV NODE_ENV=production
 ENV APP_ENV=production
 ENV PORT=3000
 ENV DATABASE_URL=file:/var/lib/posy/posy.db
-ENV CLIENT_DIR=./client
 
-# The SSR migration moves these to build/client and build/server.
-COPY --from=build /app/apps/posy/dist/server ./
-COPY --from=build /app/apps/posy/dist/client ./client
-COPY --from=build /runtime-better-sqlite3 ./node_modules/better-sqlite3
+# The app's own directory, so acme.config.ts and its migrations resolve.
+COPY --from=build /deploy ./
+
+# Only a package manager puts .bin on the path, and this stage has none. Earns
+# its keep on `docker exec <container> acme-db seed`, not just on CMD.
+ENV PATH="/app/node_modules/.bin:$PATH"
 
 # Docker seeds a fresh volume from the image, ownership included, so this has
 # to happen before VOLUME or the node user cannot write to it.
@@ -71,4 +69,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD \
   node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 # exec so node is PID 1 and receives signals.
-CMD ["sh", "-c", "node migrate.mjs && exec node index.mjs"]
+CMD ["sh", "-c", "acme-db migrate && exec node dist/server/index.mjs"]
