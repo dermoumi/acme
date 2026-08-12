@@ -5,7 +5,11 @@ import { pathToFileURL } from "node:url";
 import { PostgresDialect, SqliteDialect, sql } from "kysely";
 import { afterAll, describe, expect, it } from "vitest";
 import { createDb } from "../database";
-import { dialectFromUrl, toDatabasePath } from "./uri.node.ts";
+import {
+  dialectFromUrl,
+  explainIfMissing,
+  toDatabasePath,
+} from "./uri.node.ts";
 
 describe("toDatabasePath", () => {
   // Pure string work: these paths are never created, only converted.
@@ -113,5 +117,56 @@ describe("dialectFromUrl", () => {
     const db = createDb(await dialectFromUrl("postgres://no@127.0.0.1:1/none"));
     await expect(sql`select 1`.execute(db)).rejects.toThrow();
     await db.destroy();
+  });
+});
+
+describe("explainIfMissing", () => {
+  function notFound(code: string, message = "Cannot find package 'pg'") {
+    return Object.assign(new Error(message), { code });
+  }
+
+  it("hands back what the import resolved to", async () => {
+    const module = { default: "driver" };
+    await expect(explainIfMissing("pg", Promise.resolve(module))).resolves.toBe(
+      module,
+    );
+  });
+
+  // node reports the first from esm and the second from cjs.
+  it.each(["ERR_MODULE_NOT_FOUND", "MODULE_NOT_FOUND"])(
+    "names the package to install when the import fails with %s",
+    async (code) => {
+      await expect(
+        explainIfMissing("pg", Promise.reject(notFound(code))),
+      ).rejects.toThrow(/@acme\/db needs the "pg" package/u);
+    },
+  );
+
+  it("keeps the original as the cause", async () => {
+    const cause = notFound("ERR_MODULE_NOT_FOUND");
+
+    let thrown: Error | undefined;
+    try {
+      await explainIfMissing("pg", Promise.reject(cause));
+    } catch (error) {
+      thrown = error as Error;
+    }
+
+    expect(thrown?.cause).toBe(cause);
+  });
+
+  // An installed driver that throws on load must not be blamed on the install.
+  it("rethrows a failure that is not a missing module", async () => {
+    const boom = notFound("ERR_INVALID_ARG_TYPE", "bad option");
+
+    await expect(explainIfMissing("pg", Promise.reject(boom))).rejects.toThrow(
+      "bad option",
+    );
+  });
+
+  it("rethrows a failure carrying no code at all", async () => {
+    await expect(
+      explainIfMissing("pg", Promise.reject(new Error("plain"))),
+    ).rejects.toThrow("plain");
   });
 });
