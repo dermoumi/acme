@@ -1,7 +1,7 @@
 import type { Kysely } from "kysely";
 import { d1MigrationDialect, remoteD1Dialect } from "../d1";
 import { createDb } from "../internal/database";
-import { urlVarFor } from "../internal/db/url-var.node.ts";
+import { urlVarFor } from "../internal/db/url-var";
 import { dialectFromUrl } from "../internal/uri/uri.node.ts";
 import { databaseTarget, loadAcmeConfig } from "./config";
 
@@ -51,7 +51,7 @@ function d1Databases(config: unknown): D1Declaration[] {
 // `${binding}_ID` wins because a deploy resolves the id itself, and may patch
 // it into a built config wrangler.jsonc knows nothing about.
 async function remoteD1Id(binding: string, env: string): Promise<string> {
-  const fromEnv = process.env[`${binding.toUpperCase()}_ID`];
+  const fromEnv = process.env[`${binding}_ID`];
   if (fromEnv) {
     return fromEnv;
   }
@@ -65,7 +65,7 @@ async function remoteD1Id(binding: string, env: string): Promise<string> {
   );
   if (!declared?.database_id) {
     throw new Error(
-      `no id for ${binding}: set ${binding.toUpperCase()}_ID, or declare the` +
+      `no id for ${binding}: set ${binding}_ID, or declare the` +
         ` D1 in wrangler.jsonc for ${env}`,
     );
   }

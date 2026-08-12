@@ -1,4 +1,4 @@
-import { urlVarFor } from "../../db/url-var.node.ts";
+import { urlVarFor } from "../../db/url-var";
 import { dialectFromUrl } from "../../uri/uri.node.ts";
 import { resetPostgres } from "../postgres.node.ts";
 import type { CreateEmptyDialect, CreateEmptyEnv } from "./contract";
