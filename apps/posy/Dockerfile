@@ -46,6 +46,12 @@ RUN set -eu; \
       test -f "$dir/prebuilds/$keep.node"; \
     done
 
+# Optional peers of @sentry/cloudflare and valibot: no Worker or tsc runs here.
+# `*` covers every platform build, and a name that matches nothing fails.
+RUN node apps/posy/scripts/prune-deploy-tree.ts /deploy \
+      wrangler miniflare workerd '@cloudflare/workerd-*' \
+      typescript '@typescript/*'
+
 FROM node:24.19.0-trixie-slim
 WORKDIR /app
 
