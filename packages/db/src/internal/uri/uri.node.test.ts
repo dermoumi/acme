@@ -38,6 +38,20 @@ describe("toDatabasePath", () => {
       /not a sqlite url/u,
     );
   });
+
+  it("names the scheme without echoing a url that carries a password", () => {
+    const url = "postgres://admin:hunter2@db.internal:5432/app";
+    let message = "";
+    try {
+      toDatabasePath(url);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain('"postgres:..."');
+    expect(message).not.toContain("hunter2");
+    expect(message).not.toContain(url);
+  });
 });
 
 describe("dialectFromUrl", () => {
@@ -75,6 +89,23 @@ describe("dialectFromUrl", () => {
     await expect(dialectFromUrl("mysql://localhost/db")).rejects.toThrow(
       /unsupported database url/u,
     );
+  });
+
+  // The throw reaches Sentry through the app's error handler, and CI logs
+  // through the CLI, so the url itself must not travel with it.
+  it("never puts the url in the message", async () => {
+    const url = "mysql://admin:hunter2@db.internal:3306/app";
+    let message = "";
+    try {
+      await dialectFromUrl(url);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain('"mysql:..."');
+    expect(message).not.toContain("hunter2");
+    expect(message).not.toContain("admin");
+    expect(message).not.toContain(url);
   });
 
   // Nothing listens on port 1, so this needs no server of its own.

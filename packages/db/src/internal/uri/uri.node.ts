@@ -3,6 +3,14 @@ import type { Dialect } from "kysely";
 
 const MISSING_MODULE = new Set(["ERR_MODULE_NOT_FOUND", "MODULE_NOT_FOUND"]);
 
+// A url may carry a password, and these throws reach Sentry through the app's
+// error handler and CI logs through the CLI. Only the scheme is safe to name.
+function startOf(url: string): string {
+  const protocol = URL.parse(url)?.protocol;
+
+  return protocol ? `${protocol}...` : "<none>";
+}
+
 /**
  * Turns a sqlite url into a path `better-sqlite3` accepts.
  *
@@ -14,7 +22,7 @@ export function toDatabasePath(url: string): string {
   if (url === ":memory:") return ":memory:";
   if (url.startsWith("file://")) return fileURLToPath(url);
   if (url.startsWith("file:")) return url.slice("file:".length);
-  throw new Error(`not a sqlite url: ${url}`);
+  throw new Error(`not a sqlite url: "${startOf(url)}"`);
 }
 
 // Drivers are optional peers, so a missing one is a wiring mistake worth
@@ -68,6 +76,6 @@ export async function dialectFromUrl(url: string): Promise<Dialect> {
     return postgresDialect(url);
   }
   throw new Error(
-    `unsupported database url: ${url}. Expected ":memory:", "file:...", or "postgres:..."`,
+    `unsupported database url: "${startOf(url)}". Expected ":memory:", "file:...", or "postgres:..."`,
   );
 }
