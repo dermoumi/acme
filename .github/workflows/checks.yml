@@ -17,6 +17,21 @@ jobs:
       contents: read
     env:
       TURBO_TELEMETRY_DISABLED: 1
+    services:
+      # @acme/db's postgres contract tests only; every other suite is in-process.
+      postgres:
+        image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+        env:
+          POSTGRES_USER: acme
+          POSTGRES_PASSWORD: acme
+          POSTGRES_DB: acme_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U acme -d acme_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -31,6 +46,13 @@ jobs:
 
       - name: Test
         run: pnpm test:cov
+
+      # Named explicitly so a missing url makes vitest fail on an unknown
+      # project, rather than reporting green having tested no postgres at all.
+      - name: Test @acme/db against postgres
+        env:
+          ACME_DB_TEST_POSTGRES_URL: postgres://acme:acme@127.0.0.1:5432/acme_test
+        run: pnpm --filter @acme/db exec vitest run --project node:postgres
 
       - name: Check for Codecov token
         id: codecov
@@ -60,6 +82,6 @@ jobs:
         uses: docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
 
       - name: Audit workflows
-        uses: zizmorcore/zizmor-action@6fc4b006235f201fdab3722e17240ab420d580e5 # v0.6.1
+        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
         with:
           advanced-security: false

@@ -4,7 +4,7 @@
 # live outside this directory.
 #   docker build -f apps/posy/Dockerfile .
 
-FROM node:24.18.1-trixie AS build
+FROM node:24.19.0-trixie AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /app
 RUN corepack enable
@@ -12,6 +12,7 @@ RUN corepack enable
 # Manifests before sources, so editing a file does not redo the install.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/posy/package.json apps/posy/
+COPY packages/db/package.json packages/db/
 COPY packages/rate-limiter/package.json packages/rate-limiter/
 COPY packages/sentry/package.json packages/sentry/
 COPY packages/tsconfig/package.json packages/tsconfig/
@@ -33,7 +34,7 @@ RUN cp -RL apps/posy/node_modules/better-sqlite3 /runtime-better-sqlite3 \
            /runtime-better-sqlite3/src \
            /runtime-better-sqlite3/binding.gyp
 
-FROM node:24.18.1-trixie-slim
+FROM node:24.19.0-trixie-slim
 WORKDIR /app
 
 # Baked, not just build-time: /health reports these, so the image has to know
@@ -49,7 +50,7 @@ ENV NODE_ENV=production
 # Unset reads as development, which serves /debug/*.
 ENV APP_ENV=production
 ENV PORT=3000
-ENV DATABASE_PATH=/var/lib/posy/posy.db
+ENV DATABASE_URL=file:/var/lib/posy/posy.db
 ENV CLIENT_DIR=./client
 
 # The SSR migration moves these to build/client and build/server.

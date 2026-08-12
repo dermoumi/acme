@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
 import type { AddressInfo } from "node:net";
 import { expect, test } from "vitest";
-import { bench } from "../testing/bench.node";
+import { bench } from "../testing/bench.node.ts";
 import { DSN, loginRequest, PASSWORD } from "../testing/contract";
 import { BOOM } from "../testing/throwing-app";
 

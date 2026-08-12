@@ -21,7 +21,7 @@
   // Local dev only; the named envs below get their ids from CI.
   "d1_databases": [
     {
-      "binding": "DB",
+      "binding": "DATABASE",
       "database_name": "posy",
       "database_id": "posy-local"
     }
@@ -57,7 +57,7 @@
       // CI resolves by name and patches the id in; see target-cloudflare.yml.
       "d1_databases": [
         {
-          "binding": "DB",
+          "binding": "DATABASE",
           "database_name": "posy-staging",
           "database_id": "set-by-ci"
         }
@@ -82,7 +82,11 @@
         "APP_ENV": "production"
       },
       "d1_databases": [
-        { "binding": "DB", "database_name": "posy", "database_id": "set-by-ci" }
+        {
+          "binding": "DATABASE",
+          "database_name": "posy",
+          "database_id": "set-by-ci"
+        }
       ],
       "ratelimits": [
         {

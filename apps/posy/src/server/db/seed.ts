@@ -1,6 +1,5 @@
 import type { Kysely } from "kysely";
-import type { Database } from "../src/server/db";
-import { withDb } from "./d1-util";
+import type { Database } from "./schema";
 
 // Throwaway staging credentials. Password for both accounts is "test".
 const HASH =
@@ -11,7 +10,7 @@ const USERS = [
   { id: "sara", name: "sara", password_hash: HASH },
 ];
 
-async function seedUsers(db: Kysely<Database>): Promise<void> {
+export async function seedUsers(db: Kysely<Database>): Promise<void> {
   await Promise.all(
     USERS.map((user) =>
       db
@@ -26,9 +25,5 @@ async function seedUsers(db: Kysely<Database>): Promise<void> {
         .execute(),
     ),
   );
-}
-
-await withDb(async (db) => {
-  await seedUsers(db);
   console.log("seeded users");
-}, process.argv[2]);
+}

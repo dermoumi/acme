@@ -1,8 +1,12 @@
-import { createDb, createMigrator } from "./db";
-import { fileDialect } from "./db/sqlite.node";
+import { createMigrator } from "@acme/db";
+import { getDb, migrations } from "./db";
 
-const db = createDb(fileDialect(process.env.DATABASE_PATH ?? "./posy.db"));
-const { error, results } = await createMigrator(db).migrateToLatest();
+// `acme-db migrate` needs the source tree and tsx; the image ships neither.
+const db = await getDb({ env: process.env });
+const { error, results } = await createMigrator(
+  db,
+  migrations,
+).migrateToLatest();
 
 for (const result of results ?? []) {
   console.log(`${result.status}: ${result.migrationName}`);
