@@ -8,7 +8,8 @@ import type { AppBindings } from "./bindings";
 // built once here and reused. @acme/db opens DATABASE_URL on first use.
 const env: AppBindings = {
   ASSETS: staticAssets(process.env.CLIENT_DIR ?? "./dist/client"),
-  DATABASE_URL: process.env.DATABASE_URL,
+  // Unset runs on a local file; a `postgres:` url picks the bundled pg driver.
+  DATABASE_URL: process.env.DATABASE_URL ?? "file:./posy.db",
   REQUIRE_AUTH: process.env.REQUIRE_AUTH,
   BASIC_AUTH: process.env.BASIC_AUTH,
   SENTRY_DSN: process.env.SENTRY_DSN,
