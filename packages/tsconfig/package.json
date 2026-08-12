@@ -10,5 +10,19 @@
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@cloudflare/workers-types": {
+      "optional": true
+    },
+    "@types/node": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
   }
 }
