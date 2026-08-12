@@ -53,7 +53,7 @@ export function tagDialect<Source extends Dialect>(
  * @param db Any database handle, including the one a migration is given.
  * @throws Error when the dialect carries no tag.
  */
-export function dialectKind(db: Kysely<never>): DialectKind {
+export function dialectKind<DB>(db: Kysely<DB>): DialectKind {
   const adapter: DialectAdapter & Tagged = db.getExecutor().adapter;
   const kind = adapter[KIND];
   if (!kind) {

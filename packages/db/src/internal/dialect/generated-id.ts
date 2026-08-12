@@ -21,7 +21,7 @@ import { dialectKind } from "./kind";
  * @param db The handle the migration was given, which carries the dialect.
  * @param column Column name. Defaults to `id`.
  */
-export function generatedId(db: Kysely<never>, column = "id") {
+export function generatedId<DB>(db: Kysely<DB>, column = "id") {
   return <Table extends string, Column extends string>(
     builder: CreateTableBuilder<Table, Column>,
   ): CreateTableBuilder<Table, Column> =>
