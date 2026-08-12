@@ -27,9 +27,10 @@ ARG APP_VERSION=dev
 ARG APP_REVISION=dev
 RUN pnpm exec turbo build:node --filter=@acme/posy
 
-# Source and a prod-only install beside the bundle: `acme-db migrate` loads
-# acme.config.ts through tsx, so it needs the tree the bundle inlined away.
-RUN pnpm deploy --filter=@acme/posy --prod --legacy /deploy
+# `acme-db migrate` loads acme.config.ts through tsx, so it needs the tree the
+# bundle inlined away. Injected, or workspace packages stay monorepo symlinks.
+RUN pnpm --config.inject-workspace-packages=true \
+    deploy --filter=@acme/posy --prod /deploy
 
 # Here, not in the runtime stage: a later RUN cannot shrink the COPY below it.
 ARG TARGETARCH
