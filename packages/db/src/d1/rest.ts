@@ -1,16 +1,47 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import type { Dialect } from "kysely";
+import * as v from "valibot";
 import { d1MigrationDialect } from "./migration-dialect";
 
 const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
 
-interface QueryResponse {
-  success: boolean;
-  errors?: { code: number; message: string }[];
-  result?: {
-    results: Record<string, unknown>[];
-    meta: { changes: number; last_row_id: number | null };
-  }[];
+// Loose because the fields are Cloudflare's to add and `meta` is handed on as
+// it arrived; nullish because a failed query answers `result: null`.
+const QueryResponse = v.looseObject({
+  success: v.boolean(),
+  errors: v.nullish(
+    v.array(v.looseObject({ code: v.number(), message: v.string() })),
+  ),
+  result: v.nullish(
+    v.array(
+      v.looseObject({
+        results: v.array(v.record(v.string(), v.unknown())),
+        meta: v.looseObject({
+          changes: v.number(),
+          last_row_id: v.nullable(v.number()),
+        }),
+      }),
+    ),
+  ),
+});
+
+type QueryResponse = v.InferOutput<typeof QueryResponse>;
+
+// An edge 5xx answers HTML, and a body that parses but drifted from the shape
+// is no more usable: both come back as a problem for the caller to blame.
+async function readBody(
+  response: Response,
+): Promise<{ body?: QueryResponse; problem?: unknown }> {
+  try {
+    const payload = await response.json();
+    const parsed = v.safeParse(QueryResponse, payload);
+
+    return parsed.success
+      ? { body: parsed.output }
+      : { problem: new Error(v.summarize(parsed.issues)) };
+  } catch (problem) {
+    return { problem };
+  }
 }
 
 /** Which remote database to reach, and the credentials to reach it with. */
@@ -43,15 +74,7 @@ export function restD1(config: RemoteD1Config): D1Database {
             },
             body: JSON.stringify({ sql, params }),
           });
-          // Some failures answer HTML, an edge 5xx among them: the status
-          // leads, and the parse failure rides along as the cause.
-          let body: QueryResponse | undefined;
-          let unparsed: unknown;
-          try {
-            body = (await response.json()) as QueryResponse;
-          } catch (error) {
-            unparsed = error;
-          }
+          const { body, problem } = await readBody(response);
 
           if (!response.ok || !body?.success) {
             const detail = body?.errors
@@ -59,7 +82,7 @@ export function restD1(config: RemoteD1Config): D1Database {
               .join("; ");
             throw new Error(
               detail ?? `D1 query failed with status ${response.status}`,
-              { cause: unparsed },
+              { cause: problem },
             );
           }
           const [first] = body.result ?? [];

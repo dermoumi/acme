@@ -32,7 +32,8 @@
     "cac": "catalog:",
     "kysely": "catalog:",
     "kysely-d1": "catalog:",
-    "tsx": "catalog:"
+    "tsx": "catalog:",
+    "valibot": "catalog:"
   },
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",

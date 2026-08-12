@@ -115,6 +115,21 @@ describe("restD1", () => {
       ).rejects.toThrow("7500: no such table: widgets");
     });
 
+    // How a failure actually arrives: rejecting the body throws the detail away.
+    it("reports the detail when result comes back null", async () => {
+      mockFetch(
+        {
+          success: false,
+          result: null,
+          errors: [{ code: 7003, message: "could not route" }],
+        },
+        { ok: false, status: 404 },
+      );
+      await expect(
+        restD1(config).prepare("select 1").bind().all(),
+      ).rejects.toThrow("7003: could not route");
+    });
+
     it("joins several errors into one message", async () => {
       mockFetch({
         success: false,
@@ -158,6 +173,39 @@ describe("restD1", () => {
         "Unexpected token",
       );
     });
+
+    it("refuses a body that parses but is not the shape we read", async () => {
+      mockFetch({ success: true, result: [{ results: "not rows" }] });
+
+      let thrown: Error | undefined;
+      try {
+        await restD1(config).prepare("select 1").bind().all();
+      } catch (error) {
+        thrown = error as Error;
+      }
+
+      expect(thrown?.message).toContain("D1 query failed with status 200");
+      expect((thrown?.cause as Error | undefined)?.message).toContain(
+        "result.0.results",
+      );
+    });
+  });
+});
+
+describe("the body it accepts", () => {
+  it("passes meta on with the fields cloudflare adds to it", async () => {
+    mockFetch({
+      success: true,
+      result: [
+        {
+          results: [],
+          meta: { changes: 0, last_row_id: null, duration: 0.3, rows_read: 7 },
+        },
+      ],
+    });
+    const result = await restD1(config).prepare("select 1").bind().all();
+
+    expect(result.meta).toMatchObject({ duration: 0.3, rows_read: 7 });
   });
 });
 
