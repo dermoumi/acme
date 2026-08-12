@@ -53,9 +53,3 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
-
-# Optional peers that nothing needs at runtime, and which every package that
-# does need them already depends on directly. Only --prod trees change.
-ignoredOptionalDependencies:
-  - typescript
-  - wrangler
