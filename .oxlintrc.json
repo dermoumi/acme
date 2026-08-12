@@ -15,7 +15,7 @@
   },
   "rules": {
     "eslint/arrow-body-style": "off",
-    "eslint/id-length": "error",
+    "eslint/id-length": ["error", { "exceptions": ["v"] }],
     "eslint/no-unused-vars": "off",
     "eslint/no-undef": "off",
     "eslint/no-console": "off",
