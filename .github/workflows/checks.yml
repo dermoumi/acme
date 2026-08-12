@@ -17,6 +17,21 @@ jobs:
       contents: read
     env:
       TURBO_TELEMETRY_DISABLED: 1
+    services:
+      # @acme/db's postgres contract tests only; every other suite is in-process.
+      postgres:
+        image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+        env:
+          POSTGRES_USER: acme
+          POSTGRES_PASSWORD: acme
+          POSTGRES_DB: acme_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U acme -d acme_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -31,6 +46,13 @@ jobs:
 
       - name: Test
         run: pnpm test:cov
+
+      # Named explicitly so a missing url makes vitest fail on an unknown
+      # project, rather than reporting green having tested no postgres at all.
+      - name: Test @acme/db against postgres
+        env:
+          ACME_DB_TEST_POSTGRES_URL: postgres://acme:acme@127.0.0.1:5432/acme_test
+        run: pnpm --filter @acme/db exec vitest run --project node:postgres
 
       - name: Check for Codecov token
         id: codecov

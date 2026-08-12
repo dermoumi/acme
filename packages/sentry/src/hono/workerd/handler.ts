@@ -21,10 +21,10 @@ import { withRequestClient } from "./with-request-client";
  *
  * Passes requests through unwrapped when `env.SENTRY_DSN` is unset.
  */
-export function withSentry<Bindings extends SentryBindings>(
-  app: Hono<{ Bindings: Bindings }>,
+export function withSentry<Env extends { Bindings: SentryBindings }>(
+  app: Hono<Env>,
   config: SentryConfig = {},
-): ExportedHandler<Bindings> {
+): ExportedHandler<Env["Bindings"]> {
   app.onError(sentryErrorHandler(config));
 
   return {

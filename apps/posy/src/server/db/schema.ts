@@ -23,7 +23,7 @@ export interface ItemsTable {
   name: string;
   rarity: string;
   color: string | null;
-  tags: string; // JSON string array, see jsonText/parseJsonText in index.ts
+  tags: string; // JSON string array; @acme/db's jsonText/parseJsonText handle it
   set_id: string;
   art_key: string | null;
   created_at: number;

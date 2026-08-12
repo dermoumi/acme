@@ -29,6 +29,17 @@ function d1TableIntrospector(db: Kysely<unknown>): DatabaseIntrospector {
   };
 }
 
+/**
+ * Wraps `D1Dialect` with an introspector the Migrator can survive.
+ *
+ * Kysely's sqlite introspector sweeps every table into a `pragma_table_info()`
+ * join, and D1's protected `_cf_*` tables make that throw `SQLITE_AUTH`, so the
+ * Migrator dies before running anything. Upstream owns neither half
+ * (kysely#1571, open since 2025-09; kysely-d1 last released 2025-04).
+ *
+ * Reports names only, with empty `columns`, which is all the Migrator reads.
+ * Do not use it when you need real column metadata.
+ */
 export function d1MigrationDialect(database: D1Database): Dialect {
   const inner = new D1Dialect({ database });
   return {

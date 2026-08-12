@@ -1,15 +1,14 @@
 import { createBindings } from "#testing/runtime";
 import { expect, test } from "vitest";
 import { createApp } from "../app";
+import { noDatabase } from "../testing/no-database";
 
-const app = createApp({
-  getDialect: () => {
-    throw new Error("debug tests never reach the database");
-  },
-});
+// The env names no database, so resolving throws: these prove debug routes
+// never reach for one.
+const app = createApp();
 
 function env(overrides: Record<string, string> = {}) {
-  return { ...createBindings(), ...overrides };
+  return { ...createBindings(noDatabase), ...overrides };
 }
 
 test("throwing routes answer 500 off production", async () => {

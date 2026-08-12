@@ -1,9 +1,8 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import type { Dialect } from "kysely";
-import type { AppBindings } from "../bindings";
-import { createDb } from "../db";
+import type { AppEnv } from "../bindings";
+import { getDb } from "../db";
 import { verifyPassword } from "./password";
 import { DbSessionStore } from "./session-db";
 import {
@@ -39,12 +38,9 @@ function parseLoginBody(body: unknown): LoginBody {
   };
 }
 
-type Ctx = Context<{ Bindings: AppBindings }>;
+type Ctx = Context<AppEnv>;
 
-async function handleLogin(
-  ctx: Ctx,
-  getDialect: (env: AppBindings) => Dialect,
-): Promise<Response> {
+async function handleLogin(ctx: Ctx): Promise<Response> {
   const { username, password, clientVersion } = parseLoginBody(
     await ctx.req.json().catch(() => null),
   );
@@ -52,7 +48,7 @@ async function handleLogin(
     return ctx.json({ error: "invalid_credentials" }, 401);
   }
 
-  const db = createDb(getDialect(ctx.env));
+  const db = await getDb(ctx);
   const user = await verifyPassword(db, username, password);
   if (!user) return ctx.json({ error: "invalid_credentials" }, 401);
 
@@ -69,15 +65,13 @@ async function handleLogin(
   return ctx.json({ user: { id: user.id, name: user.name } });
 }
 
-export function authRoutes(
-  getDialect: (env: AppBindings) => Dialect,
-): Hono<{ Bindings: AppBindings }> {
-  const routes = new Hono<{ Bindings: AppBindings }>();
+export function authRoutes(): Hono<AppEnv> {
+  const routes = new Hono<AppEnv>();
 
   routes.get("/", async (ctx) => {
     const token = getCookie(ctx, SESSION_COOKIE);
     if (!token) return ctx.json({ user: null });
-    const db = createDb(getDialect(ctx.env));
+    const db = await getDb(ctx);
     const store = new DbSessionStore(db);
     const userId = await resolveSession(store, token, Date.now());
     if (!userId) return ctx.json({ user: null });
@@ -89,13 +83,12 @@ export function authRoutes(
     return ctx.json({ user: user ?? null });
   });
 
-  routes.post("/", (ctx) => handleLogin(ctx, getDialect));
+  routes.post("/", (ctx) => handleLogin(ctx));
 
   routes.delete("/", async (ctx) => {
     const token = getCookie(ctx, SESSION_COOKIE);
     if (token) {
-      const db = createDb(getDialect(ctx.env));
-      await revokeSession(new DbSessionStore(db), token);
+      await revokeSession(new DbSessionStore(await getDb(ctx)), token);
     }
     deleteCookie(ctx, SESSION_COOKIE, { path: "/" });
     return ctx.body(null, 204);

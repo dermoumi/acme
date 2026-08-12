@@ -1,0 +1,14 @@
+{
+  "extends": "@acme/tsconfig/tsconfig.workerd.json",
+  "compilerOptions": {
+    // Resolve #runtime the way workerd does, so node-only imports stay out.
+    "customConditions": ["workerd"]
+  },
+  "include": ["src"],
+  "exclude": [
+    "**/*.node.ts",
+    "**/*.node.test.ts",
+    "**/*.sqlite.test.ts",
+    "**/*.postgres.test.ts"
+  ]
+}

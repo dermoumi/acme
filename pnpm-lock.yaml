@@ -39,6 +39,9 @@ catalogs:
     '@types/node':
       specifier: 24.13.3
       version: 24.13.3
+    '@types/pg':
+      specifier: 8.20.3
+      version: 8.20.3
     '@types/react':
       specifier: 19.2.18
       version: 19.2.18
@@ -54,6 +57,9 @@ catalogs:
     better-sqlite3:
       specifier: 13.0.3
       version: 13.0.3
+    cac:
+      specifier: 7.0.0
+      version: 7.0.0
     hono:
       specifier: 4.13.1
       version: 4.13.1
@@ -78,6 +84,9 @@ catalogs:
     oxlint-tsgolint:
       specifier: 7.0.2001
       version: 7.0.2001
+    pg:
+      specifier: 8.22.0
+      version: 8.22.0
     react:
       specifier: 19.2.8
       version: 19.2.8
@@ -93,6 +102,9 @@ catalogs:
     typescript:
       specifier: 7.0.2
       version: 7.0.2
+    valibot:
+      specifier: 1.4.2
+      version: 1.4.2
     vite:
       specifier: 8.2.1
       version: 8.2.1
@@ -134,6 +146,9 @@ importers:
 
   apps/posy:
     dependencies:
+      '@acme/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@acme/rate-limiter':
         specifier: workspace:*
         version: link:../../packages/rate-limiter
@@ -149,9 +164,6 @@ importers:
       kysely:
         specifier: 'catalog:'
         version: 0.29.5
-      kysely-d1:
-        specifier: 'catalog:'
-        version: 0.4.0(kysely@0.29.5)
       react:
         specifier: 'catalog:'
         version: 19.2.8
@@ -216,6 +228,64 @@ importers:
       wrangler:
         specifier: 'catalog:'
         version: 4.120.0(@cloudflare/workers-types@5.20260810.1)
+
+  packages/db:
+    dependencies:
+      cac:
+        specifier: 'catalog:'
+        version: 7.0.0
+      kysely:
+        specifier: 'catalog:'
+        version: 0.29.5
+      kysely-d1:
+        specifier: 'catalog:'
+        version: 0.4.0(kysely@0.29.5)
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.12
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@7.0.2)
+    devDependencies:
+      '@acme/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@cloudflare/vitest-pool-workers':
+        specifier: 'catalog:'
+        version: 0.20.3(@cloudflare/workers-types@5.20260809.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20260809.1
+      '@types/better-sqlite3':
+        specifier: 'catalog:'
+        version: 9.6.0
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      '@types/pg':
+        specifier: 'catalog:'
+        version: 8.20.3
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 4.1.10(supports-color@10.2.2)(vitest@4.1.10)
+      better-sqlite3:
+        specifier: 'catalog:'
+        version: 13.0.3
+      pg:
+        specifier: 'catalog:'
+        version: 8.22.0
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vite:
+        specifier: 'catalog:'
+        version: 8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.120.0(@cloudflare/workers-types@5.20260809.1)
 
   packages/rate-limiter:
     dependencies:
@@ -2114,6 +2184,9 @@ packages:
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
 
+  '@types/pg@8.20.3':
+    resolution: {integrity: sha512-4Tvg+HO6+oQaAkpT8GTYoSExzpGGZz532GXgbbCElWJQeQdMozBWxEKNBhJJpHFjWXsMxqPbyypvj/89FWNoSQ==}
+
   '@types/react-dom@19.2.4':
     resolution: {integrity: sha512-Bsc+QHgp+P/F02XDzNCY9jnZNCUuLki36KT7VKrTXXLdHf+vHMNZnW1rVu5DNW/rCK+fya3DATySbLM4yhtKUw==}
     peerDependencies:
@@ -2398,6 +2471,10 @@ packages:
 
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
+
+  cac@7.0.0:
+    resolution: {integrity: sha512-tixWYgm5ZoOD+3g6UTea91eow5z6AAHaho3g0V9CNSNb45gM8SmflpAc+GRd1InC4AqN/07Unrgp56Y94N9hJQ==}
+    engines: {node: '>=20.19.0'}
 
   call-bind-apply-helpers@1.0.2:
     resolution: {integrity: sha512-Sp1ablJ0ivDkSzjcaJdxEunN5/XvksFJ2sMBFfq6x0ryhQV/2b/KwFe21cMpmHtPOSij8K99/wSfoEuTObmuMQ==}
@@ -3145,6 +3222,40 @@ packages:
   pathe@2.0.3:
     resolution: {integrity: sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w==}
 
+  pg-cloudflare@1.4.0:
+    resolution: {integrity: sha512-Vo7z/6rrQYxpNRylp4Tlob2elzbh+N/MOQbxFVWCxS7oEx6jF53GTJFxK2WWpKuBRkmiin4Mt+xofFDjx09R0A==}
+
+  pg-connection-string@2.14.0:
+    resolution: {integrity: sha512-XwWDGcLRGCXAR8F/AM5bG7Q+A3Wm2s6QeEjlOKZLlH3UYcguiqCWKyWXVag5TLTIjR7oOJUY8kcADaZgWPyLeg==}
+
+  pg-int8@1.0.1:
+    resolution: {integrity: sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw==}
+    engines: {node: '>=4.0.0'}
+
+  pg-pool@3.14.0:
+    resolution: {integrity: sha512-gKtPkFdQPU3DksooVLi9LsjZxrsBUZIpa+7aVx+LV5pNh0KzP4Zleud2po+ConrxbuXGBJ6Hfer6hdgpIBpBaw==}
+    peerDependencies:
+      pg: '>=8.0'
+
+  pg-protocol@1.16.0:
+    resolution: {integrity: sha512-sILXutLVjCLjcDuOmvhX5e2Z4cS5qG/6Bu3VkpFwdf/633ElGLpEh9bgmuI5I4sqKqkifQiGyiCcx1HdtrK7tg==}
+
+  pg-types@2.2.0:
+    resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
+    engines: {node: '>=4'}
+
+  pg@8.22.0:
+    resolution: {integrity: sha512-8wih1vVIBMxoUM2oB4soJsD9tDnDpLv4OXBJ+EJzFsvycD+lfyIreC2gGHq78f8jbLLt+bvlPTFdFZfJkOuzAA==}
+    engines: {node: '>= 16.0.0'}
+    peerDependencies:
+      pg-native: '>=3.0.1'
+    peerDependenciesMeta:
+      pg-native:
+        optional: true
+
+  pgpass@1.0.5:
+    resolution: {integrity: sha512-FdW9r/jQZhSeohs1Z3sI1yxFQNFvMcnmfuj4WBMUTxOrAyLMaTcE1aAMBiTlbMNaXvBCQuVi0R7hd8udDSP7ug==}
+
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
@@ -3159,6 +3270,22 @@ packages:
   postcss@8.5.25:
     resolution: {integrity: sha512-DTPx3RWSSnWyzLxQnlH0rJP+EW5ekl16ZU4/psbIhA0e53kJfdgaN5vKM+xP7yJtXVu+nfdVFmlgFDEKAe4Pyw==}
     engines: {node: ^10 || ^12 || >=14}
+
+  postgres-array@2.0.0:
+    resolution: {integrity: sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA==}
+    engines: {node: '>=4'}
+
+  postgres-bytea@1.0.1:
+    resolution: {integrity: sha512-5+5HqXnsZPE65IJZSMkZtURARZelel2oXUEO8rH83VS/hxH5vv1uHquPg5wZs8yMAfdv971IU+kcPUczi7NVBQ==}
+    engines: {node: '>=0.10.0'}
+
+  postgres-date@1.0.7:
+    resolution: {integrity: sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q==}
+    engines: {node: '>=0.10.0'}
+
+  postgres-interval@1.2.0:
+    resolution: {integrity: sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==}
+    engines: {node: '>=0.10.0'}
 
   pretty-bytes@5.6.0:
     resolution: {integrity: sha512-FFw039TmrBqFK8ma/7OL3sDz/VytdtJr044/QUJtH0wK9lb9jLq9tJyIxUwtQJHwar2BqtiA4iCWSwo9JLkzFg==}
@@ -3334,6 +3461,10 @@ packages:
     resolution: {integrity: sha512-d8EqvL+k/SOXCreS/SUzg2ciyHqBBLcN/yuRjFsbvVhHTE2pgei7oAhmPM7kWFbkX6OSMQfUq4KbkF3au9lhYQ==}
     engines: {node: '>= 12'}
 
+  split2@4.2.0:
+    resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
+    engines: {node: '>= 10.x'}
+
   stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
 
@@ -3504,6 +3635,14 @@ packages:
     resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  valibot@1.4.2:
+    resolution: {integrity: sha512-gjdCvJ6d3RyHAneqxMYMW9QMCwYMb3jpOO0IyHZV1bnRHFBHrX3VkIILt5XYR0WhwHiH7Mty8ovuPZ/O3gamrg==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   vite-plugin-pwa@1.3.0:
     resolution: {integrity: sha512-c5kMgN+ITrOtHXp8PAtk2uOIEea6XjP/unCGxOWWBzQ6qa65qj/awHg0wf+QF9E/2u9vh86LqxPwzEPNbM2r5A==}
@@ -3713,6 +3852,10 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+
+  xtend@4.0.2:
+    resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
+    engines: {node: '>=0.4'}
 
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
@@ -5316,6 +5459,12 @@ snapshots:
     dependencies:
       undici-types: 7.18.2
 
+  '@types/pg@8.20.3':
+    dependencies:
+      '@types/node': 24.13.3
+      pg-protocol: 1.16.0
+      pg-types: 2.2.0
+
   '@types/react-dom@19.2.4(@types/react@19.2.18)':
     dependencies:
       '@types/react': 19.2.18
@@ -5569,6 +5718,8 @@ snapshots:
       update-browserslist-db: 1.2.3(browserslist@4.28.7)
 
   buffer-from@1.1.2: {}
+
+  cac@7.0.0: {}
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
@@ -6361,6 +6512,41 @@ snapshots:
 
   pathe@2.0.3: {}
 
+  pg-cloudflare@1.4.0:
+    optional: true
+
+  pg-connection-string@2.14.0: {}
+
+  pg-int8@1.0.1: {}
+
+  pg-pool@3.14.0(pg@8.22.0):
+    dependencies:
+      pg: 8.22.0
+
+  pg-protocol@1.16.0: {}
+
+  pg-types@2.2.0:
+    dependencies:
+      pg-int8: 1.0.1
+      postgres-array: 2.0.0
+      postgres-bytea: 1.0.1
+      postgres-date: 1.0.7
+      postgres-interval: 1.2.0
+
+  pg@8.22.0:
+    dependencies:
+      pg-connection-string: 2.14.0
+      pg-pool: 3.14.0(pg@8.22.0)
+      pg-protocol: 1.16.0
+      pg-types: 2.2.0
+      pgpass: 1.0.5
+    optionalDependencies:
+      pg-cloudflare: 1.4.0
+
+  pgpass@1.0.5:
+    dependencies:
+      split2: 4.2.0
+
   picocolors@1.1.1: {}
 
   picomatch@4.0.5: {}
@@ -6372,6 +6558,16 @@ snapshots:
       nanoid: 3.3.16
       picocolors: 1.1.1
       source-map-js: 1.2.1
+
+  postgres-array@2.0.0: {}
+
+  postgres-bytea@1.0.1: {}
+
+  postgres-date@1.0.7: {}
+
+  postgres-interval@1.2.0:
+    dependencies:
+      xtend: 4.0.2
 
   pretty-bytes@5.6.0: {}
 
@@ -6633,6 +6829,8 @@ snapshots:
 
   source-map@0.8.0: {}
 
+  split2@4.2.0: {}
+
   stackback@0.0.2: {}
 
   std-env@4.2.0: {}
@@ -6848,6 +7046,10 @@ snapshots:
   use-sync-external-store@1.6.0(react@19.2.8):
     dependencies:
       react: 19.2.8
+
+  valibot@1.4.2(typescript@7.0.2):
+    optionalDependencies:
+      typescript: 7.0.2
 
   vite-plugin-pwa@1.3.0(supports-color@10.2.2)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))(workbox-build@7.4.1(supports-color@10.2.2))(workbox-window@7.4.1):
     dependencies:
@@ -7107,6 +7309,8 @@ snapshots:
       - utf-8-validate
 
   ws@8.21.0: {}
+
+  xtend@4.0.2: {}
 
   yallist@3.1.1: {}
 

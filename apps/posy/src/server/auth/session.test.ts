@@ -1,27 +1,20 @@
-import type { Kysely } from "kysely";
-import { expect, test } from "vitest";
+import { resetDb } from "@acme/db/testing";
+import { beforeEach, expect, test } from "vitest";
 import { createApp } from "../app";
-import { createDb, type Database } from "../db";
+import { getDb } from "../db";
 import {
   createSession,
   resolveSession,
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
 } from "./session";
-import { DbSessionStore } from "./session-db";
-import { migratedDialect, seedUser, testEnv as env } from "./test-utils";
+import { noDatabaseEnv } from "../testing/no-database";
+import { seeded } from "./test-utils";
 import { hashToken } from "./tokens";
 
 const HOUR_MS = 60 * 60 * 1000;
 
-async function seeded(): Promise<{
-  db: Kysely<Database>;
-  store: DbSessionStore;
-}> {
-  const db = createDb(await migratedDialect());
-  await seedUser(db, "u1");
-  return { db, store: new DbSessionStore(db) };
-}
+beforeEach(() => resetDb(getDb));
 
 test("createSession stores only the token hash", async () => {
   const { db, store } = await seeded();
@@ -33,61 +26,52 @@ test("createSession stores only the token hash", async () => {
   expect(row.id).toBe(await hashToken(token));
   expect(row.id).not.toBe(token);
   expect(row.client_version).toBe("1.0.0");
-  await db.destroy();
 });
 
 test("resolveSession returns the userId for a valid token", async () => {
-  const { db, store } = await seeded();
+  const { store } = await seeded();
   const token = await createSession(store, "u1", null, 1000);
   expect(await resolveSession(store, token, 2000)).toBe("u1");
   expect(await resolveSession(store, "not-a-token", 2000)).toBeNull();
-  await db.destroy();
 });
 
 test("resolveSession refreshes last_seen_at only after an hour", async () => {
   const { db, store } = await seeded();
   const token = await createSession(store, "u1", null, 1000);
-  const lastSeen = async () =>
-    (
+  const lastSeen = async () => {
+    return (
       await db
         .selectFrom("sessions")
         .select("last_seen_at")
         .executeTakeFirstOrThrow()
     ).last_seen_at;
+  };
 
   await resolveSession(store, token, 1000 + HOUR_MS);
   expect(await lastSeen()).toBe(1000);
   await resolveSession(store, token, 1000 + 2 * HOUR_MS);
   expect(await lastSeen()).toBe(1000 + 2 * HOUR_MS);
-  await db.destroy();
 });
 
 test("resolveSession rejects expired sessions", async () => {
-  const { db, store } = await seeded();
+  const { store } = await seeded();
   const token = await createSession(store, "u1", null, 1000);
   const expired = 1000 + SESSION_MAX_AGE_SECONDS * 1000 + 1;
   expect(await resolveSession(store, token, expired)).toBeNull();
-  await db.destroy();
 });
 
 test("GET /session without a cookie never touches the db", async () => {
-  const app = createApp({
-    getDialect: () => {
-      throw new Error("getDialect must not be called");
-    },
-  });
+  const app = createApp();
+  const env = noDatabaseEnv();
   const res = await app.request("/session", {}, env);
   expect(res.status).toBe(200);
   expect(await res.json()).toEqual({ user: null });
 });
 
 test("GET /session resolves the cookie to a user", async () => {
-  const dialect = await migratedDialect();
-  const db = createDb(dialect);
-  await seedUser(db, "u1");
-  const store = new DbSessionStore(db);
+  const { env, store } = await seeded();
   const token = await createSession(store, "u1", null, Date.now());
-  const app = createApp({ getDialect: () => dialect });
+  const app = createApp();
 
   const authed = await app.request(
     "/session",
@@ -102,5 +86,4 @@ test("GET /session resolves the cookie to a user", async () => {
     env,
   );
   expect(await bogus.json()).toEqual({ user: null });
-  await db.destroy();
 });
