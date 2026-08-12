@@ -22,7 +22,12 @@ interface Call {
 
 function mockFetch(
   payload: unknown,
-  response: { ok?: boolean; status?: number } = {},
+  response: {
+    ok?: boolean;
+    status?: number;
+    // Overridden to answer a body that is not json at all.
+    json?: () => Promise<unknown>;
+  } = {},
 ): Call[] {
   const calls: Call[] = [];
   // Typed to what restD1 sends, not RequestInit's wider union.
@@ -39,7 +44,7 @@ function mockFetch(
     return Promise.resolve({
       ok: response.ok ?? true,
       status: response.status ?? 200,
-      json: () => Promise.resolve(payload),
+      json: response.json ?? (() => Promise.resolve(payload)),
     } as Response);
   });
   return calls;
@@ -128,6 +133,30 @@ describe("restD1", () => {
       await expect(
         restD1(config).prepare("select 1").bind().all(),
       ).rejects.toThrow("D1 query failed with status 403");
+    });
+
+    // An edge 5xx answers HTML, so parsing first would replace the status
+    // with whatever the json parser complains about.
+    it("keeps the http status when the body is not json at all", async () => {
+      mockFetch(undefined, {
+        ok: false,
+        status: 502,
+        json: () => Promise.reject(new SyntaxError("Unexpected token '<'")),
+      });
+
+      let thrown: Error | undefined;
+      try {
+        await restD1(config).prepare("select 1").bind().all();
+      } catch (error) {
+        thrown = error as Error;
+      }
+
+      expect(thrown?.message).toContain("D1 query failed with status 502");
+      // Kept rather than swallowed: the CLI prints the chain, so why the body
+      // would not parse is still there to debug with.
+      expect((thrown?.cause as Error | undefined)?.message).toContain(
+        "Unexpected token",
+      );
     });
   });
 });

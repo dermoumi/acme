@@ -43,13 +43,23 @@ export function restD1(config: RemoteD1Config): D1Database {
             },
             body: JSON.stringify({ sql, params }),
           });
-          const body = (await response.json()) as QueryResponse;
-          if (!response.ok || !body.success) {
-            const detail = body.errors
+          // Some failures answer HTML, an edge 5xx among them: the status
+          // leads, and the parse failure rides along as the cause.
+          let body: QueryResponse | undefined;
+          let unparsed: unknown;
+          try {
+            body = (await response.json()) as QueryResponse;
+          } catch (error) {
+            unparsed = error;
+          }
+
+          if (!response.ok || !body?.success) {
+            const detail = body?.errors
               ?.map((err) => `${err.code}: ${err.message}`)
               .join("; ");
             throw new Error(
               detail ?? `D1 query failed with status ${response.status}`,
+              { cause: unparsed },
             );
           }
           const [first] = body.result ?? [];
