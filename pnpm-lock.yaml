@@ -158,6 +158,15 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 2.1.0(hono@4.13.1)
+      '@sentry/cloudflare':
+        specifier: 'catalog:'
+        version: 10.69.0(@cloudflare/workers-types@5.20260810.1)(supports-color@10.2.2)(wrangler@4.120.0(@cloudflare/workers-types@5.20260810.1))
+      '@sentry/node':
+        specifier: 'catalog:'
+        version: 10.69.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@10.2.2)
+      '@sentry/react':
+        specifier: 'catalog:'
+        version: 10.69.0(react@19.2.8)
       better-sqlite3:
         specifier: 'catalog:'
         version: 13.0.3
@@ -192,6 +201,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260810.1
+      '@sentry/vite-plugin':
+        specifier: 'catalog:'
+        version: 5.4.0(rollup@4.62.2)(supports-color@10.2.2)
       '@types/better-sqlite3':
         specifier: 'catalog:'
         version: 9.6.0
@@ -326,21 +338,9 @@ importers:
 
   packages/sentry:
     dependencies:
-      '@sentry/cloudflare':
-        specifier: 'catalog:'
-        version: 10.69.0(@cloudflare/workers-types@5.20260810.1)(supports-color@10.2.2)(wrangler@4.120.0(@cloudflare/workers-types@5.20260810.1))
       '@sentry/core':
         specifier: 'catalog:'
         version: 10.69.0
-      '@sentry/node':
-        specifier: 'catalog:'
-        version: 10.69.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@10.2.2)
-      '@sentry/react':
-        specifier: 'catalog:'
-        version: 10.69.0(react@19.2.8)
-      '@sentry/vite-plugin':
-        specifier: 'catalog:'
-        version: 5.4.0(rollup@4.62.2)(supports-color@10.2.2)
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
@@ -354,6 +354,18 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 2.1.0(hono@4.13.1)
+      '@sentry/cloudflare':
+        specifier: 'catalog:'
+        version: 10.69.0(@cloudflare/workers-types@5.20260810.1)(supports-color@10.2.2)(wrangler@4.120.0(@cloudflare/workers-types@5.20260810.1))
+      '@sentry/node':
+        specifier: 'catalog:'
+        version: 10.69.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@10.2.2)
+      '@sentry/react':
+        specifier: 'catalog:'
+        version: 10.69.0(react@19.2.8)
+      '@sentry/vite-plugin':
+        specifier: 'catalog:'
+        version: 5.4.0(rollup@4.62.2)(supports-color@10.2.2)
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3

@@ -24,17 +24,17 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
-    "@sentry/cloudflare": "catalog:",
-    "@sentry/core": "catalog:",
-    "@sentry/node": "catalog:",
-    "@sentry/react": "catalog:",
-    "@sentry/vite-plugin": "catalog:"
+    "@sentry/core": "catalog:"
   },
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@hono/node-server": "catalog:",
+    "@sentry/cloudflare": "catalog:",
+    "@sentry/node": "catalog:",
+    "@sentry/react": "catalog:",
+    "@sentry/vite-plugin": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
@@ -45,7 +45,25 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
+    "@sentry/cloudflare": "catalog:",
+    "@sentry/node": "catalog:",
+    "@sentry/react": "catalog:",
+    "@sentry/vite-plugin": "catalog:",
     "hono": "catalog:",
     "react": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@sentry/cloudflare": {
+      "optional": true
+    },
+    "@sentry/node": {
+      "optional": true
+    },
+    "@sentry/react": {
+      "optional": true
+    },
+    "@sentry/vite-plugin": {
+      "optional": true
+    }
   }
 }
