@@ -23,7 +23,7 @@ async function capture(
   return { res, body: JSON.stringify(sent) };
 }
 
-describe("sentry hono error capture", () => {
+describe("sentryErrorHandler", () => {
   it("captures an error thrown inside a route handler", async () => {
     const { res, body } = await capture({ SENTRY_DSN: DSN });
     expect(res.status).toBe(500);
@@ -51,7 +51,7 @@ describe("sentry hono error capture", () => {
     expect(body).not.toContain(COOKIE);
   });
 
-  it("redactKeys masks a project specific field", async () => {
+  it("masks a project specific field named by redactKeys", async () => {
     const { body } = await capture(
       { SENTRY_DSN: DSN },
       { redactKeys: ["note"] },
@@ -60,7 +60,7 @@ describe("sentry hono error capture", () => {
     expect(body).not.toContain(NOTE);
   });
 
-  it("masking none sends values verbatim but never credentials", async () => {
+  it("sends values verbatim under masking none, but never credentials", async () => {
     const { body } = await capture({ SENTRY_DSN: DSN }, { masking: "none" });
     expect(body).toContain(PASSWORD);
     expect(body).toContain(SESSION);
@@ -70,20 +70,20 @@ describe("sentry hono error capture", () => {
 
   // Delivery must not depend on waitUntil, which races isolate teardown once the
   // client has its response. No settle() here on purpose.
-  it("the event is sent before the response resolves", async () => {
+  it("sends the event before the response resolves", async () => {
     const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, {});
     await invoke(loginRequest());
     expect(JSON.stringify(sent)).toContain(BOOM);
   });
 
-  it("the 500 body carries the event id so a user can quote it", async () => {
+  it("puts the event id in the 500 body, so a user can quote it", async () => {
     const { invoke } = bench.build({ SENTRY_DSN: DSN }, {});
     const res = await invoke(loginRequest());
     const body = (await res.json()) as { sentryEventId: string | null };
     expect(body.sentryEventId).toMatch(/^[a-f0-9]{32}$/u);
   });
 
-  it("with no DSN the id is null rather than absent", async () => {
+  it("reports a null event id, rather than none, with no DSN", async () => {
     const { invoke } = bench.build({}, {});
     const res = await invoke(loginRequest());
     expect(await res.json()).toEqual({
@@ -93,7 +93,7 @@ describe("sentry hono error capture", () => {
   });
 
   // CI failures are reported in the logs of the CI itself.
-  it("ignoreUserAgent skips capture for a matching caller", async () => {
+  it("skips capture for a caller ignoreUserAgent matches", async () => {
     const { invoke, sent } = bench.build(
       { SENTRY_DSN: DSN },
       { ignoreUserAgent: "acme-ci-health-probe" },
@@ -106,7 +106,7 @@ describe("sentry hono error capture", () => {
     expect(sent).toEqual([]);
   });
 
-  it("a different user agent is still captured", async () => {
+  it("still captures a different user agent", async () => {
     const { invoke, sent } = bench.build(
       { SENTRY_DSN: DSN },
       { ignoreUserAgent: "acme-ci-health-probe" },

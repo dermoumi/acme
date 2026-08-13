@@ -196,12 +196,12 @@ describe("restD1 surfaces failures rather than returning empty rows", () => {
   });
 });
 
-describe("the body it accepts", () => {
+describe("restD1 on the body cloudflare actually sends", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("passes meta on with the fields cloudflare adds to it", async () => {
+  it("passes meta through with the extra fields it carries", async () => {
     mockFetch({
       success: true,
       result: [

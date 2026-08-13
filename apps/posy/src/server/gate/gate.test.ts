@@ -13,8 +13,8 @@ const gated = createBindings({
   BASIC_AUTH: "alice:secret",
 });
 
-describe("gate", () => {
-  it("asset responses have immutable headers", async () => {
+describe("the ASSETS binding gate has to work around", () => {
+  it("answers with headers that cannot be set", async () => {
     const res = await createBindings().ASSETS.fetch(
       new Request("https://posy.test/"),
     );
@@ -23,8 +23,10 @@ describe("gate", () => {
       res.headers.set("X-Robots-Tag", "noindex");
     }).toThrow(TypeError);
   });
+});
 
-  it("REQUIRE_AUTH unset: everything open, no noindex header", async () => {
+describe("gate", () => {
+  it("leaves everything open and unmarked when REQUIRE_AUTH is unset", async () => {
     const health = await app.request("/health", {}, createBindings());
     expect(health.status).toBe(200);
     expect(health.headers.get("X-Robots-Tag")).toBeNull();
@@ -35,7 +37,7 @@ describe("gate", () => {
     expect(asset.headers.get("X-Robots-Tag")).toBeNull();
   });
 
-  it("REQUIRE_AUTH set without BASIC_AUTH: 503 everywhere, even /health", async () => {
+  it("answers 503 everywhere, even /health, when REQUIRE_AUTH has no BASIC_AUTH", async () => {
     const broken = createBindings({ REQUIRE_AUTH: "1" });
     const responses = await Promise.all(
       ["/health", "/", "/api/whatever"].map(async (path) =>
@@ -48,7 +50,7 @@ describe("gate", () => {
     }
   });
 
-  it("unparseable BASIC_AUTH fails closed with 503", async () => {
+  it("fails closed with 503 on an unparseable BASIC_AUTH", async () => {
     const responses = await Promise.all(
       ["no-colon", "alice:ok\ngarbage", ":startswithcolon", "  \n  "].map(
         async (raw) =>
@@ -63,15 +65,17 @@ describe("gate", () => {
       expect(res.status).toBe(503);
     }
   });
+});
 
-  it("gated: missing credentials get 401 with noindex", async () => {
+describe("gate with credentials required", () => {
+  it("challenges a request with no credentials, and marks it noindex", async () => {
     const res = await app.request("/", {}, gated);
     expect(res.status).toBe(401);
     expect(res.headers.get("WWW-Authenticate")).toContain("Posy Staging");
     expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
   });
 
-  it("gated: wrong credentials get 401", async () => {
+  it("challenges wrong credentials", async () => {
     const res = await app.request(
       "/",
       { headers: creds("alice", "wrong") },
@@ -80,7 +84,7 @@ describe("gate", () => {
     expect(res.status).toBe(401);
   });
 
-  it("gated: correct credentials reach assets, still noindex", async () => {
+  it("lets correct credentials reach assets, still marked noindex", async () => {
     const res = await app.request(
       "/",
       { headers: creds("alice", "secret") },
@@ -91,7 +95,7 @@ describe("gate", () => {
     expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
   });
 
-  it("multi-user secret: both lines work, colons in passwords survive", async () => {
+  it("accepts every line of a multi-user secret, colons in passwords included", async () => {
     const multi = createBindings({
       REQUIRE_AUTH: "1",
       BASIC_AUTH: "alice:secret\n\n  bob:pa:ss:word  \n",
@@ -116,13 +120,13 @@ describe("gate", () => {
     expect(truncated.status).toBe(401);
   });
 
-  it("gated: an open path answers without credentials, still noindex", async () => {
+  it("answers an open path without credentials, still marked noindex", async () => {
     const res = await app.request("/health", {}, gated);
     expect(res.status).toBe(200);
     expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
   });
 
-  it("gated: /health is challenged like anything else when unlisted", async () => {
+  it("challenges /health like anything else when it is not listed open", async () => {
     const unlisted = new Hono()
       .use(gate())
       .get("/health", (ctx) => ctx.text("hi"));
@@ -130,7 +134,7 @@ describe("gate", () => {
     expect((await unlisted.request("/health", {}, gated)).status).toBe(401);
   });
 
-  it("gated: the challenge names the realm it was given", async () => {
+  it("names the realm it was given in the challenge", async () => {
     const named = new Hono()
       .use(gate({ realm: "Somewhere Else" }))
       .get("/", (ctx) => ctx.text("hi"));
@@ -141,7 +145,7 @@ describe("gate", () => {
     );
   });
 
-  it("gated: any listed path skips the challenge", async () => {
+  it("skips the challenge for any listed path", async () => {
     const listed = new Hono()
       .use(gate({ open: ["/anything"] }))
       .get("/anything", (ctx) => ctx.text("hi"));

@@ -23,8 +23,8 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-describe("auth api", () => {
-  it("fetchSession returns the user or null", async () => {
+describe("fetchSession", () => {
+  it("returns the user or null", async () => {
     stubFetch(jsonResponse({ user: { id: "u1", name: "Tester" } }));
     expect(await fetchSession()).toEqual({ id: "u1", name: "Tester" });
 
@@ -32,7 +32,14 @@ describe("auth api", () => {
     expect(await fetchSession()).toBeNull();
   });
 
-  it("loginWithPassword posts username and password", async () => {
+  it("throws on a server error", async () => {
+    stubFetch(jsonResponse({ error: "internal" }, 500));
+    await expect(fetchSession()).rejects.toThrow("500");
+  });
+});
+
+describe("loginWithPassword", () => {
+  it("posts the username and password", async () => {
     const fetchMock = stubFetch(
       jsonResponse({ user: { id: "u1", name: "Tester" } }),
     );
@@ -51,19 +58,19 @@ describe("auth api", () => {
     });
   });
 
-  it("loginWithPassword resolves null for bad credentials", async () => {
+  it("resolves null for bad credentials", async () => {
     stubFetch(jsonResponse({ error: "invalid_credentials" }, 401));
     expect(await loginWithPassword("u1", "wrong", "1.2.3")).toBeNull();
   });
 
-  it("server errors on login throw instead of looking like bad credentials", async () => {
+  it("throws on a server error instead of looking like bad credentials", async () => {
     stubFetch(jsonResponse({ error: "internal" }, 500));
     await expect(loginWithPassword("u1", "pass", "1.2.3")).rejects.toThrow(
       "500",
     );
   });
 
-  it("being rate limited is distinguishable from a server fault", async () => {
+  it("rejects with a distinguishable error when rate limited", async () => {
     stubFetch(
       new Response(JSON.stringify({ error: "rate_limited" }), {
         status: 429,
@@ -84,7 +91,7 @@ describe("auth api", () => {
     });
   });
 
-  it("a rate limit without a usable Retry-After still says how long to wait", async () => {
+  it("still says how long to wait without a usable Retry-After", async () => {
     stubFetch(jsonResponse({ error: "rate_limited" }, 429));
     await expect(
       loginWithPassword("u1", "pass", "1.2.3"),
@@ -93,19 +100,16 @@ describe("auth api", () => {
     });
   });
 
-  it("network failures reject instead of looking like bad credentials", async () => {
+  it("rejects on a network failure instead of looking like bad credentials", async () => {
     stubFetch(new TypeError("offline"));
     await expect(loginWithPassword("u1", "pass", "1.2.3")).rejects.toThrow(
       "offline",
     );
   });
+});
 
-  it("fetchSession throws on server error", async () => {
-    stubFetch(jsonResponse({ error: "internal" }, 500));
-    await expect(fetchSession()).rejects.toThrow("500");
-  });
-
-  it("endSession issues a DELETE", async () => {
+describe("endSession", () => {
+  it("issues a DELETE", async () => {
     const fetchMock = stubFetch(new Response(null, { status: 204 }));
     await endSession();
     const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit];

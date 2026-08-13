@@ -32,7 +32,7 @@ describe("d1MigrationDialect", () => {
 
   // Guards the fix against a kysely-d1 release that only looks like it made
   // the wrapper redundant.
-  it("wraps a stock D1Dialect that still cannot introspect D1", async () => {
+  it("is still needed, since a stock D1Dialect cannot introspect D1", async () => {
     const db = createDb(new D1Dialect({ database: database() }));
     await expect(db.introspection.getTables()).rejects.toThrow(
       /not authorized|SQLITE_AUTH/iu,

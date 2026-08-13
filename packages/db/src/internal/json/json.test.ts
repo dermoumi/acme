@@ -18,18 +18,18 @@ interface TestSchema {
   documents: { id: string; body: string };
 }
 
-describe("json columns", () => {
-  it("round-trips values a JSON column can hold", () => {
+describe("jsonText and parseJsonText", () => {
+  it("round-trip every value a JSON column can hold", () => {
     for (const value of VALUES) {
       expect(parseJsonText(jsonText(value))).toEqual(value);
     }
   });
 
-  it("rejects text that is not JSON on parse", () => {
+  it("reject text that is not JSON, on parse", () => {
     expect(() => parseJsonText("not json")).toThrow(SyntaxError);
   });
 
-  it("rejects a circular value on serialize", () => {
+  it("reject a circular value, on serialize", () => {
     const circular: Record<string, unknown> = {};
     circular.self = circular;
     expect(() => jsonText(circular)).toThrow(TypeError);
@@ -37,7 +37,7 @@ describe("json columns", () => {
 
   // TEXT on every engine: sqlite has no JSON column type, and one declared
   // `jsonb` there takes NUMERIC affinity, which would store 42 as an integer.
-  it("survives a round-trip through a real column", async () => {
+  it("survive a round-trip through a real column", async () => {
     const db = createDb<TestSchema>(await createEmptyDialect());
     await db.schema
       .createTable("documents")

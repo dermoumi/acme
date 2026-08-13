@@ -14,10 +14,10 @@ import { hashToken } from "./tokens";
 
 const HOUR_MS = 60 * 60 * 1000;
 
-describe("session", () => {
+describe("createSession", () => {
   beforeEach(() => resetDb(getDb));
 
-  it("createSession stores only the token hash", async () => {
+  it("stores only the token hash", async () => {
     const { db, store } = await seeded();
     const token = await createSession(store, "u1", "1.0.0", 1000);
     const row = await db
@@ -28,15 +28,19 @@ describe("session", () => {
     expect(row.id).not.toBe(token);
     expect(row.client_version).toBe("1.0.0");
   });
+});
 
-  it("resolveSession returns the userId for a valid token", async () => {
+describe("resolveSession", () => {
+  beforeEach(() => resetDb(getDb));
+
+  it("returns the userId for a valid token", async () => {
     const { store } = await seeded();
     const token = await createSession(store, "u1", null, 1000);
     expect(await resolveSession(store, token, 2000)).toBe("u1");
     expect(await resolveSession(store, "not-a-token", 2000)).toBeNull();
   });
 
-  it("resolveSession refreshes last_seen_at only after an hour", async () => {
+  it("refreshes last_seen_at only after an hour", async () => {
     const { db, store } = await seeded();
     const token = await createSession(store, "u1", null, 1000);
     const lastSeen = async () => {
@@ -54,14 +58,18 @@ describe("session", () => {
     expect(await lastSeen()).toBe(1000 + 2 * HOUR_MS);
   });
 
-  it("resolveSession rejects expired sessions", async () => {
+  it("rejects an expired session", async () => {
     const { store } = await seeded();
     const token = await createSession(store, "u1", null, 1000);
     const expired = 1000 + SESSION_MAX_AGE_SECONDS * 1000 + 1;
     expect(await resolveSession(store, token, expired)).toBeNull();
   });
+});
 
-  it("GET /session without a cookie never touches the db", async () => {
+describe("GET /session", () => {
+  beforeEach(() => resetDb(getDb));
+
+  it("never touches the db without a cookie", async () => {
     const app = createApp();
     const env = noDatabaseEnv();
     const res = await app.request("/session", {}, env);
@@ -69,7 +77,7 @@ describe("session", () => {
     expect(await res.json()).toEqual({ user: null });
   });
 
-  it("GET /session resolves the cookie to a user", async () => {
+  it("resolves the cookie to a user", async () => {
     const { env, store } = await seeded();
     const token = await createSession(store, "u1", null, Date.now());
     const app = createApp();
