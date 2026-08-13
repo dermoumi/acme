@@ -13,6 +13,7 @@ export default defineConfig({
     // The workers pool rejects the v8 provider: it needs node:inspector.
     coverage: {
       provider: "istanbul",
+      reporter: ["text", "lcovonly"],
       // The entry starts a server; CI's container health check covers it.
       exclude: [
         "src/server/testing/**",
