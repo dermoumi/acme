@@ -59,19 +59,52 @@ const server = serve(
   },
 );
 
+// Under docker's ten second default, and every orchestrator has one. Docker
+// sends a single SIGTERM and then SIGKILLs, so leaving is on us.
+const DRAIN_MS = 8000;
+
+// Once, whichever of the two paths below gets there first.
+let leaving = false;
+function leave(): void {
+  if (leaving) return;
+  leaving = true;
+  // Bounded, so an unreachable Sentry cannot outlast docker's patience.
+  void closeSentry().finally(() => {
+    // A pg pool holds the loop open, so exiting is not something to leave to
+    // whether anything else happens to be pending.
+    // oxlint-disable-next-line unicorn/no-process-exit
+    process.exit(0);
+  });
+}
+
 // PID 1 is exempt from the default signal dispositions, so without these the
-// container ignores `docker stop` until it is killed. A second signal gives up.
+// container ignores `docker stop` until it is killed.
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.once(signal, () => {
     console.log("Closing...");
+    // An impatient human, since docker never sends a second one.
     process.once(signal, () => {
       process.exit(130);
     });
-    server.close(() => {
-      // Bounded, so an unreachable Sentry cannot outlast docker's patience.
-      void closeSentry().finally(() => {
-        process.exit(0);
-      });
-    });
+
+    server.close(leave);
+
+    // close() waits on every open socket, and a kept-alive one is idle for
+    // five seconds before node reaps it. Without this, one browser sitting
+    // there is enough to reach SIGKILL. http2 servers expose neither method.
+    if ("closeIdleConnections" in server) {
+      server.closeIdleConnections();
+    }
+
+    // Whatever is still mid-request when the deadline passes gets cut, which
+    // is what SIGKILL would do anyway, except this way the drain still runs.
+    setTimeout(() => {
+      console.log("Closing: cutting connections still open.");
+      if ("closeAllConnections" in server) {
+        server.closeAllConnections();
+      }
+
+      leave();
+    }, DRAIN_MS).unref();
   });
 }
