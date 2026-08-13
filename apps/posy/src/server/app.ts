@@ -49,7 +49,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     trustedProxies: options.trustedProxies,
   });
 
-  app.use(gate({ open: ["/health"] }));
+  app.use(gate({ open: ["/health"], realm: "Posy Staging" }));
 
   // POST only keeps the per-load GET uncapped; /sentry exact, /* double-charges.
   app.on(

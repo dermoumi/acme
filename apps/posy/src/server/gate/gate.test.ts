@@ -129,6 +129,17 @@ test("gated: /health is challenged like anything else when unlisted", async () =
   expect((await unlisted.request("/health", {}, gated)).status).toBe(401);
 });
 
+test("gated: the challenge names the realm it was given", async () => {
+  const named = new Hono()
+    .use(gate({ realm: "Somewhere Else" }))
+    .get("/", (ctx) => ctx.text("hi"));
+  const res = await named.request("/", {}, gated);
+
+  expect(res.headers.get("WWW-Authenticate")).toContain(
+    'realm="Somewhere Else"',
+  );
+});
+
 test("gated: any listed path skips the challenge", async () => {
   const listed = new Hono()
     .use(gate({ open: ["/anything"] }))
