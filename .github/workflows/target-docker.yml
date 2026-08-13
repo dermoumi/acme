@@ -249,49 +249,6 @@ jobs:
       - name: Set up buildx
         uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
-      # A single platform can be loaded where a manifest list cannot, so arm64
-      # is built and actually run here rather than pushed untested.
-      - name: Build arm64 image
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
-        with:
-          context: .
-          file: apps/${{ inputs.app }}/Dockerfile
-          platforms: linux/arm64
-          load: true
-          push: false
-          tags: ${{ inputs.app }}:arm64
-          build-args: |
-            APP_NAME=${{ inputs.app }}
-            APP_ENV=production
-            APP_VERSION=${{ steps.release.outputs.version }}
-            APP_REVISION=${{ steps.release.outputs.short }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Start arm64 container
-        env:
-          TAG: ${{ inputs.app }}:arm64
-        run: docker run -d --platform linux/arm64 --name "$APP-arm64" -p 3000:3000 "$TAG"
-
-      - name: Probe arm64
-        if: inputs.health-path != ''
-        uses: ./.github/actions/probe-app
-        with:
-          base-url: http://localhost:3000
-          health-path: ${{ inputs.health-path }}
-          revision: ${{ steps.release.outputs.short }}
-          check-client: "true"
-          # emulated, so it starts an order of magnitude slower than native
-          timeout-seconds: "300"
-
-      - name: arm64 logs
-        if: failure()
-        run: docker logs "$APP-arm64" || true
-
-      - name: Remove arm64 container
-        if: always()
-        run: docker rm -fv "$APP-arm64" || true
-
       - name: Log in to GHCR
         uses: docker/login-action@371161bbe7024a29a25c5e19bfcbc0804fe9ad2c # v4.5.2
         with:
