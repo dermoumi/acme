@@ -48,8 +48,27 @@ const handler = withSentry(
   sentryConfig,
 );
 
-serve({
-  fetch: (request: Request) => handler.fetch(request, env),
-  port: Number(process.env.PORT ?? 3000),
-  hostname: "0.0.0.0",
-});
+const server = serve(
+  {
+    fetch: (request: Request) => handler.fetch(request, env),
+    port: Number(process.env.PORT ?? 3000),
+    hostname: "0.0.0.0",
+  },
+  ({ port }) => {
+    console.log(`Listening on ${port}`);
+  },
+);
+
+// PID 1 is exempt from the default signal dispositions, so without these the
+// container ignores `docker stop` until it is killed. A second signal gives up.
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, () => {
+    console.log("Closing...");
+    process.once(signal, () => {
+      process.exit(130);
+    });
+    server.close(() => {
+      process.exit(0);
+    });
+  });
+}

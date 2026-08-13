@@ -90,5 +90,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD \
   node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-# exec so node is PID 1 and receives signals.
+# exec so node, which handles its own signals, replaces sh as PID 1. sh does
+# not forward them, so a stop during the migration still waits for the timeout.
 CMD ["sh", "-c", "acme-db migrate && exec node dist/server/index.mjs"]
