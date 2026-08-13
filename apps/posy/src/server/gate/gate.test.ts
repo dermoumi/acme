@@ -1,6 +1,13 @@
+import { resetDb } from "@acme/db/testing";
 import { createBindings } from "#testing/runtime";
-import { expect, test } from "vitest";
+import { beforeEach, expect, test } from "vitest";
+import { migratedEnv } from "../auth/test-utils";
+import { getDb } from "../db";
 import { app } from "../index";
+
+// The accessor holds its database for the life of the process, and these cases
+// deliberately run with and without one.
+beforeEach(() => resetDb(getDb));
 
 function creds(user: string, pass: string): { Authorization: string } {
   return { Authorization: `Basic ${btoa(`${user}:${pass}`)}` };
@@ -123,6 +130,7 @@ test("gated: /health stays open without credentials but gets noindex", async () 
     revision: "dev",
     sentry: "off",
     rateLimit: "on",
+    database: "down",
   });
   expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
 });
@@ -137,6 +145,11 @@ test("/health reports the build so a deploy check can wait for it", async () => 
     version: "1.2.3",
     revision: "abc1234",
   });
+});
+
+test("/health reports the database as ok once it can be queried", async () => {
+  const res = await app.request("/health", {}, await migratedEnv());
+  expect(await res.json()).toMatchObject({ database: "ok" });
 });
 
 test("/health reports sentry as configured once a DSN is bound", async () => {

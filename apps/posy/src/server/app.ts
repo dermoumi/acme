@@ -1,8 +1,10 @@
 import { createRateLimiter } from "@acme/rate-limiter";
 import { sentryTunnel, type SentryConfig } from "@acme/sentry/hono";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
+import { sql } from "kysely";
 import { authRoutes } from "./auth";
 import type { AppBindings, AppEnv } from "./bindings";
+import { getDb } from "./db";
 import { debugRoutes, isDebugEnabled } from "./debug";
 import { gate } from "./gate";
 
@@ -20,6 +22,17 @@ export const RATE_LOGIN_LIMIT = 10;
 export const RATE_LOGIN_PERIOD = 60;
 export const RATE_TUNNEL_LIMIT = 60;
 export const RATE_TUNNEL_PERIOD = 60;
+
+// A query, not a binding check: the url is only opened on first use.
+async function databaseStatus(ctx: Context<AppEnv>): Promise<"down" | "ok"> {
+  try {
+    await sql`select 1`.execute(await getDb(ctx));
+
+    return "ok";
+  } catch {
+    return "down";
+  }
+}
 
 export interface AppOptions {
   /**
@@ -59,7 +72,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
   );
   app.route("/debug", debugRoutes());
   // Whether a DSN is set, not whether Sentry is reachable; capture is fail-soft.
-  app.get("/health", (ctx) =>
+  app.get("/health", async (ctx) =>
     ctx.json({
       status: "ok",
       app: "posy",
@@ -69,6 +82,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
       sentry: ctx.env.SENTRY_DSN ? "configured" : "off",
       // Limiting fails open, so a lost binding is silent without this.
       rateLimit: limiter.status(ctx.env),
+      database: await databaseStatus(ctx),
     }),
   );
 
