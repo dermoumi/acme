@@ -86,6 +86,7 @@ describe("create", () => {
 
     if (SELF_PROVISIONED) {
       // Nothing to lose: create() described a budget, so it still applies.
+      // oxlint-disable-next-line vitest/no-conditional-expect
       expect(responses.some((response) => response.status === 429)).toBe(true);
       return;
     }
