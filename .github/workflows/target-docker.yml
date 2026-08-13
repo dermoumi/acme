@@ -182,7 +182,9 @@ jobs:
         run: docker compose -f "$COMPOSE_FILE" config --quiet
 
   publish:
-    name: publish ${{ inputs.app }}
+    # A skipped job never evaluates its name, and this one is skipped on every
+    # pull request. Callers already name themselves per app.
+    name: publish
     if: inputs.push
     needs: [run, compose]
     runs-on: ubuntu-latest
