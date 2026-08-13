@@ -1,4 +1,4 @@
-import { withSentry } from "@acme/sentry/hono";
+import { closeSentry, withSentry } from "@acme/sentry/hono";
 import { serve } from "@hono/node-server";
 import { createApp, sentryConfig } from "./app";
 import { staticAssets } from "./assets.node";
@@ -68,7 +68,10 @@ for (const signal of ["SIGINT", "SIGTERM"] as const) {
       process.exit(130);
     });
     server.close(() => {
-      process.exit(0);
+      // Bounded, so an unreachable Sentry cannot outlast docker's patience.
+      void closeSentry().finally(() => {
+        process.exit(0);
+      });
     });
   });
 }

@@ -6,4 +6,5 @@ export type { SentryBindings } from "../bindings";
 export type { MaskingLevel, SentryConfig } from "../config";
 export { sentryTunnel } from "../tunnel";
 export { setUser, type User } from "../user";
+export { closeSentry } from "./close";
 export { withSentry } from "./handler";
