@@ -96,6 +96,15 @@ runs:
           exit 1
         fi
 
+        # Same shape: an app without a database never reports the field, and one
+        # that does has to be reachable. /health answers before anything queries
+        # it, so a database lost after the migration is otherwise invisible.
+        database=$(printf '%s' "$body" | jq -r '.database // empty')
+        if [ -n "$database" ] && [ "$database" != "ok" ]; then
+          echo "::error::$HEALTH_PATH reports the database as '$database'; the app is serving but cannot reach it"
+          exit 1
+        fi
+
         if [ "$CHECK_CLIENT" != "true" ]; then
           exit 0
         fi
