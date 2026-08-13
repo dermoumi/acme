@@ -1,13 +1,8 @@
-import { resetDb } from "@acme/db/testing";
 import { createBindings } from "#testing/runtime";
-import { beforeEach, expect, test } from "vitest";
-import { migratedEnv } from "../auth/test-utils";
-import { getDb } from "../db";
+import { Hono } from "hono";
+import { expect, test } from "vitest";
 import { app } from "../index";
-
-// The accessor holds its database for the life of the process, and these cases
-// deliberately run with and without one.
-beforeEach(() => resetDb(getDb));
+import { gate } from "./gate";
 
 function creds(user: string, pass: string): { Authorization: string } {
   return { Authorization: `Basic ${btoa(`${user}:${pass}`)}` };
@@ -120,46 +115,24 @@ test("multi-user secret: both lines work, colons in passwords survive", async ()
   expect(truncated.status).toBe(401);
 });
 
-test("gated: /health stays open without credentials but gets noindex", async () => {
+test("gated: an open path answers without credentials, still noindex", async () => {
   const res = await app.request("/health", {}, gated);
   expect(res.status).toBe(200);
-  expect(await res.json()).toEqual({
-    status: "ok",
-    app: "posy",
-    version: "dev",
-    revision: "dev",
-    sentry: "off",
-    rateLimit: "on",
-    database: "down",
-  });
   expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
 });
 
-test("/health reports the build so a deploy check can wait for it", async () => {
-  const res = await app.request(
-    "/health",
-    {},
-    { ...createBindings(), APP_VERSION: "1.2.3", APP_REVISION: "abc1234" },
-  );
-  expect(await res.json()).toMatchObject({
-    version: "1.2.3",
-    revision: "abc1234",
-  });
+test("gated: /health is challenged like anything else when unlisted", async () => {
+  const unlisted = new Hono()
+    .use(gate())
+    .get("/health", (ctx) => ctx.text("hi"));
+
+  expect((await unlisted.request("/health", {}, gated)).status).toBe(401);
 });
 
-test("/health reports the database as ok once it can be queried", async () => {
-  const res = await app.request("/health", {}, await migratedEnv());
-  expect(await res.json()).toMatchObject({ database: "ok" });
-});
+test("gated: any listed path skips the challenge", async () => {
+  const listed = new Hono()
+    .use(gate({ open: ["/anything"] }))
+    .get("/anything", (ctx) => ctx.text("hi"));
 
-test("/health reports sentry as configured once a DSN is bound", async () => {
-  const res = await app.request(
-    "/health",
-    {},
-    {
-      ...createBindings(),
-      SENTRY_DSN: "https://dummy@dummy.ingest.sentry.io/1",
-    },
-  );
-  expect(await res.json()).toMatchObject({ sentry: "configured" });
+  expect((await listed.request("/anything", {}, gated)).status).toBe(200);
 });

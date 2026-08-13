@@ -30,7 +30,20 @@ function parseUsers(raw: string | undefined): User[] {
   return users;
 }
 
-export function gate(): MiddlewareHandler<{ Bindings: GateBindings }> {
+export interface GateOptions {
+  /**
+   * Paths that skip the credentials check but still pass through the gate, so
+   * they keep its noindex header and its 503 when the secret is unusable.
+   * Whatever is listed is world-readable on a gated tier.
+   */
+  open?: readonly string[];
+}
+
+export function gate(
+  options: GateOptions = {},
+): MiddlewareHandler<{ Bindings: GateBindings }> {
+  const open = new Set(options.open);
+
   return async (ctx, next) => {
     if (!ctx.env.REQUIRE_AUTH) return next();
 
@@ -42,7 +55,7 @@ export function gate(): MiddlewareHandler<{ Bindings: GateBindings }> {
     }
 
     try {
-      if (ctx.req.path === "/health") {
+      if (open.has(ctx.req.path)) {
         await next();
       } else {
         await basicAuth({ realm: "Posy Staging", ...first }, ...rest)(
