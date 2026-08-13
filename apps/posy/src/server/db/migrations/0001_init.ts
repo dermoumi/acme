@@ -1,3 +1,4 @@
+import { generatedId } from "@acme/db";
 import type { Kysely } from "kysely";
 
 async function createUsers(db: Kysely<unknown>): Promise<void> {
@@ -57,7 +58,7 @@ async function createInventory(db: Kysely<unknown>): Promise<void> {
 async function createLedger(db: Kysely<unknown>): Promise<void> {
   await db.schema
     .createTable("ledger")
-    .addColumn("id", "integer", (col) => col.primaryKey().autoIncrement())
+    .$call(generatedId(db))
     .addColumn("user_id", "text", (col) => col.notNull().references("users.id"))
     .addColumn("delta", "integer", (col) => col.notNull())
     .addColumn("reason", "text", (col) => col.notNull())

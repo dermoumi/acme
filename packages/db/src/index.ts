@@ -1,4 +1,5 @@
 export { createDb } from "./internal/database";
+export { type DialectKind, dialectKind, generatedId } from "./internal/dialect";
 export {
   type DatabaseAccessor,
   type DatabaseOptions,

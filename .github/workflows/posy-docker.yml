@@ -1,0 +1,37 @@
+name: Docker Posy
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - apps/posy/**
+      - packages/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - .dockerignore
+      - .github/workflows/target-docker.yml
+      - .github/workflows/posy-docker.yml
+      - .github/actions/probe-app/**
+  push:
+    branches: [main]
+    paths:
+      - apps/posy/**
+      - packages/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - .dockerignore
+      - .github/workflows/target-docker.yml
+      - .github/workflows/posy-docker.yml
+      - .github/actions/probe-app/**
+
+jobs:
+  verify:
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/target-docker.yml
+    with:
+      app: posy

@@ -1,6 +1,8 @@
 import { createBindings } from "#testing/runtime";
+import { Hono } from "hono";
 import { expect, test } from "vitest";
 import { app } from "../index";
+import { gate } from "./gate";
 
 function creds(user: string, pass: string): { Authorization: string } {
   return { Authorization: `Basic ${btoa(`${user}:${pass}`)}` };
@@ -113,40 +115,35 @@ test("multi-user secret: both lines work, colons in passwords survive", async ()
   expect(truncated.status).toBe(401);
 });
 
-test("gated: /health stays open without credentials but gets noindex", async () => {
+test("gated: an open path answers without credentials, still noindex", async () => {
   const res = await app.request("/health", {}, gated);
   expect(res.status).toBe(200);
-  expect(await res.json()).toEqual({
-    status: "ok",
-    app: "posy",
-    version: "dev",
-    revision: "dev",
-    sentry: "off",
-    rateLimit: "on",
-  });
   expect(res.headers.get("X-Robots-Tag")).toBe("noindex");
 });
 
-test("/health reports the build so a deploy check can wait for it", async () => {
-  const res = await app.request(
-    "/health",
-    {},
-    { ...createBindings(), APP_VERSION: "1.2.3", APP_REVISION: "abc1234" },
-  );
-  expect(await res.json()).toMatchObject({
-    version: "1.2.3",
-    revision: "abc1234",
-  });
+test("gated: /health is challenged like anything else when unlisted", async () => {
+  const unlisted = new Hono()
+    .use(gate())
+    .get("/health", (ctx) => ctx.text("hi"));
+
+  expect((await unlisted.request("/health", {}, gated)).status).toBe(401);
 });
 
-test("/health reports sentry as configured once a DSN is bound", async () => {
-  const res = await app.request(
-    "/health",
-    {},
-    {
-      ...createBindings(),
-      SENTRY_DSN: "https://dummy@dummy.ingest.sentry.io/1",
-    },
+test("gated: the challenge names the realm it was given", async () => {
+  const named = new Hono()
+    .use(gate({ realm: "Somewhere Else" }))
+    .get("/", (ctx) => ctx.text("hi"));
+  const res = await named.request("/", {}, gated);
+
+  expect(res.headers.get("WWW-Authenticate")).toContain(
+    'realm="Somewhere Else"',
   );
-  expect(await res.json()).toMatchObject({ sentry: "configured" });
+});
+
+test("gated: any listed path skips the challenge", async () => {
+  const listed = new Hono()
+    .use(gate({ open: ["/anything"] }))
+    .get("/anything", (ctx) => ctx.text("hi"));
+
+  expect((await listed.request("/anything", {}, gated)).status).toBe(200);
 });

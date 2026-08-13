@@ -13,7 +13,12 @@ export default defineConfig({
     // The workers pool rejects the v8 provider: it needs node:inspector.
     coverage: {
       provider: "istanbul",
-      exclude: ["src/server/testing/**", "*.config.ts"],
+      // The entry starts a server; CI's container health check covers it.
+      exclude: [
+        "src/server/testing/**",
+        "src/server/index.node.ts",
+        "*.config.ts",
+      ],
     },
     projects: [
       { test: { name: "node", include } },
@@ -30,7 +35,8 @@ export default defineConfig({
             },
           }),
         ],
-        test: { name: "workerd", include },
+        // Node-only tests reach for node builtins the pool cannot provide.
+        test: { name: "workerd", include, exclude: ["**/*.node.test.ts"] },
       },
     ],
   },

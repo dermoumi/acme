@@ -85,6 +85,31 @@
         "$TURBO_ROOT$/package.json"
       ],
       "outputs": ["dist/**", ".output/**"]
+    },
+    "build:node": {
+      "dependsOn": ["^build"],
+      "env": [
+        "APP_NAME",
+        "APP_ENV",
+        "APP_REVISION",
+        "APP_VERSION",
+        "SENTRY_AUTH_TOKEN",
+        "SENTRY_ORG",
+        "SENTRY_PROJECT"
+      ],
+      "outputLogs": "errors-only",
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "src/**/*.{ts,tsx,css}",
+        "!src/**/*.{test,stories}.{ts,tsx}",
+        "vite.config.ts",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        ".gitignore",
+        "$TURBO_ROOT$/.gitignore",
+        "$TURBO_ROOT$/package.json"
+      ],
+      "outputs": ["dist/**"]
     }
   }
 }

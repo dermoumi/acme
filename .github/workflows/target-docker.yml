@@ -1,0 +1,282 @@
+name: Target Docker
+
+# One target among several; apps pick theirs. Inputs are deliberately
+# docker-specific rather than a shared interface across targets.
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: App directory name under apps/ (package @acme/<app>)
+        required: true
+        type: string
+      health-path:
+        description: Health endpoint path. Empty disables the probe.
+        default: /health
+        type: string
+      push:
+        description: >-
+          Publish to GHCR as a multi-arch image. Releases only: the tag name
+          supplies the version, so callers set this from a tag trigger.
+        default: false
+        type: boolean
+
+jobs:
+  run:
+    name: docker run (${{ inputs.app }}, ${{ matrix.platform }}, ${{ matrix.database }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      # Every combination reports: which one broke is the whole point.
+      fail-fast: false
+      matrix:
+        platform: [amd64, arm64]
+        database: [sqlite, postgres]
+    concurrency:
+      group: docker-run-${{ inputs.app }}-${{ matrix.platform }}-${{ matrix.database }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    env:
+      APP: ${{ inputs.app }}
+    services:
+      # Starts for every leg: a service cannot be conditional on the matrix. The
+      # sqlite legs pay a few seconds and ignore it.
+      postgres:
+        image: postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15
+        env:
+          POSTGRES_USER: posy
+          POSTGRES_PASSWORD: posy
+          POSTGRES_DB: posy
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U posy -d posy"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve build identity
+        id: revision
+        working-directory: apps/${{ inputs.app }}
+        env:
+          # on a PR, github.sha is the synthetic merge commit, not what was pushed
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          echo "short=${COMMIT_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "version=$(jq -r '.version // "dev"' package.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        if: matrix.platform != 'amd64'
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+
+      - name: Set up buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Build image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: apps/${{ inputs.app }}/Dockerfile
+          # One platform at a time: buildx cannot load a manifest list.
+          platforms: linux/${{ matrix.platform }}
+          load: true
+          push: false
+          tags: ${{ inputs.app }}:ci
+          build-args: |
+            APP_NAME=${{ inputs.app }}
+            APP_ENV=production
+            APP_VERSION=${{ steps.revision.outputs.version }}
+            APP_REVISION=${{ steps.revision.outputs.short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Report image size
+        env:
+          TAG: ${{ inputs.app }}:ci
+        run: |
+          set -euo pipefail
+          bytes=$(docker image inspect --format '{{.Size}}' "$TAG")
+          # tee so it lands in the log too: the step summary is web-only.
+          printf '%s image size: %s MB\n' "$TAG" "$((bytes / 1024 / 1024))" |
+            tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Start container
+        env:
+          TAG: ${{ inputs.app }}:ci
+          DATABASE: ${{ matrix.database }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          args=(-d --name "$APP" -p 3000:3000 --platform "linux/$PLATFORM")
+          if [ "$DATABASE" = postgres ]; then
+            # the service is published on the runner, which is not this
+            # container's localhost
+            args+=(--add-host=host.docker.internal:host-gateway)
+            args+=(-e "DATABASE_URL=postgres://posy:posy@host.docker.internal:5432/posy")
+          fi
+          docker run "${args[@]}" "$TAG"
+
+      - name: Probe
+        if: inputs.health-path != ''
+        uses: ./.github/actions/probe-app
+        with:
+          base-url: http://localhost:3000
+          health-path: ${{ inputs.health-path }}
+          revision: ${{ steps.revision.outputs.short }}
+          check-client: "true"
+          # emulated, so it starts an order of magnitude slower than native
+          timeout-seconds: ${{ matrix.platform == 'amd64' && '60' || '300' }}
+
+      # Without this the leg proves nothing: a DATABASE_URL that never reached
+      # the container falls back to the image's sqlite default, migrates, serves,
+      # and passes the probe having tested the engine this leg is not about.
+      - name: Assert the app migrated postgres
+        if: matrix.database == 'postgres'
+        run: |
+          set -euo pipefail
+          # psql from the image the service already pulled, rather than assuming
+          # the runner ships one.
+          tables=$(docker run --rm \
+            --add-host=host.docker.internal:host-gateway \
+            -e PGPASSWORD=posy \
+            postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15 \
+            psql -h host.docker.internal -U posy -d posy -tAc \
+            "select count(*) from information_schema.tables
+             where table_schema = 'public' and table_name = 'users'")
+          if [ "$tables" != "1" ]; then
+            echo "::error::posy served, but postgres has no schema: it used another database"
+            exit 1
+          fi
+
+      # The only place PID 1 is real: a process spawned by a test runner gets
+      # the default signal dispositions and dies on SIGTERM whatever the code
+      # does, so this cannot be covered outside a container. 137 is SIGKILL,
+      # meaning docker waited out its grace period and had to kill it.
+      - name: Stop container
+        run: |
+          set -euo pipefail
+          started=$(date +%s)
+          docker stop -t 10 "$APP" >/dev/null
+          took=$(( $(date +%s) - started ))
+          code=$(docker inspect -f '{{.State.ExitCode}}' "$APP")
+          if [ "$code" != "0" ]; then
+            echo "::error::$APP exited $code after ${took}s, so it did not stop on SIGTERM"
+            docker logs "$APP" || true
+            exit 1
+          fi
+          echo "::notice::$APP stopped cleanly in ${took}s"
+
+      - name: Container logs
+        if: failure()
+        run: docker logs "$APP" || true
+
+      - name: Remove container
+        if: always()
+        run: docker rm -fv "$APP" || true
+
+  compose:
+    name: compose config (${{ inputs.app }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: docker-compose-${{ inputs.app }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    env:
+      COMPOSE_FILE: apps/${{ inputs.app }}/compose.yaml
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Parses and interpolates without building or starting anything. The file
+      # is documentation, so nothing else would notice a typo in it.
+      - name: Validate compose file
+        run: docker compose -f "$COMPOSE_FILE" config --quiet
+
+  publish:
+    # A skipped job never evaluates its name, and this one is skipped on every
+    # pull request. Callers already name themselves per app.
+    name: publish
+    if: inputs.push
+    needs: [run, compose]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    concurrency:
+      group: docker-publish-${{ inputs.app }}-${{ github.ref_name }}
+    env:
+      APP: ${{ inputs.app }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve release identity
+        id: release
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # GHCR rejects uppercase, and repository_owner preserves it
+          owner=$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')
+          image="ghcr.io/$owner/$APP"
+          # release-please emits <app>-v<semver>
+          version="${REF_NAME#"$APP-v"}"
+          if [ "$version" = "$REF_NAME" ]; then
+            echo "::error::tag $REF_NAME is not $APP-v<version>"
+            exit 1
+          fi
+          {
+            echo "image=$image"
+            echo "version=$version"
+            echo "short=${COMMIT_SHA::7}"
+            echo "tags=$image:$version,$image:latest"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+
+      - name: Set up buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@371161bbe7024a29a25c5e19bfcbc0804fe9ad2c # v4.5.2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Push multi-arch image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: apps/${{ inputs.app }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.release.outputs.tags }}
+          build-args: |
+            APP_NAME=${{ inputs.app }}
+            APP_ENV=production
+            APP_VERSION=${{ steps.release.outputs.version }}
+            APP_REVISION=${{ steps.release.outputs.short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Report pushed tags
+        env:
+          TAGS: ${{ steps.release.outputs.tags }}
+        run: |
+          set -euo pipefail
+          # tee so it lands in the log too: the step summary is web-only.
+          printf 'pushed:\n%s\n' "${TAGS//,/$'\n'}" |
+            tee -a "$GITHUB_STEP_SUMMARY"

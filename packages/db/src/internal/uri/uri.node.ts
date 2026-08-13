@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import type { Dialect } from "kysely";
+import { tagDialect } from "../dialect";
 
 const MISSING_MODULE = new Set(["ERR_MODULE_NOT_FOUND", "MODULE_NOT_FOUND"]);
 
@@ -57,7 +58,10 @@ async function sqliteDialect(path: string): Promise<Dialect> {
     explainIfMissing("better-sqlite3", import("better-sqlite3")),
     import("kysely"),
   ]);
-  return new SqliteDialect({ database: new SQLite(path) });
+  return tagDialect(
+    new SqliteDialect({ database: new SQLite(path) }),
+    "sqlite",
+  );
 }
 
 async function postgresDialect(url: string): Promise<Dialect> {
@@ -65,7 +69,10 @@ async function postgresDialect(url: string): Promise<Dialect> {
     explainIfMissing("pg", import("pg")),
     import("kysely"),
   ]);
-  return new PostgresDialect({ pool: new pg.Pool({ connectionString: url }) });
+  return tagDialect(
+    new PostgresDialect({ pool: new pg.Pool({ connectionString: url }) }),
+    "postgres",
+  );
 }
 
 /**

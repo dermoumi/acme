@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/posy/Dockerfile
+    image: posy:local
+    init: true
+    environment:
+      # CIDRs of proxies allowed to name the client through x-forwarded-for.
+      # Set this when posy runs behind a proxy: otherwise every request looks
+      # like it came from the proxy, and all clients share one login rate limit.
+      TRUSTED_PROXIES: ""
+    ports:
+      - "3000:3000"
+    volumes:
+      - posy-data:/var/lib/posy
+    restart: unless-stopped
+
+volumes:
+  posy-data:

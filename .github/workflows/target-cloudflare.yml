@@ -313,50 +313,11 @@ jobs:
 
       - name: Health check
         if: env.CLOUDFLARE_API_TOKEN != '' && inputs.health-path != ''
-        env:
-          BASE_URL: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
-          HEALTH_PATH: ${{ inputs.health-path }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          APP_REVISION: ${{ steps.revision.outputs.short }}
-        run: |
-          # asking for a probe that cannot run is a config bug, so fail rather than skip
-          if [ -z "$BASE_URL" ]; then
-            echo "::error::health-path is set but no url resolved; pass url, or workers-subdomain for previews"
-            exit 1
-          fi
-          # curl --retry only retries failures, and the PREVIOUS deployment answering
-          # 200 is not a failure, so waiting on the revision is what makes this check
-          # about the build we just shipped. Also covers a cold preview route 404ing.
-          deadline=$((SECONDS + 120))
-          while :; do
-            body=$(curl --fail --silent --show-error \
-              --connect-timeout 10 --max-time 30 \
-              --user-agent "acme-ci-health-probe" \
-              "$BASE_URL$HEALTH_PATH" || true)
-            served=$(printf '%s' "$body" | jq -r '.revision // empty' 2>/dev/null || true)
-            if [ "$served" = "$APP_REVISION" ]; then
-              break
-            fi
-            if [ "$SECONDS" -ge "$deadline" ]; then
-              echo "::error::$HEALTH_PATH never served revision $APP_REVISION (last: ${served:-no response})"
-              exit 1
-            fi
-            sleep 5
-          done
-          echo "$body"
-
-          # Capture is fail-soft, so a dsn that never reached the worker is silent.
-          # Only assert when one was supplied: no secret stays a legitimate deploy.
-          if [ -n "$SENTRY_DSN" ] &&
-             ! printf '%s' "$body" | grep -qE '"sentry" *: *"configured"'; then
-            echo "::error::SENTRY_DSN is set but $HEALTH_PATH does not report sentry as configured"
-            exit 1
-          fi
-
-          # Also fail-soft, but bound in wrangler.jsonc rather than by a secret, so
-          # an app reporting the field at all must report it fully configured.
-          limits=$(printf '%s' "$body" | jq -r '.rateLimit // empty' 2>/dev/null || true)
-          if [ -n "$limits" ] && [ "$limits" != "on" ]; then
-            echo "::error::$HEALTH_PATH reports rate limiting as '$limits'; check the ratelimits bindings against the rateLimits passed to createApp"
-            exit 1
-          fi
+        uses: ./.github/actions/probe-app
+        with:
+          base-url: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
+          health-path: ${{ inputs.health-path }}
+          revision: ${{ steps.revision.outputs.short }}
+          sentry-dsn: ${{ secrets.SENTRY_DSN }}
+          # every path but /health is behind basic auth on the gated tiers
+          check-client: ${{ inputs.environment == 'production' }}

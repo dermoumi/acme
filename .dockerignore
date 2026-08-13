@@ -1,0 +1,19 @@
+# Denylist, not an allowlist: .devcontainer/compose.yaml builds with the repo
+# root as its context too, and `*` + re-includes would exclude it.
+.git
+.github
+
+**/node_modules
+**/dist
+**/.output
+**/.turbo
+**/coverage
+**/.wrangler
+**/*.tsbuildinfo
+
+**/.env
+**/.env.*.local
+
+**/*.db
+**/data
+**/run
