@@ -7,19 +7,19 @@ interface TestSchema {
   widgets: { id: string; label: string; note: string | null; count: number };
 }
 
-describe("createDb", () => {
-  async function widgetDb(): Promise<Kysely<TestSchema>> {
-    const db = createDb<TestSchema>(await createEmptyDialect());
-    await db.schema
-      .createTable("widgets")
-      .addColumn("id", "text", (col) => col.primaryKey())
-      .addColumn("label", "text", (col) => col.notNull())
-      .addColumn("note", "text")
-      .addColumn("count", "integer")
-      .execute();
-    return db;
-  }
+async function widgetDb(): Promise<Kysely<TestSchema>> {
+  const db = createDb<TestSchema>(await createEmptyDialect());
+  await db.schema
+    .createTable("widgets")
+    .addColumn("id", "text", (col) => col.primaryKey())
+    .addColumn("label", "text", (col) => col.notNull())
+    .addColumn("note", "text")
+    .addColumn("count", "integer")
+    .execute();
+  return db;
+}
 
+describe("createDb", () => {
   it("queries the schema it was typed with", async () => {
     const db = await widgetDb();
     await db
@@ -58,33 +58,33 @@ describe("createDb", () => {
     expect(rows.rows[0]?.one).toBe(1);
     await db.destroy();
   });
+});
 
-  describe("enforces the constraints it declared", () => {
-    it("rejects a missing not-null value", async () => {
-      const db = await widgetDb();
-      await expect(
-        db
-          .insertInto("widgets")
-          .values({ id: "w2" } as TestSchema["widgets"])
-          .execute(),
-      ).rejects.toThrow();
-      await db.destroy();
-    });
-
-    it("rejects a duplicate primary key", async () => {
-      const db = await widgetDb();
-      const widget = { id: "w1", note: null, count: 0 };
-      await db
+describe("createDb enforces the constraints it declared", () => {
+  it("rejects a missing not-null value", async () => {
+    const db = await widgetDb();
+    await expect(
+      db
         .insertInto("widgets")
-        .values({ ...widget, label: "Cog" })
-        .execute();
-      await expect(
-        db
-          .insertInto("widgets")
-          .values({ ...widget, label: "Bolt" })
-          .execute(),
-      ).rejects.toThrow();
-      await db.destroy();
-    });
+        .values({ id: "w2" } as TestSchema["widgets"])
+        .execute(),
+    ).rejects.toThrow();
+    await db.destroy();
+  });
+
+  it("rejects a duplicate primary key", async () => {
+    const db = await widgetDb();
+    const widget = { id: "w1", note: null, count: 0 };
+    await db
+      .insertInto("widgets")
+      .values({ ...widget, label: "Cog" })
+      .execute();
+    await expect(
+      db
+        .insertInto("widgets")
+        .values({ ...widget, label: "Bolt" })
+        .execute(),
+    ).rejects.toThrow();
+    await db.destroy();
   });
 });

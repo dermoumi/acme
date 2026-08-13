@@ -8,11 +8,11 @@ function sourcemapSetting(plugins: unknown): unknown {
   return first?.config().build.sourcemap;
 }
 
-afterEach(() => {
-  delete process.env.SENTRY_AUTH_TOKEN;
-});
-
 describe("sentryVite", () => {
+  afterEach(() => {
+    delete process.env.SENTRY_AUTH_TOKEN;
+  });
+
   it("emits hidden maps when a token is available", () => {
     expect(sourcemapSetting(sentryVite({ authToken: "t" }))).toBe("hidden");
   });

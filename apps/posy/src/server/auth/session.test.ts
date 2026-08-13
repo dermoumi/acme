@@ -1,5 +1,5 @@
 import { resetDb } from "@acme/db/testing";
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../app";
 import { getDb } from "../db";
 import {
@@ -14,76 +14,86 @@ import { hashToken } from "./tokens";
 
 const HOUR_MS = 60 * 60 * 1000;
 
-beforeEach(() => resetDb(getDb));
+describe("createSession", () => {
+  beforeEach(() => resetDb(getDb));
 
-test("createSession stores only the token hash", async () => {
-  const { db, store } = await seeded();
-  const token = await createSession(store, "u1", "1.0.0", 1000);
-  const row = await db
-    .selectFrom("sessions")
-    .selectAll()
-    .executeTakeFirstOrThrow();
-  expect(row.id).toBe(await hashToken(token));
-  expect(row.id).not.toBe(token);
-  expect(row.client_version).toBe("1.0.0");
+  it("stores only the token hash", async () => {
+    const { db, store } = await seeded();
+    const token = await createSession(store, "u1", "1.0.0", 1000);
+    const row = await db
+      .selectFrom("sessions")
+      .selectAll()
+      .executeTakeFirstOrThrow();
+    expect(row.id).toBe(await hashToken(token));
+    expect(row.id).not.toBe(token);
+    expect(row.client_version).toBe("1.0.0");
+  });
 });
 
-test("resolveSession returns the userId for a valid token", async () => {
-  const { store } = await seeded();
-  const token = await createSession(store, "u1", null, 1000);
-  expect(await resolveSession(store, token, 2000)).toBe("u1");
-  expect(await resolveSession(store, "not-a-token", 2000)).toBeNull();
+describe("resolveSession", () => {
+  beforeEach(() => resetDb(getDb));
+
+  it("returns the userId for a valid token", async () => {
+    const { store } = await seeded();
+    const token = await createSession(store, "u1", null, 1000);
+    expect(await resolveSession(store, token, 2000)).toBe("u1");
+    expect(await resolveSession(store, "not-a-token", 2000)).toBeNull();
+  });
+
+  it("refreshes last_seen_at only after an hour", async () => {
+    const { db, store } = await seeded();
+    const token = await createSession(store, "u1", null, 1000);
+    const lastSeen = async () => {
+      return (
+        await db
+          .selectFrom("sessions")
+          .select("last_seen_at")
+          .executeTakeFirstOrThrow()
+      ).last_seen_at;
+    };
+
+    await resolveSession(store, token, 1000 + HOUR_MS);
+    expect(await lastSeen()).toBe(1000);
+    await resolveSession(store, token, 1000 + 2 * HOUR_MS);
+    expect(await lastSeen()).toBe(1000 + 2 * HOUR_MS);
+  });
+
+  it("rejects an expired session", async () => {
+    const { store } = await seeded();
+    const token = await createSession(store, "u1", null, 1000);
+    const expired = 1000 + SESSION_MAX_AGE_SECONDS * 1000 + 1;
+    expect(await resolveSession(store, token, expired)).toBeNull();
+  });
 });
 
-test("resolveSession refreshes last_seen_at only after an hour", async () => {
-  const { db, store } = await seeded();
-  const token = await createSession(store, "u1", null, 1000);
-  const lastSeen = async () => {
-    return (
-      await db
-        .selectFrom("sessions")
-        .select("last_seen_at")
-        .executeTakeFirstOrThrow()
-    ).last_seen_at;
-  };
+describe("GET /session", () => {
+  beforeEach(() => resetDb(getDb));
 
-  await resolveSession(store, token, 1000 + HOUR_MS);
-  expect(await lastSeen()).toBe(1000);
-  await resolveSession(store, token, 1000 + 2 * HOUR_MS);
-  expect(await lastSeen()).toBe(1000 + 2 * HOUR_MS);
-});
+  it("never touches the db without a cookie", async () => {
+    const app = createApp();
+    const env = noDatabaseEnv();
+    const res = await app.request("/session", {}, env);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ user: null });
+  });
 
-test("resolveSession rejects expired sessions", async () => {
-  const { store } = await seeded();
-  const token = await createSession(store, "u1", null, 1000);
-  const expired = 1000 + SESSION_MAX_AGE_SECONDS * 1000 + 1;
-  expect(await resolveSession(store, token, expired)).toBeNull();
-});
+  it("resolves the cookie to a user", async () => {
+    const { env, store } = await seeded();
+    const token = await createSession(store, "u1", null, Date.now());
+    const app = createApp();
 
-test("GET /session without a cookie never touches the db", async () => {
-  const app = createApp();
-  const env = noDatabaseEnv();
-  const res = await app.request("/session", {}, env);
-  expect(res.status).toBe(200);
-  expect(await res.json()).toEqual({ user: null });
-});
+    const authed = await app.request(
+      "/session",
+      { headers: { Cookie: `${SESSION_COOKIE}=${token}` } },
+      env,
+    );
+    expect(await authed.json()).toEqual({ user: { id: "u1", name: "Tester" } });
 
-test("GET /session resolves the cookie to a user", async () => {
-  const { env, store } = await seeded();
-  const token = await createSession(store, "u1", null, Date.now());
-  const app = createApp();
-
-  const authed = await app.request(
-    "/session",
-    { headers: { Cookie: `${SESSION_COOKIE}=${token}` } },
-    env,
-  );
-  expect(await authed.json()).toEqual({ user: { id: "u1", name: "Tester" } });
-
-  const bogus = await app.request(
-    "/session",
-    { headers: { Cookie: `${SESSION_COOKIE}=forged` } },
-    env,
-  );
-  expect(await bogus.json()).toEqual({ user: null });
+    const bogus = await app.request(
+      "/session",
+      { headers: { Cookie: `${SESSION_COOKIE}=forged` } },
+      env,
+    );
+    expect(await bogus.json()).toEqual({ user: null });
+  });
 });

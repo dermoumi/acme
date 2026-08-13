@@ -5,10 +5,10 @@ import { migratedEnv } from "./auth/test-utils";
 import { getDb } from "./db";
 import { app } from "./index";
 
-// These cases deliberately run with and without a database.
-beforeEach(() => resetDb(getDb));
-
 describe("/health", () => {
+  // These cases deliberately run with and without a database.
+  beforeEach(() => resetDb(getDb));
+
   it("reports the build and what it is wired to", async () => {
     const res = await app.request("/health", {}, createBindings());
 

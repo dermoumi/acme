@@ -75,35 +75,43 @@ describe("create", () => {
     expect(other.at(-1)?.headers.get("Retry-After")).toBe(String(OTHER_PERIOD));
   });
 
-  it("keeps serving when nothing can count", async () => {
+  const spendUnbound = async () => {
     const app = limitedApp();
     const env = createBindings({ RATE_LIMIT_TEST: undefined });
     const headers = client();
+    return sequence(TEST_LIMIT * 2, () => post(app, env, "/limited", headers));
+  };
 
-    const responses = await sequence(TEST_LIMIT * 2, () =>
-      post(app, env, "/limited", headers),
-    );
+  it.skipIf(SELF_PROVISIONED)(
+    "keeps serving when nothing can count",
+    async () => {
+      for (const response of await spendUnbound())
+        expect(response.status).toBe(200);
+    },
+  );
 
-    if (SELF_PROVISIONED) {
-      // Nothing to lose: create() described a budget, so it still applies.
+  // Nothing to lose: create() described a budget, so it still applies.
+  it.runIf(SELF_PROVISIONED)(
+    "enforces its own budget when nothing is bound",
+    async () => {
+      const responses = await spendUnbound();
       expect(responses.some((response) => response.status === 429)).toBe(true);
-      return;
-    }
-    for (const response of responses) expect(response.status).toBe(200);
-  });
+    },
+  );
 
-  it("counts each client address separately", async () => {
-    // Node keys every request "unknown" without @hono/node-server behind it.
-    if (SELF_PROVISIONED) return;
+  // Node keys every request "unknown" without @hono/node-server behind it.
+  it.skipIf(SELF_PROVISIONED)(
+    "counts each client address separately",
+    async () => {
+      const app = limitedApp();
+      const env = createBindings();
+      const spender = client();
 
-    const app = limitedApp();
-    const env = createBindings();
-    const spender = client();
-
-    await sequence(TEST_LIMIT + 1, () => post(app, env, "/limited", spender));
-    expect((await post(app, env, "/limited", spender)).status).toBe(429);
-    expect((await post(app, env, "/limited", client())).status).toBe(200);
-  });
+      await sequence(TEST_LIMIT + 1, () => post(app, env, "/limited", spender));
+      expect((await post(app, env, "/limited", spender)).status).toBe(429);
+      expect((await post(app, env, "/limited", client())).status).toBe(200);
+    },
+  );
 });
 
 describe("status", () => {
@@ -129,17 +137,16 @@ describe("status", () => {
     expect(await readStatus(limitedApp(), createBindings())).toBe("on");
   });
 
-  it("reads partial when only some are bound", async () => {
-    // A runtime that builds its own limiters has no unbound state to report.
-    if (SELF_PROVISIONED) return;
+  // A runtime that builds its own limiters has no unbound state to report.
+  it.skipIf(SELF_PROVISIONED)(
+    "reads partial when only some are bound",
+    async () => {
+      const env = createBindings({ RATE_LIMIT_OTHER: undefined });
+      expect(await readStatus(limitedApp(), env)).toBe("partial");
+    },
+  );
 
-    const env = createBindings({ RATE_LIMIT_OTHER: undefined });
-    expect(await readStatus(limitedApp(), env)).toBe("partial");
-  });
-
-  it("reads off when none are bound", async () => {
-    if (SELF_PROVISIONED) return;
-
+  it.skipIf(SELF_PROVISIONED)("reads off when none are bound", async () => {
     const env = createBindings({
       RATE_LIMIT_TEST: undefined,
       RATE_LIMIT_OTHER: undefined,

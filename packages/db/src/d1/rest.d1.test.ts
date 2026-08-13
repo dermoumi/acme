@@ -57,11 +57,11 @@ function rowsPayload(rows: Record<string, unknown>[]) {
   };
 }
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
-
 describe("restD1", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("posts the sql and its parameters to the database's query url", async () => {
     const calls = mockFetch(rowsPayload([]));
     await restD1(config).prepare("select ?").bind(7).all();
@@ -103,97 +103,105 @@ describe("restD1", () => {
     expect(result.results).toEqual([]);
     expect(result.meta).toEqual({ changes: 0, last_row_id: null });
   });
+});
 
-  describe("surfaces failures rather than returning empty rows", () => {
-    it("reports the api's own error detail", async () => {
-      mockFetch({
+describe("restD1 surfaces failures rather than returning empty rows", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("reports the api's own error detail", async () => {
+    mockFetch({
+      success: false,
+      errors: [{ code: 7500, message: "no such table: widgets" }],
+    });
+    await expect(
+      restD1(config).prepare("select 1").bind().all(),
+    ).rejects.toThrow("7500: no such table: widgets");
+  });
+
+  // How a failure actually arrives: rejecting the body throws the detail away.
+  it("reports the detail when result comes back null", async () => {
+    mockFetch(
+      {
         success: false,
-        errors: [{ code: 7500, message: "no such table: widgets" }],
-      });
-      await expect(
-        restD1(config).prepare("select 1").bind().all(),
-      ).rejects.toThrow("7500: no such table: widgets");
+        result: null,
+        errors: [{ code: 7003, message: "could not route" }],
+      },
+      { ok: false, status: 404 },
+    );
+    await expect(
+      restD1(config).prepare("select 1").bind().all(),
+    ).rejects.toThrow("7003: could not route");
+  });
+
+  it("joins several errors into one message", async () => {
+    mockFetch({
+      success: false,
+      errors: [
+        { code: 1, message: "first" },
+        { code: 2, message: "second" },
+      ],
+    });
+    await expect(
+      restD1(config).prepare("select 1").bind().all(),
+    ).rejects.toThrow("1: first; 2: second");
+  });
+
+  it("falls back to the http status when the body names no error", async () => {
+    mockFetch({ success: false }, { ok: false, status: 403 });
+    await expect(
+      restD1(config).prepare("select 1").bind().all(),
+    ).rejects.toThrow("D1 query failed with status 403");
+  });
+
+  // An edge 5xx answers HTML, so parsing first would replace the status
+  // with whatever the json parser complains about.
+  it("keeps the http status when the body is not json at all", async () => {
+    mockFetch(undefined, {
+      ok: false,
+      status: 502,
+      json: () => Promise.reject(new SyntaxError("Unexpected token '<'")),
     });
 
-    // How a failure actually arrives: rejecting the body throws the detail away.
-    it("reports the detail when result comes back null", async () => {
-      mockFetch(
-        {
-          success: false,
-          result: null,
-          errors: [{ code: 7003, message: "could not route" }],
-        },
-        { ok: false, status: 404 },
-      );
-      await expect(
-        restD1(config).prepare("select 1").bind().all(),
-      ).rejects.toThrow("7003: could not route");
-    });
+    let thrown: Error | undefined;
+    try {
+      await restD1(config).prepare("select 1").bind().all();
+    } catch (error) {
+      thrown = error as Error;
+    }
 
-    it("joins several errors into one message", async () => {
-      mockFetch({
-        success: false,
-        errors: [
-          { code: 1, message: "first" },
-          { code: 2, message: "second" },
-        ],
-      });
-      await expect(
-        restD1(config).prepare("select 1").bind().all(),
-      ).rejects.toThrow("1: first; 2: second");
-    });
+    expect(thrown?.message).toContain("D1 query failed with status 502");
+    // Kept rather than swallowed: the CLI prints the chain, so why the body
+    // would not parse is still there to debug with.
+    expect((thrown?.cause as Error | undefined)?.message).toContain(
+      "Unexpected token",
+    );
+  });
 
-    it("falls back to the http status when the body names no error", async () => {
-      mockFetch({ success: false }, { ok: false, status: 403 });
-      await expect(
-        restD1(config).prepare("select 1").bind().all(),
-      ).rejects.toThrow("D1 query failed with status 403");
-    });
+  it("refuses a body that parses but is not the shape we read", async () => {
+    mockFetch({ success: true, result: [{ results: "not rows" }] });
 
-    // An edge 5xx answers HTML, so parsing first would replace the status
-    // with whatever the json parser complains about.
-    it("keeps the http status when the body is not json at all", async () => {
-      mockFetch(undefined, {
-        ok: false,
-        status: 502,
-        json: () => Promise.reject(new SyntaxError("Unexpected token '<'")),
-      });
+    let thrown: Error | undefined;
+    try {
+      await restD1(config).prepare("select 1").bind().all();
+    } catch (error) {
+      thrown = error as Error;
+    }
 
-      let thrown: Error | undefined;
-      try {
-        await restD1(config).prepare("select 1").bind().all();
-      } catch (error) {
-        thrown = error as Error;
-      }
-
-      expect(thrown?.message).toContain("D1 query failed with status 502");
-      // Kept rather than swallowed: the CLI prints the chain, so why the body
-      // would not parse is still there to debug with.
-      expect((thrown?.cause as Error | undefined)?.message).toContain(
-        "Unexpected token",
-      );
-    });
-
-    it("refuses a body that parses but is not the shape we read", async () => {
-      mockFetch({ success: true, result: [{ results: "not rows" }] });
-
-      let thrown: Error | undefined;
-      try {
-        await restD1(config).prepare("select 1").bind().all();
-      } catch (error) {
-        thrown = error as Error;
-      }
-
-      expect(thrown?.message).toContain("D1 query failed with status 200");
-      expect((thrown?.cause as Error | undefined)?.message).toContain(
-        "result.0.results",
-      );
-    });
+    expect(thrown?.message).toContain("D1 query failed with status 200");
+    expect((thrown?.cause as Error | undefined)?.message).toContain(
+      "result.0.results",
+    );
   });
 });
 
-describe("the body it accepts", () => {
-  it("passes meta on with the fields cloudflare adds to it", async () => {
+describe("restD1 on the body cloudflare actually sends", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("passes meta through with the extra fields it carries", async () => {
     mockFetch({
       success: true,
       result: [
@@ -210,6 +218,10 @@ describe("the body it accepts", () => {
 });
 
 describe("remoteD1Dialect", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("runs a kysely query end to end over the api", async () => {
     const calls = mockFetch(rowsPayload([{ id: "w1" }]));
     const db = createDb<TestSchema>(remoteD1Dialect(config));
