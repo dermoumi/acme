@@ -20,11 +20,12 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# After the install layer: each of these changes the cache key.
-ARG APP_NAME=posy
-ARG APP_ENV=production
-ARG APP_VERSION=dev
-ARG APP_REVISION=dev
+# After the install layer: each of these changes the cache key. The client bakes
+# them in, so unlike the runtime stage's copies they are needed at build time.
+ARG APP_NAME=posy \
+    APP_ENV=production \
+    APP_VERSION=dev \
+    APP_REVISION=dev
 RUN pnpm exec turbo build:node --filter=@acme/posy
 
 # `acme-db migrate` loads acme.config.ts through tsx, so it needs the tree the
@@ -55,21 +56,12 @@ RUN node apps/posy/scripts/prune-deploy-tree.ts /deploy \
 FROM node:24.19.0-trixie-slim
 WORKDIR /app
 
-# Baked, not just build-time: /health reports these, so the image has to know
-# which build it is once it is running.
-ARG APP_NAME=posy
-ARG APP_VERSION=dev
-ARG APP_REVISION=dev
-ENV APP_NAME=$APP_NAME
-ENV APP_VERSION=$APP_VERSION
-ENV APP_REVISION=$APP_REVISION
-
-ENV NODE_ENV=production
-# Unset reads as development, which serves /debug/*.
-ENV APP_ENV=production
-ENV PORT=3000
-ENV DATABASE_URL=file:/var/lib/posy/posy.db
-ENV CLIENT_DIR=./dist/client
+# An unset APP_ENV reads as development, which serves /debug/*.
+ENV NODE_ENV=production \
+    APP_ENV=production \
+    PORT=3000 \
+    DATABASE_URL=file:/var/lib/posy/posy.db \
+    CLIENT_DIR=./dist/client
 
 # The app's own directory, so acme.config.ts and its migrations resolve.
 COPY --from=build /deploy ./
@@ -77,6 +69,13 @@ COPY --from=build /deploy ./
 # Only a package manager puts .bin on the path, and this stage has none. Earns
 # its keep on `docker exec <container> acme-db seed`, not just on CMD.
 ENV PATH="/app/node_modules/.bin:$PATH"
+
+ARG APP_NAME=posy \
+    APP_VERSION=dev \
+    APP_REVISION=dev
+ENV APP_NAME=$APP_NAME \
+    APP_VERSION=$APP_VERSION \
+    APP_REVISION=$APP_REVISION
 
 # Docker seeds a fresh volume from the image, ownership included, so this has
 # to happen before VOLUME or the node user cannot write to it.
