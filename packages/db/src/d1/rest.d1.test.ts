@@ -57,11 +57,11 @@ function rowsPayload(rows: Record<string, unknown>[]) {
   };
 }
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
-
 describe("restD1", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("posts the sql and its parameters to the database's query url", async () => {
     const calls = mockFetch(rowsPayload([]));
     await restD1(config).prepare("select ?").bind(7).all();
@@ -193,6 +193,10 @@ describe("restD1", () => {
 });
 
 describe("the body it accepts", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("passes meta on with the fields cloudflare adds to it", async () => {
     mockFetch({
       success: true,
@@ -210,6 +214,10 @@ describe("the body it accepts", () => {
 });
 
 describe("remoteD1Dialect", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("runs a kysely query end to end over the api", async () => {
     const calls = mockFetch(rowsPayload([{ id: "w1" }]));
     const db = createDb<TestSchema>(remoteD1Dialect(config));
