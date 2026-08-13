@@ -68,6 +68,7 @@
     // Vitest
     "vitest/require-top-level-describe": "error",
     "vitest/consistent-test-it": "error",
+    "vitest/max-nested-describe": ["error", { "max": 1 }],
     // Vitest takes a message as expect's second argument; the default is jest's.
     "vitest/valid-expect": ["error", { "maxArgs": 2 }],
     "vitest/require-test-timeout": "off",
