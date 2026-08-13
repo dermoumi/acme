@@ -1,0 +1,40 @@
+coverage:
+  status:
+    # No baseline yet, so any target would be invented; flip to `target` later.
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+# Path-based attribution from the single upload; no statuses, so no extra checks.
+component_management:
+  individual_components:
+    - component_id: posy
+      name: apps/posy
+      paths:
+        - apps/posy/**
+    - component_id: db
+      name: "@acme/db"
+      paths:
+        - packages/db/**
+    - component_id: rate-limiter
+      name: "@acme/rate-limiter"
+      paths:
+        - packages/rate-limiter/**
+    - component_id: sentry
+      name: "@acme/sentry"
+      paths:
+        - packages/sentry/**
+
+comment:
+  layout: condensed_header, components, diff, files
+  require_changes: false
+
+# Mirrors the `coverage.exclude` lists in the four vitest configs.
+ignore:
+  - "**/testing/**"
+  - "**/*.config.ts"
+  - apps/posy/src/server/index.node.ts
+  - packages/tsconfig/**
