@@ -152,6 +152,24 @@ jobs:
             exit 1
           fi
 
+      # The only place PID 1 is real: a process spawned by a test runner gets
+      # the default signal dispositions and dies on SIGTERM whatever the code
+      # does, so this cannot be covered outside a container. 137 is SIGKILL,
+      # meaning docker waited out its grace period and had to kill it.
+      - name: Stop container
+        run: |
+          set -euo pipefail
+          started=$(date +%s)
+          docker stop -t 10 "$APP" >/dev/null
+          took=$(( $(date +%s) - started ))
+          code=$(docker inspect -f '{{.State.ExitCode}}' "$APP")
+          if [ "$code" != "0" ]; then
+            echo "::error::$APP exited $code after ${took}s, so it did not stop on SIGTERM"
+            docker logs "$APP" || true
+            exit 1
+          fi
+          echo "::notice::$APP stopped cleanly in ${took}s"
+
       - name: Container logs
         if: failure()
         run: docker logs "$APP" || true
