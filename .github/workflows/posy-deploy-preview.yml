@@ -1,26 +1,28 @@
-name: Deploy Posy (staging)
+name: Deploy Posy (preview)
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
     paths:
       - apps/posy/**
       - packages/**
       - pnpm-lock.yaml
       - .github/workflows/target-cloudflare.yml
-      - .github/workflows/posy-deploy-staging.yml
+      - .github/workflows/posy-deploy-preview.yml
       - .github/actions/setup/**
 
 jobs:
-  staging:
+  preview:
+    # not an on: filter: pull_request.branches matches the base ref, not the head
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     permissions:
       contents: read
     uses: ./.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
     with:
       app: posy
-      environment: staging
-      url: https://staging.posy-stg.workers.dev
+      environment: preview
+      branch: ${{ github.head_ref }}
+      workers-subdomain: posy-stg
       d1: true
       seed: true
       sentry-org: sdrmme
