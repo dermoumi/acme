@@ -1,13 +1,9 @@
 export {
-  type AcmeConfig,
   type AnyDatabaseConfig,
-  CONFIG_FILE,
   type DatabaseConfig,
   type DatabaseTarget,
-  databaseTarget,
   defineDbConfig,
-  loadAcmeConfig,
-  validateAcmeConfig,
-} from "./config";
+} from "../kit";
 export { configOption, run } from "./acme-db";
-export { withDb } from "./with-db";
+export { type AcmeConfig, databaseNamed, loadDatabases } from "./config";
+export { type OpenOptions, withDb } from "./with-db";

@@ -1,15 +1,19 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { runWithConfig } from "@acme/app/cli";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDb } from "../internal/database";
 import { dialectFromUrl } from "../internal/uri/uri.node.ts";
+import appConfig from "../kit/fixtures/app/acme.config";
 import { run } from "./acme-db";
 
 // One engine is enough: this proves the CLI wires the migrator to a database,
 // not that the migrator works, which every engine project already covers.
 const config = path.join(
   import.meta.dirname,
+  "..",
+  "kit",
   "fixtures",
   "app",
   "acme.config.ts",
@@ -247,5 +251,38 @@ describe("run help and version", () => {
 
   it("answers 1 when seed is given a migrate-only option", async () => {
     expect(await cli("seed", "--revert-all")).toBe(1);
+  });
+});
+
+// The kit's whole point: acme mounts the same commands from the same module,
+// so what acme-db proves above is proven of the app's CLI too.
+describe("acme mounting the database kit", () => {
+  sandbox();
+
+  it<CliContext>("migrates through the app's own CLI", async ({ main }) => {
+    expect(await runWithConfig(appConfig, ["migrate", "--db", "MAIN"])).toBe(0);
+    expect(await tables(main)).toEqual(["posts", "users"]);
+  });
+
+  it<CliContext>("seeds through the app's own CLI", async ({ main }) => {
+    await runWithConfig(appConfig, ["migrate", "--db", "MAIN"]);
+    expect(await runWithConfig(appConfig, ["seed", "--db", "MAIN"])).toBe(0);
+
+    const db = createDb<never>(await dialectFromUrl(main));
+    const rows = await db.selectFrom("users").selectAll().execute();
+    await db.destroy();
+    expect(rows).toEqual([{ id: "seeded" }]);
+  });
+
+  it("lists both commands in acme's help", async () => {
+    const said: string[] = [];
+    // cac prints help through console.info, which the sandbox leaves alone.
+    vi.spyOn(console, "info").mockImplementation((...args: unknown[]) => {
+      said.push(args.join(" "));
+    });
+
+    expect(await runWithConfig(appConfig, ["--help"])).toBe(0);
+    expect(said.join("\n")).toContain("migrate");
+    expect(said.join("\n")).toContain("seed");
   });
 });

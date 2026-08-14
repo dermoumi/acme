@@ -3,7 +3,7 @@ import { d1MigrationDialect, remoteD1Dialect } from "../d1";
 import { createDb } from "../internal/database";
 import { urlVarFor } from "../internal/db/url-var";
 import { dialectFromUrl } from "../internal/uri/uri.node.ts";
-import { databaseTarget, loadAcmeConfig } from "./config";
+import type { AnyDatabaseConfig } from "../kit";
 
 // One value per name, in the same positions, so a caller can destructure.
 type EnvValues<Keys extends string[]> = { [Index in keyof Keys]: string };
@@ -76,8 +76,6 @@ async function remoteD1Id(binding: string, env: string): Promise<string> {
 export interface OpenOptions {
   /** Wrangler environment to reach. Its absence means act locally. */
   wranglerEnv?: string;
-  /** Path to acme.config.ts. Defaults to the one in the working directory. */
-  configFile?: string;
 }
 
 // Answers what went wrong rather than throwing, so cleanup can carry on.
@@ -98,9 +96,10 @@ interface DbHandle<DB> {
 }
 
 async function open<DB>(
-  binding: string,
+  target: AnyDatabaseConfig,
   options: OpenOptions,
 ): Promise<DbHandle<DB>> {
+  const { binding } = target;
   // If there's a wrangler environment, then we're targeting a remote D1
   const { wranglerEnv } = options;
   if (wranglerEnv !== undefined) {
@@ -115,9 +114,6 @@ async function open<DB>(
   }
 
   // If not and there's a url env var, then we're targeting that database
-  const { configFile } = options;
-  const config = await loadAcmeConfig(configFile);
-  const target = await databaseTarget(binding, config);
   const url = process.env[urlVarFor(binding, target.urlVar)];
   if (url) {
     const dialect = await dialectFromUrl(url);
@@ -129,18 +125,21 @@ async function open<DB>(
 }
 
 /**
- * Opens the database named by a binding, and closes it afterwards.
+ * Opens a declared database, and closes it afterwards.
  *
  * A wrangler environment takes the D1 id from wrangler.jsonc. Without one it
  * is local: the url env var first, which is how a node deployment migrates,
  * then the D1 wrangler serves.
+ *
+ * @param target - The database as the app declared it. `databaseNamed` finds
+ *   one for a caller that was handed no config.
  */
 export async function withDb<DB>(
-  binding: string,
+  target: AnyDatabaseConfig,
   options: OpenOptions,
   run: (db: Kysely<DB>) => Promise<void>,
 ): Promise<void> {
-  const { db, dispose } = await open<DB>(binding, options);
+  const { db, dispose } = await open<DB>(target, options);
 
   let failed: unknown;
   try {

@@ -1,57 +1,23 @@
-import path from "node:path";
-import { pathToFileURL } from "node:url";
-import type { Kysely } from "kysely";
-import type { Migrations } from "../internal/migrator";
-
-export const CONFIG_FILE = "acme.config.ts";
-
-/** Enough to reach a database. All any kit's CLI needs to open one. */
-export interface DatabaseTarget {
-  /** The D1 binding, matching what the app passed `defineDb`. */
-  binding: string;
-  /** Env var holding the url. Defaults to `${binding}_URL`. */
-  urlVar?: string;
-}
-
-export interface DatabaseConfig<DB> extends DatabaseTarget {
-  /** Keyed by name, in the order the keys sort. */
-  migrations?: Migrations;
-  /** Rows an empty deployment needs. Run by `acme-db seed`. */
-  seed?: (db: Kysely<DB>) => Promise<void>;
-}
+import { loadAcmeConfig } from "@acme/app/cli";
+import { type AnyDatabaseConfig, databasesOf } from "../kit";
 
 /**
- * A declared database with its schema erased, which is all a CLI can see.
+ * An app's databases, however it declared them.
  *
- * Not `DatabaseConfig<unknown>`: `seed` takes the schema, so it is
- * contravariant, and that type would refuse every real config.
+ * @param file - Path to the config. Defaults to the one in the working
+ *   directory, whose absence means an app that declares nothing.
  */
-export interface AnyDatabaseConfig extends DatabaseTarget {
-  migrations?: Migrations;
-  seed?: (db: never) => Promise<void>;
-}
+export async function loadDatabases(
+  file?: string,
+): Promise<AnyDatabaseConfig[]> {
+  const config = await loadAcmeConfig(file);
+  const declared = databasesOf(config);
+  if (declared.length > 0) {
+    return declared;
+  }
 
-/**
- * One config per app, a section per kit, and a kit reads only its own.
- *
- * Sections are optional because an app takes the kits it wants: `acme-db` says
- * so plainly when `db` is missing rather than failing further in.
- */
-export interface AcmeConfig {
-  /** The app's database, or all of them in the order they migrate. */
-  db?: AnyDatabaseConfig | AnyDatabaseConfig[];
-}
-
-/** Identity, but it types a database without the app naming a type. */
-export function defineDbConfig<DB>(
-  config: DatabaseConfig<DB>,
-): DatabaseConfig<DB> {
-  return config;
-}
-
-/** The `db` section as a list, however the app chose to write it. */
-export function databases(config: AcmeConfig): AnyDatabaseConfig[] {
-  const { db } = config;
+  // The old `db:` section, until posy declares the kit. Goes with AcmeConfig.
+  const { db } = config as AcmeConfig;
   if (!db) {
     return [];
   }
@@ -60,61 +26,30 @@ export function databases(config: AcmeConfig): AnyDatabaseConfig[] {
 }
 
 /**
- * Checks a config is usable, whoever assembled it.
+ * Finds one declared database by its binding, for a caller that is not a
+ * command and so was handed no config.
  *
- * @param config - The config to check.
- * @param source - Where it came from, for the message. Defaults to the file
- *   an app would normally keep it in.
+ * @param binding - The binding the app declared it under.
+ * @param file - Path to the config. Defaults to the working directory's.
+ * @throws If the app declares no database bound to that name.
  */
-export function validateAcmeConfig(
-  config: AcmeConfig,
-  source: string = CONFIG_FILE,
-): AcmeConfig {
-  // Every reader, not just those that go on to pick a database: a duplicate
-  // would otherwise resolve silently to whichever came first.
-  const bindings = databases(config).map((entry) => entry.binding);
-  const duplicate = bindings.find((name, at) => bindings.indexOf(name) !== at);
-  if (duplicate) {
-    throw new Error(`${source} declares ${duplicate} twice`);
-  }
-
-  return config;
-}
-
-/**
- * Reads an app's config from a file. Shared by every kit's CLI.
- *
- * @param file - Path to the config. Defaults to `acme.config.ts` here.
- */
-export async function loadAcmeConfig(file?: string): Promise<AcmeConfig> {
-  const resolved = path.resolve(file ?? CONFIG_FILE);
-  const filePath = pathToFileURL(resolved).href;
-  const loaded = (await import(filePath).catch((cause: unknown) => {
-    throw new Error(`could not read ${resolved}`, { cause });
-  })) as { default?: AcmeConfig };
-
-  if (!loaded.default) {
-    throw new Error(`${resolved} must export a config as its default`);
-  }
-
-  return validateAcmeConfig(loaded.default, resolved);
-}
-
-/**
- * Finds a declared database by its binding, reading the config if not given.
- */
-export async function databaseTarget(
+export async function databaseNamed(
   binding: string,
-  config?: AcmeConfig,
-): Promise<DatabaseTarget> {
-  const db = databases(config ?? (await loadAcmeConfig()));
-  const declared = db.find((entry) => entry.binding === binding);
-  if (!declared) {
-    const known = db.map((entry) => entry.binding).join(", ");
+  file?: string,
+): Promise<AnyDatabaseConfig> {
+  const declared = await loadDatabases(file);
+  const one = declared.find((entry) => entry.binding === binding);
+  if (!one) {
+    const known = declared.map((entry) => entry.binding).join(", ");
     throw new Error(
-      `${CONFIG_FILE} declares no database bound to ${binding}${known ? `: ${known}` : ""}`,
+      `no database bound to ${binding}${known ? `: ${known}` : ""}`,
     );
   }
 
-  return declared;
+  return one;
+}
+
+/** A config written before `@acme/db` was a kit. Goes once posy declares it. */
+export interface AcmeConfig {
+  db?: AnyDatabaseConfig | AnyDatabaseConfig[];
 }

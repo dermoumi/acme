@@ -1,5 +1,5 @@
 import { createInterface } from "node:readline";
-import { withDb } from "@acme/db/cli";
+import { databaseNamed, withDb } from "@acme/db/cli";
 import { hashPassword } from "../src/server/auth";
 import type { Database } from "../src/server/db";
 
@@ -23,7 +23,8 @@ if (username) {
   const password = await readPassword();
   if (password) {
     const hash = await hashPassword(password);
-    await withDb<Database>("DATABASE", { wranglerEnv }, async (db) => {
+    const target = await databaseNamed("DATABASE");
+    await withDb<Database>(target, { wranglerEnv }, async (db) => {
       await db
         .insertInto("users")
         .values({

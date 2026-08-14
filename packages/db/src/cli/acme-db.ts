@@ -1,16 +1,10 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { CONFIG_FILE, getConfigFile } from "@acme/app/cli";
 import { type CAC, cac } from "cac";
-import type { Kysely } from "kysely";
-import { NO_MIGRATIONS } from "kysely/migration";
-import { createMigrator } from "../internal/migrator";
-import {
-  type AnyDatabaseConfig,
-  CONFIG_FILE,
-  databases,
-  loadAcmeConfig,
-} from "./config";
-import { withDb } from "./with-db";
+import type { AnyDatabaseConfig } from "../kit";
+import commands from "./commands";
+import { loadDatabases } from "./config";
 
 const { version } = JSON.parse(
   readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
@@ -25,7 +19,7 @@ interface TakesOptions {
   ): this;
 }
 
-/** Adds the `--config` flag, so every kit's CLI names a config the same way. */
+/** Adds the `--config` flag. Goes with its last caller: @acme/app owns `-c`. */
 export function configOption<Target extends TakesOptions>(
   target: Target,
 ): Target {
@@ -34,159 +28,10 @@ export function configOption<Target extends TakesOptions>(
   });
 }
 
-interface Flags {
-  db?: string;
-  wranglerEnv?: string;
-  revertAll?: boolean;
-  // Path to acme.config.ts. Defaults to the one in the working directory.
-  configFile?: string;
-}
-
-async function select(flags: Flags): Promise<AnyDatabaseConfig[]> {
-  const binding = flags.db;
-  const file = flags.configFile ?? CONFIG_FILE;
-  const config = await loadAcmeConfig(flags.configFile);
-  const db = databases(config);
-  if (db.length === 0) {
-    throw new Error(`${file} declares no databases`);
-  }
-
-  if (binding === undefined) {
-    return db;
-  }
-
-  const one = db.find((entry) => entry.binding === binding);
-  if (!one) {
-    const bindings = db.map((entry) => entry.binding).join(", ");
-    throw new Error(`no database bound to ${binding}: ${bindings}`);
-  }
-
-  return [one];
-}
-
-// Sequential on purpose: one connection, and one wrangler proxy, at a time.
-async function forEach(
-  chosen: AnyDatabaseConfig[],
-  each: (entry: AnyDatabaseConfig) => Promise<void>,
-) {
-  for (const entry of chosen) {
-    // oxlint-disable-next-line no-await-in-loop
-    await each(entry);
-  }
-}
-
-async function migrate(
-  chosen: AnyDatabaseConfig[],
-  migration: string | undefined,
-  flags: Flags,
-) {
-  if (migration !== undefined && flags.revertAll) {
-    throw new Error("a migration and --revert-all are exclusive");
-  }
-  // Only a name: it may not exist in the next database, or may mean something
-  // else there. --revert-all is NO_MIGRATIONS, which every schema understands.
-  if (migration !== undefined && chosen.length > 1) {
-    throw new Error("--db is required: a migration acts on one database");
-  }
-
-  await forEach(chosen, async (entry) => {
-    const { binding, migrations = {} } = entry;
-    const names = Object.keys(migrations).toSorted();
-    const last = names.at(-1);
-    if (!last) {
-      if (chosen.length === 1) {
-        throw new Error(`${binding} declares no migrations`);
-      }
-      return;
-    }
-
-    if (migration !== undefined && !names.includes(migration)) {
-      throw new Error(
-        `${binding} has no migration named "${migration}": ${names.join(", ")}`,
-      );
-    }
-
-    await withDb(entry.binding, flags, async (db) => {
-      // Both directions: kysely rolls back when the target is behind.
-      const { error, results } = await createMigrator(db, migrations).migrateTo(
-        flags.revertAll ? NO_MIGRATIONS : (migration ?? last),
-      );
-      for (const { status, direction, migrationName } of results ?? []) {
-        console.log(`${binding}: ${status} ${direction} ${migrationName}`);
-      }
-      if (error) {
-        throw error instanceof Error
-          ? error
-          : new Error(`${binding}: migration failed`, { cause: error });
-      }
-    });
-  });
-}
-
-async function seed(chosen: AnyDatabaseConfig[], flags: Flags) {
-  await forEach(chosen, async (entry) => {
-    const seeder = entry.seed;
-    if (!seeder) {
-      if (chosen.length === 1) {
-        throw new Error(`${entry.binding} declares no seed`);
-      }
-      return;
-    }
-
-    // The schema is the app's business: `defineDbConfig` already checked the
-    // seed against it, and nothing here can know it.
-    await withDb(
-      entry.binding,
-      flags,
-      seeder as (db: Kysely<unknown>) => Promise<void>,
-    );
-  });
-}
-
-interface Options {
-  config?: string;
-  db?: string;
-  wranglerEnv?: string;
-  revertAll?: boolean;
-}
-
-function flagsOf(options: Options): Flags {
-  return {
-    configFile: options.config,
-    db: options.db,
-    wranglerEnv: options.wranglerEnv,
-    revertAll: options.revertAll,
-  };
-}
-
-// cac folds global options into every command's help and parsing. --revert-all
-// stays on migrate, which is what makes `seed --revert-all` an error.
-function buildCli(): CAC {
-  const cli = cac("acme-db");
-  configOption(cli)
-    .option("-d, --db <binding>", "one database it declares, not every one")
-    .option(
-      "-e, --wrangler-env <env>",
-      "act on what is deployed to that wrangler environment",
-    );
-
-  cli
-    .command("migrate [migration]", "bring a database to a migration")
-    .option("--revert-all", "roll every migration back")
-    .action(async (migration: string | undefined, options: Options) => {
-      const flags = flagsOf(options);
-      const chosen = await select(flags);
-      await migrate(chosen, migration, flags);
-    });
-
-  cli
-    .command("seed", "insert the rows an empty deployment needs")
-    .action(async (options: Options) => {
-      const flags = flagsOf(options);
-      const chosen = await select(flags);
-      await seed(chosen, flags);
-    });
-
+// The same commands the `acme` CLI mounts, so the two entries cannot drift.
+function buildCli(declared: AnyDatabaseConfig[]): CAC {
+  const cli = configOption(cac("acme-db"));
+  commands({ cli, config: declared });
   cli.help();
   cli.version(version);
   return cli;
@@ -206,11 +51,14 @@ function messageWithCauses(error: unknown): string {
 /**
  * Runs one command and answers the exit code, without touching the process.
  *
+ * The way in when the app layer is what is broken: it reads the same config and
+ * mounts the same commands, but never builds the app's CLI.
+ *
  * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
  */
 export async function run(argv: string[]): Promise<number> {
-  const cli = buildCli();
   try {
+    const cli = buildCli(await loadDatabases(getConfigFile(argv)));
     // Parsing prints help or the version itself; running is ours to do, so the
     // action's promise is awaited rather than left dangling.
     cli.parse(["node", "acme-db", ...argv], { run: false });

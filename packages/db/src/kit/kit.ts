@@ -1,0 +1,47 @@
+import type { AcmeConfig, Kit } from "@acme/app";
+import type { AnyDatabaseConfig } from "./database";
+
+/** What the database kit calls itself in `kits`, and what reads it back. */
+export const KIT_NAME = "database";
+
+function checkBindings(declared: AnyDatabaseConfig[]): AnyDatabaseConfig[] {
+  // Every reader, not just those that go on to pick one: a duplicate would
+  // otherwise resolve silently to whichever came first.
+  const bindings = declared.map((entry) => entry.binding);
+  const duplicate = bindings.find((name, at) => bindings.indexOf(name) !== at);
+  if (duplicate) {
+    throw new Error(`the ${KIT_NAME} kit declares ${duplicate} twice`);
+  }
+
+  return declared;
+}
+
+/**
+ * The database kit, taking every database the app has at once.
+ *
+ * An app declares it once, however many databases it holds, because a command
+ * such as `migrate` acts on all of them unless `--db` names one.
+ *
+ * @param declared - The app's databases, in the order they migrate.
+ * @throws If two of them claim the same binding.
+ */
+export function database(declared: AnyDatabaseConfig[]): Kit {
+  return {
+    name: KIT_NAME,
+    config: checkBindings(declared),
+    // The literal URL, never a helper: `import.meta.url` is lexically bound, so
+    // one living in @acme/app would resolve against @acme/app's own directory.
+    cli: new URL("../cli/commands.ts", import.meta.url).href,
+  };
+}
+
+/**
+ * The databases an app declared, or none if it took no database kit.
+ *
+ * @param config - The app's config, as `acme.config.ts` default-exports it.
+ */
+export function databasesOf(config: AcmeConfig): AnyDatabaseConfig[] {
+  const kit = config.kits?.find((entry) => entry.name === KIT_NAME);
+
+  return (kit?.config as AnyDatabaseConfig[] | undefined) ?? [];
+}

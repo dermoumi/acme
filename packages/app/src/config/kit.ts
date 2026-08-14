@@ -1,3 +1,13 @@
+// Declared here because `cli` below is what forces a kit to use it: workerd
+// serves import.meta.url, but @cloudflare/workers-types declares no ImportMeta.
+declare global {
+  // Not readonly: @types/node declares the same property mutable, and tsc
+  // refuses two declarations whose modifiers differ.
+  interface ImportMeta {
+    url: string;
+  }
+}
+
 /**
  * One capability an app takes on, such as a database or an error reporter.
  *

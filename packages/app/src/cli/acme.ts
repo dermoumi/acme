@@ -10,8 +10,15 @@ const { version } = JSON.parse(
   readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
 ) as { version: string };
 
-// Which commands exist depends on the config, and cac matches against the
-// commands it already has, so a throwaway CLI reads the flag in a first pass.
+/**
+ * Reads `-c` out of an argv, before there is a CLI to read it with.
+ *
+ * Which commands exist depends on the config, and cac matches against the
+ * commands it already has, so a throwaway CLI reads the flag in a first pass.
+ * Any CLI mounting a kit's commands needs the same first pass.
+ *
+ * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
+ */
 export function getConfigFile(argv: string[]): string | undefined {
   const probe = cac().option("-c, --config <file>", "the config to read");
   const parsed = probe.parse(["node", "acme", ...argv], { run: false });

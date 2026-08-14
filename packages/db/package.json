@@ -29,6 +29,7 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@acme/app": "workspace:*",
     "cac": "catalog:",
     "kysely": "catalog:",
     "kysely-d1": "catalog:",

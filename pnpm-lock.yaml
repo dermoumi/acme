@@ -283,6 +283,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@acme/app':
+        specifier: workspace:*
+        version: link:../app
       cac:
         specifier: 'catalog:'
         version: 7.0.0
