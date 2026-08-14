@@ -1,4 +1,4 @@
-name: Deploy Posy (staging)
+name: Posy deploy (staging)
 
 on:
   push:

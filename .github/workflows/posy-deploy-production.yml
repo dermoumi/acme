@@ -1,4 +1,4 @@
-name: Deploy Posy (production)
+name: Posy deploy (production)
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Reset Posy database
+name: Posy reset
 
 # Redeploy is mandatory: the recreated database gets a new id and the live worker
 # would stay bound to the deleted one. Run this FROM the branch you want reset.

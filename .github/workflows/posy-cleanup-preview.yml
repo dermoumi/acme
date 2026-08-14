@@ -1,4 +1,4 @@
-name: Cleanup Posy preview
+name: Posy cleanup (preview)
 
 # No paths filter: it would strand previews made by workflows that have none (posy-reset.yml)
 on:

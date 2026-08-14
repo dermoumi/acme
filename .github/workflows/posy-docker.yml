@@ -1,4 +1,4 @@
-name: Docker Posy
+name: Posy docker
 
 on:
   pull_request:

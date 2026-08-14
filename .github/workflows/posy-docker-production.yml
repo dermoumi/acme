@@ -1,4 +1,4 @@
-name: Publish Posy image
+name: Posy docker (production)
 
 # Separate from posy-docker.yml: paths and tags in one push block silently
 # skips the tag runs.

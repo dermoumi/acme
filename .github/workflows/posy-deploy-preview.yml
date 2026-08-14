@@ -1,4 +1,4 @@
-name: Deploy Posy (preview)
+name: Posy deploy (preview)
 
 on:
   pull_request:
