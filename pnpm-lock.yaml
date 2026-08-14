@@ -261,10 +261,10 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-pool-workers':
         specifier: 'catalog:'
-        version: 0.21.1(@cloudflare/workers-types@5.20260811.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
+        version: 0.21.1(@cloudflare/workers-types@5.20260812.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20260811.1
+        version: 5.20260812.1
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
