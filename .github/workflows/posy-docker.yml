@@ -30,7 +30,6 @@ jobs:
   verify:
     permissions:
       contents: read
-      packages: write
     uses: ./.github/workflows/target-docker.yml
     with:
       app: posy
