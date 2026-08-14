@@ -5,7 +5,6 @@ import { databaseNamed, loadDatabases } from "./config";
 const at = (...parts: string[]) => path.join(import.meta.dirname, ...parts);
 
 const KIT = at("..", "kit", "fixtures", "app", "acme.config.ts");
-const LEGACY = at("fixtures", "legacy", "acme.config.ts");
 
 describe("loadDatabases", () => {
   it("reads what the app declared through the kit", async () => {
@@ -15,12 +14,6 @@ describe("loadDatabases", () => {
       "ANALYTICS",
       "RENAMED",
     ]);
-  });
-
-  // The shape posy still uses; it goes when posy declares the kit.
-  it("falls back to the db section an older app declared", async () => {
-    const declared = await loadDatabases(LEGACY);
-    expect(declared.map((entry) => entry.binding)).toEqual(["MAIN"]);
   });
 
   it("answers none where there is no config to read", async () => {

@@ -10,27 +10,12 @@ const { version } = JSON.parse(
   readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
 ) as { version: string };
 
-// Anything cac lets you hang an option on: the CLI itself, or one command.
-interface TakesOptions {
-  option(
-    rawName: string,
-    description: string,
-    config?: { default?: unknown },
-  ): this;
-}
-
-/** Adds the `--config` flag. Goes with its last caller: @acme/app owns `-c`. */
-export function configOption<Target extends TakesOptions>(
-  target: Target,
-): Target {
-  return target.option("-c, --config <file>", "the config to read", {
-    default: CONFIG_FILE,
-  });
-}
-
 // The same commands the `acme` CLI mounts, so the two entries cannot drift.
 function buildCli(declared: AnyDatabaseConfig[]): CAC {
-  const cli = configOption(cac("acme-db"));
+  const cli = cac("acme-db");
+  cli.option("-c, --config <file>", "the config to read", {
+    default: CONFIG_FILE,
+  });
   commands({ cli, config: declared });
   cli.help();
   cli.version(version);
