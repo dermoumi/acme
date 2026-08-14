@@ -1,0 +1,10 @@
+{
+  "extends": "@acme/tsconfig/tsconfig.workerd.json",
+  "compilerOptions": {
+    // Resolve #runtime the way workerd does, so node-only imports stay out.
+    "customConditions": ["workerd"]
+  },
+  "include": ["src"],
+  // The CLI is node-only by definition; tsconfig.node.json is what checks it.
+  "exclude": ["**/*.node.ts", "**/*.node.test.ts", "src/cli/**"]
+}

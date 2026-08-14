@@ -12,6 +12,7 @@ RUN corepack enable
 # Manifests before sources, so editing a file does not redo the install.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/posy/package.json apps/posy/
+COPY packages/app/package.json packages/app/
 COPY packages/db/package.json packages/db/
 COPY packages/rate-limiter/package.json packages/rate-limiter/
 COPY packages/sentry/package.json packages/sentry/
@@ -48,8 +49,8 @@ RUN set -eu; \
     done
 
 # Optional peers of @sentry/cloudflare and valibot: no Worker or tsc runs here.
-# `*` covers every platform build, and a name that matches nothing fails.
-RUN node apps/posy/scripts/prune-deploy-tree.ts /deploy \
+# 'pnpm acme prune' fails because we bundle packages without installing them.
+RUN node packages/app/src/cli/bin/acme.js prune --root=/deploy \
       wrangler miniflare workerd '@cloudflare/workerd-*' \
       typescript '@typescript/*'
 

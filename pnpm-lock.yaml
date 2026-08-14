@@ -146,6 +146,9 @@ importers:
 
   apps/posy:
     dependencies:
+      '@acme/app':
+        specifier: workspace:*
+        version: link:../../packages/app
       '@acme/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -243,6 +246,40 @@ importers:
       wrangler:
         specifier: 'catalog:'
         version: 4.121.0(@cloudflare/workers-types@5.20260811.1)
+
+  packages/app:
+    dependencies:
+      cac:
+        specifier: 'catalog:'
+        version: 7.0.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.12
+    devDependencies:
+      '@acme/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@cloudflare/vitest-pool-workers':
+        specifier: 'catalog:'
+        version: 0.21.1(@cloudflare/workers-types@5.20260811.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20260811.1
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 4.1.10(supports-color@10.2.2)(vitest@4.1.10)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vite:
+        specifier: 'catalog:'
+        version: 8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))
 
   packages/db:
     dependencies:

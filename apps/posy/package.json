@@ -23,6 +23,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@acme/app": "workspace:*",
     "@acme/db": "workspace:*",
     "@acme/rate-limiter": "workspace:*",
     "@acme/sentry": "workspace:*",

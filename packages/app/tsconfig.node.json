@@ -1,0 +1,11 @@
+{
+  "extends": "@acme/tsconfig/tsconfig.node.json",
+  "compilerOptions": {
+    // The bin is .js: without these it belongs to no project, which leaves it
+    // unchecked and reads as untyped to the type-aware lint rules.
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["src", "vitest.config.ts"],
+  "exclude": ["**/*.workerd.ts", "**/*.workerd.test.ts"]
+}

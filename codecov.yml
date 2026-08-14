@@ -15,6 +15,10 @@ component_management:
       name: apps/posy
       paths:
         - apps/posy/**
+    - component_id: app
+      name: "@acme/app"
+      paths:
+        - packages/app/**
     - component_id: db
       name: "@acme/db"
       paths:
@@ -32,7 +36,7 @@ comment:
   layout: condensed_header, components, diff, files
   require_changes: false
 
-# Mirrors the `coverage.exclude` lists in the four vitest configs.
+# Mirrors the `coverage.exclude` lists in the per-package vitest configs.
 ignore:
   - "**/testing/**"
   - "**/*.config.ts"
