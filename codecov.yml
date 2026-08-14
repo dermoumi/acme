@@ -39,6 +39,7 @@ comment:
 # Mirrors the `coverage.exclude` lists in the per-package vitest configs.
 ignore:
   - "**/testing/**"
+  - "**/fixtures/**"
   - "**/*.config.ts"
   - apps/posy/src/server/index.node.ts
   - packages/tsconfig/**
