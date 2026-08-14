@@ -1,14 +1,48 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { type CAC, cac } from "cac";
+import type { AcmeConfig, Kit } from "../config";
+import { CONFIG_FILE, loadAcmeConfig } from "./config";
 import { pruneDeployTree } from "./prune";
 
 const { version } = JSON.parse(
   readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
 ) as { version: string };
 
-function buildCli(): CAC {
+// Which commands exist depends on the config, and cac matches against the
+// commands it already has, so a throwaway CLI reads the flag in a first pass.
+export function getConfigFile(argv: string[]): string | undefined {
+  const probe = cac().option("-c, --config <file>", "the config to read");
+  const parsed = probe.parse(["node", "acme", ...argv], { run: false });
+  const { config } = parsed.options;
+
+  return typeof config === "string" ? config : undefined;
+}
+
+// One kit shadowing another's command would otherwise resolve silently to
+// whichever was mounted first.
+function mountCommands(cli: CAC, kits: Kit[]): void {
+  const owner = new Map(cli.commands.map((cmd) => [cmd.name, cli.name]));
+
+  for (const kit of kits) {
+    const added = cli.commands.length;
+    kit.commands?.(cli);
+    for (const { name } of cli.commands.slice(added)) {
+      const taken = owner.get(name);
+      if (taken !== undefined) {
+        throw new Error(`${kit.name} and ${taken} both declare "${name}"`);
+      }
+
+      owner.set(name, kit.name);
+    }
+  }
+}
+
+function buildCli(kits: Kit[]): CAC {
   const cli = cac("acme");
+  cli.option("-c, --config <file>", "the config to read", {
+    default: CONFIG_FILE,
+  });
 
   cli
     .command(
@@ -21,6 +55,7 @@ function buildCli(): CAC {
       console.log(`pruned ${named} named, ${stranded} stranded, ${live} left`);
     });
 
+  mountCommands(cli, kits);
   cli.help();
   cli.version(version);
   return cli;
@@ -37,14 +72,24 @@ function messageWithCauses(error: unknown): string {
   return chain.join("\n  caused by: ");
 }
 
+function report(error: unknown): number {
+  console.error(error instanceof Error ? messageWithCauses(error) : error);
+  return 1;
+}
+
 /**
- * Runs one command and answers the exit code, without touching the process.
+ * Runs one command against a config in hand, and answers the exit code.
  *
+ * @param config - The app's config. Nothing is read from disk, and `-c` is not
+ *   consulted: the caller has already decided what the app declares.
  * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
  */
-export async function run(argv: string[]): Promise<number> {
-  const cli = buildCli();
+export async function runWithConfig(
+  config: AcmeConfig,
+  argv: string[],
+): Promise<number> {
   try {
+    const cli = buildCli(config.kits ?? []);
     // Parsing prints help or the version itself; running is ours to do, so the
     // action's promise is awaited rather than left dangling.
     cli.parse(["node", "acme", ...argv], { run: false });
@@ -59,9 +104,22 @@ export async function run(argv: string[]): Promise<number> {
 
     await cli.runMatchedCommand();
   } catch (error) {
-    console.error(error instanceof Error ? messageWithCauses(error) : error);
-    return 1;
+    return report(error);
   }
 
   return 0;
+}
+
+/**
+ * Runs one command, taking the app's config from its file. The CLI's entry.
+ *
+ * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
+ */
+export async function run(argv: string[]): Promise<number> {
+  try {
+    const config = await loadAcmeConfig(getConfigFile(argv));
+    return await runWithConfig(config, argv);
+  } catch (error) {
+    return report(error);
+  }
 }
