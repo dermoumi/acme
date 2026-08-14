@@ -16,8 +16,8 @@ jobs:
   delete:
     name: Delete ${{ github.ref == 'refs/heads/main' && 'staging' || 'preview' }} database
     runs-on: ubuntu-latest
-    # staging CF account; production is a separate account and unreachable from here
-    environment: posy-staging
+    # follows the tier being reset; production is a separate CF account, unreachable from here
+    environment: posy-${{ github.ref == 'refs/heads/main' && 'staging' || 'preview' }}
     permissions:
       contents: read
     env:

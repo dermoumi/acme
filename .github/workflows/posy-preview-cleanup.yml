@@ -9,7 +9,7 @@ jobs:
   preview-cleanup:
     name: Delete preview worker and database
     runs-on: ubuntu-latest
-    environment: posy-staging
+    environment: posy-preview
     permissions:
       contents: read
     env:
