@@ -49,8 +49,8 @@ RUN set -eu; \
     done
 
 # Optional peers of @sentry/cloudflare and valibot: no Worker or tsc runs here.
-# `*` covers every platform build, and a name that matches nothing fails.
-RUN pnpm --filter @acme/posy exec acme prune --root=/deploy \
+# 'pnpm acme prune' fails because we bundle packages without installing them.
+RUN node packages/app/src/cli/bin/acme.js prune --root=/deploy \
       wrangler miniflare workerd '@cloudflare/workerd-*' \
       typescript '@typescript/*'
 
