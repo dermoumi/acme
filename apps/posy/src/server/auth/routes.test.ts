@@ -28,16 +28,23 @@ describe("auth routes", () => {
     return { app: createApp(), db, env };
   }
 
+  // Workerd shares one login budget across the whole project run, and these
+  // cases are not about rate limiting. TEST-NET-2 keeps them off other files'.
+  let clients = 0;
   async function login(
     app: App,
     env: AppBindings,
     body: unknown,
   ): Promise<Response> {
+    clients += 1;
     return app.request(
       "/session",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "cf-connecting-ip": `198.51.100.${clients}`,
+        },
         body: JSON.stringify(body),
       },
       env,
