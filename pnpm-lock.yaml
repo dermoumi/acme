@@ -146,6 +146,9 @@ importers:
 
   apps/posy:
     dependencies:
+      '@acme/app':
+        specifier: workspace:*
+        version: link:../../packages/app
       '@acme/db':
         specifier: workspace:*
         version: link:../../packages/db

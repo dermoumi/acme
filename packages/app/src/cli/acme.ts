@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { type CAC, cac } from "cac";
+import { pruneDeployTree } from "./prune";
 
 const { version } = JSON.parse(
   readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
@@ -8,6 +9,17 @@ const { version } = JSON.parse(
 
 function buildCli(): CAC {
   const cli = cac("acme");
+
+  cli
+    .command(
+      "prune <...packages>",
+      "drop packages from a deployed tree, then whatever nothing reaches",
+    )
+    .option("-r, --root <dir>", "the tree to prune", { default: "." })
+    .action((packages: string[], options: { root: string }) => {
+      const { named, stranded, live } = pruneDeployTree(packages, options.root);
+      console.log(`pruned ${named} named, ${stranded} stranded, ${live} left`);
+    });
 
   cli.help();
   cli.version(version);

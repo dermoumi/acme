@@ -1,31 +1,21 @@
 import { existsSync, readdirSync, realpathSync, rmSync } from "node:fs";
 import path from "node:path";
 
-// TODO: Make this a cli command in @acme/app, use cac
-
 // The stranded half is not a list: the tree is installed and its lockfile still
 // names everything, so reachability is all there is to go on.
 
-const USAGE =
-  "usage: prune-deploy-tree <deployed directory> <package|prefix*>...";
-
-function args(): { root: string; drop: string[] } {
-  const [root, ...drop] = process.argv.slice(2);
-  if (!root || drop.length === 0) {
-    throw new Error(USAGE);
-  }
-
-  return { root, drop };
-}
-
-const { root, drop } = args();
-const store = path.join(root, "node_modules", ".pnpm");
-if (!existsSync(store)) {
-  throw new Error(`no pnpm store to prune: ${store}`);
+/** What one prune took out, and what it left behind. */
+export interface PruneResult {
+  /** Store entries matched by name, before reachability was considered. */
+  named: number;
+  /** Store entries nothing reached once the named ones were gone. */
+  stranded: number;
+  /** Store entries still reachable from the tree's own dependencies. */
+  live: number;
 }
 
 /** Every package directory in the virtual store, by its directory name. */
-function stored(): string[] {
+function stored(store: string): string[] {
   return readdirSync(store).filter((name) => name !== "node_modules");
 }
 
@@ -49,7 +39,7 @@ function matcher(spec: string): (entry: string) => boolean {
  * The store entry a `node_modules` link points into, or null when it leaves the
  * tree. Scoped links resolve the same way, through their own directory.
  */
-function entryOf(link: string): string | null {
+function entryOf(store: string, link: string): string | null {
   try {
     const relative = path.relative(store, realpathSync(link));
 
@@ -76,10 +66,10 @@ function linksIn(nodeModules: string): string[] {
 }
 
 /** Walks out from the app's own dependencies, the only way into the store. */
-function reachable(): Set<string> {
+function reachable(root: string, store: string): Set<string> {
   const seen = new Set<string>();
   const queue = linksIn(path.join(root, "node_modules"))
-    .map((link) => entryOf(link))
+    .map((link) => entryOf(store, link))
     .filter((entry): entry is string => entry !== null);
 
   while (queue.length > 0) {
@@ -87,7 +77,7 @@ function reachable(): Set<string> {
     if (entry === undefined || seen.has(entry)) continue;
     seen.add(entry);
     for (const link of linksIn(path.join(store, entry, "node_modules"))) {
-      const next = entryOf(link);
+      const next = entryOf(store, link);
       if (next !== null && !seen.has(next)) queue.push(next);
     }
   }
@@ -95,27 +85,45 @@ function reachable(): Set<string> {
   return seen;
 }
 
-function remove(entries: string[]): void {
+function remove(store: string, entries: string[]): void {
   for (const entry of entries) {
     rmSync(path.join(store, entry), { recursive: true, force: true });
   }
 }
 
-// Every argument must hit something, so a rename upstream fails the build
-// rather than quietly leaving the packages it no longer matches installed.
-for (const spec of drop) {
-  const matches = matcher(spec);
-  const matched = stored().filter((entry) => matches(entry));
-  if (matched.length === 0) {
-    throw new Error(`nothing in the store matches "${spec}"`);
+/**
+ * Drops the named packages from a deployed tree, then everything nothing
+ * reaches any more.
+ *
+ * @param drop - Package names, or `prefix*` to cover every build of one.
+ * @param root - The directory holding `node_modules/.pnpm`. Defaults to the
+ *   working directory.
+ * @throws If there is no store, nothing is named, or a name matches nothing.
+ */
+export function pruneDeployTree(drop: string[], root = "."): PruneResult {
+  if (drop.length === 0) {
+    throw new Error("name at least one package to drop");
   }
-  remove(matched);
+
+  const store = path.join(root, "node_modules", ".pnpm");
+  if (!existsSync(store)) {
+    throw new Error(`no pnpm store to prune: ${store}`);
+  }
+
+  // Every argument must hit something, so a rename upstream fails the build
+  // rather than quietly leaving the packages it no longer matches installed.
+  for (const spec of drop) {
+    const matches = matcher(spec);
+    const matched = stored(store).filter((entry) => matches(entry));
+    if (matched.length === 0) {
+      throw new Error(`nothing in the store matches "${spec}"`);
+    }
+    remove(store, matched);
+  }
+
+  const live = reachable(root, store);
+  const stranded = stored(store).filter((entry) => !live.has(entry));
+  remove(store, stranded);
+
+  return { named: drop.length, stranded: stranded.length, live: live.size };
 }
-
-const live = reachable();
-const stranded = stored().filter((entry) => !live.has(entry));
-remove(stranded);
-
-console.log(
-  `pruned ${drop.length} named, ${stranded.length} stranded, ${live.size} left`,
-);
