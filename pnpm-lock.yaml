@@ -13,8 +13,8 @@ catalogs:
       specifier: 0.21.1
       version: 0.21.1
     '@cloudflare/workers-types':
-      specifier: 5.20260811.1
-      version: 5.20260811.1
+      specifier: 5.20260812.1
+      version: 5.20260812.1
     '@hono/node-server':
       specifier: 2.1.0
       version: 2.1.0
@@ -160,7 +160,7 @@ importers:
         version: 2.1.0(hono@4.13.1)
       '@sentry/cloudflare':
         specifier: 'catalog:'
-        version: 10.70.0(@cloudflare/workers-types@5.20260811.1)(supports-color@10.2.2)(wrangler@4.121.0(@cloudflare/workers-types@5.20260811.1))
+        version: 10.70.0(@cloudflare/workers-types@5.20260812.1)(supports-color@10.2.2)(wrangler@4.121.0(@cloudflare/workers-types@5.20260812.1))
       '@sentry/node':
         specifier: 'catalog:'
         version: 10.70.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@10.2.2)
@@ -197,13 +197,13 @@ importers:
         version: link:../../packages/tsconfig
       '@cloudflare/vite-plugin':
         specifier: 'catalog:'
-        version: 1.51.3(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))(wrangler@4.121.0(@cloudflare/workers-types@5.20260811.1))
+        version: 1.51.3(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))(wrangler@4.121.0(@cloudflare/workers-types@5.20260812.1))
       '@cloudflare/vitest-pool-workers':
         specifier: 'catalog:'
-        version: 0.21.1(@cloudflare/workers-types@5.20260811.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
+        version: 0.21.1(@cloudflare/workers-types@5.20260812.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20260811.1
+        version: 5.20260812.1
       '@sentry/vite-plugin':
         specifier: 'catalog:'
         version: 5.4.0(rollup@4.62.2)(supports-color@10.2.2)
@@ -242,7 +242,7 @@ importers:
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))
       wrangler:
         specifier: 'catalog:'
-        version: 4.121.0(@cloudflare/workers-types@5.20260811.1)
+        version: 4.121.0(@cloudflare/workers-types@5.20260812.1)
 
   packages/db:
     dependencies:
@@ -267,10 +267,10 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-pool-workers':
         specifier: 'catalog:'
-        version: 0.21.1(@cloudflare/workers-types@5.20260811.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
+        version: 0.21.1(@cloudflare/workers-types@5.20260812.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20260811.1
+        version: 5.20260812.1
       '@types/better-sqlite3':
         specifier: 'catalog:'
         version: 9.6.0
@@ -300,7 +300,7 @@ importers:
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))
       wrangler:
         specifier: 'catalog:'
-        version: 4.121.0(@cloudflare/workers-types@5.20260811.1)
+        version: 4.121.0(@cloudflare/workers-types@5.20260812.1)
 
   packages/rate-limiter:
     dependencies:
@@ -316,10 +316,10 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-pool-workers':
         specifier: 'catalog:'
-        version: 0.21.1(@cloudflare/workers-types@5.20260811.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
+        version: 0.21.1(@cloudflare/workers-types@5.20260812.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20260811.1
+        version: 5.20260812.1
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
@@ -350,16 +350,16 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-pool-workers':
         specifier: 'catalog:'
-        version: 0.21.1(@cloudflare/workers-types@5.20260811.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
+        version: 0.21.1(@cloudflare/workers-types@5.20260812.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20260811.1
+        version: 5.20260812.1
       '@hono/node-server':
         specifier: 'catalog:'
         version: 2.1.0(hono@4.13.1)
       '@sentry/cloudflare':
         specifier: 'catalog:'
-        version: 10.70.0(@cloudflare/workers-types@5.20260811.1)(supports-color@10.2.2)(wrangler@4.121.0(@cloudflare/workers-types@5.20260811.1))
+        version: 10.70.0(@cloudflare/workers-types@5.20260812.1)(supports-color@10.2.2)(wrangler@4.121.0(@cloudflare/workers-types@5.20260812.1))
       '@sentry/node':
         specifier: 'catalog:'
         version: 10.70.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(supports-color@10.2.2)
@@ -398,7 +398,7 @@ importers:
     dependencies:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
-        version: 5.20260811.1
+        version: 5.20260812.1
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
@@ -990,8 +990,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@cloudflare/workers-types@5.20260811.1':
-    resolution: {integrity: sha512-jS3o9240P8t7Y/2lecXPC0rGdODZgHyFTWy9Asdm8htE2Uepx4PAvbcVo3EC0r8wZuv6rahDc1MMj+3nDZj/QA==}
+  '@cloudflare/workers-types@5.20260812.1':
+    resolution: {integrity: sha512-eG2aQdUWH8RYEubpBjUE98L2G57JYzGEcI8PgROTjt9YjunbEnPBHP4371Usj8v8pTWcXtbOmI+LRCXF4KhJgQ==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -4594,20 +4594,20 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260804.1
 
-  '@cloudflare/vite-plugin@1.51.3(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))(wrangler@4.121.0(@cloudflare/workers-types@5.20260811.1))':
+  '@cloudflare/vite-plugin@1.51.3(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))(wrangler@4.121.0(@cloudflare/workers-types@5.20260812.1))':
     dependencies:
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260804.1)
       miniflare: 5.20260804.1-alpha
       unenv: 2.0.0-rc.24
       vite: 8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12)
       workerd: 1.20260804.1
-      wrangler: 4.121.0(@cloudflare/workers-types@5.20260811.1)
+      wrangler: 4.121.0(@cloudflare/workers-types@5.20260812.1)
       ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@cloudflare/vitest-pool-workers@0.21.1(@cloudflare/workers-types@5.20260811.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)':
+  '@cloudflare/vitest-pool-workers@0.21.1(@cloudflare/workers-types@5.20260812.1)(@vitest/runner@4.1.10)(@vitest/snapshot@4.1.10)(vitest@4.1.10)':
     dependencies:
       '@vitest/runner': 4.1.10
       '@vitest/snapshot': 4.1.10
@@ -4615,7 +4615,7 @@ snapshots:
       esbuild: 0.28.1
       miniflare: 5.20260804.1-alpha
       vitest: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))
-      wrangler: 4.121.0(@cloudflare/workers-types@5.20260811.1)
+      wrangler: 4.121.0(@cloudflare/workers-types@5.20260812.1)
       zod: 4.4.3
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
@@ -4637,7 +4637,7 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260804.1':
     optional: true
 
-  '@cloudflare/workers-types@5.20260811.1': {}
+  '@cloudflare/workers-types@5.20260812.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -5323,15 +5323,15 @@ snapshots:
       - encoding
       - supports-color
 
-  '@sentry/cloudflare@10.70.0(@cloudflare/workers-types@5.20260811.1)(supports-color@10.2.2)(wrangler@4.121.0(@cloudflare/workers-types@5.20260811.1))':
+  '@sentry/cloudflare@10.70.0(@cloudflare/workers-types@5.20260812.1)(supports-color@10.2.2)(wrangler@4.121.0(@cloudflare/workers-types@5.20260812.1))':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@sentry/core': 10.70.0
       '@sentry/server-utils': 10.70.0(supports-color@10.2.2)
       magic-string: 0.30.21
     optionalDependencies:
-      '@cloudflare/workers-types': 5.20260811.1
-      wrangler: 4.121.0(@cloudflare/workers-types@5.20260811.1)
+      '@cloudflare/workers-types': 5.20260812.1
+      wrangler: 4.121.0(@cloudflare/workers-types@5.20260812.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -7306,7 +7306,7 @@ snapshots:
       regexparam: 3.0.0
       use-sync-external-store: 1.6.0(react@19.2.8)
 
-  wrangler@4.121.0(@cloudflare/workers-types@5.20260811.1):
+  wrangler@4.121.0(@cloudflare/workers-types@5.20260812.1):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260804.1)
@@ -7317,7 +7317,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20260804.1
     optionalDependencies:
-      '@cloudflare/workers-types': 5.20260811.1
+      '@cloudflare/workers-types': 5.20260812.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - bufferutil
