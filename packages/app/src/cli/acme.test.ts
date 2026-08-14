@@ -7,12 +7,15 @@ import appConfig from "./fixtures/app/acme.config";
 const fixture = (app: string) =>
   path.join(import.meta.dirname, "fixtures", app, "acme.config.ts");
 
-// A kit is a plain object, so the ones a test needs take no file of their own.
+const commandsModule = new URL("./fixtures/app/commands.ts", import.meta.url)
+  .href;
+
+// Two kits pointing at one module both declare its commands, which is the
+// clash the CLI has to catch.
 const claims = (name: string): Kit => ({
   name,
-  commands: (cli) => {
-    cli.command("greet <name>", "say hello").action(() => undefined);
-  },
+  config: { greeting: "hello" },
+  cli: commandsModule,
 });
 
 interface CliContext {
@@ -78,6 +81,35 @@ describe("runWithConfig", () => {
   it<CliContext>("takes a config declaring no kits at all", async ({ out }) => {
     expect(await runWithConfig({}, ["--help"])).toBe(0);
     expect(out.join("\n")).toContain("prune");
+  });
+
+  it<CliContext>("takes a kit that declares no commands", async ({ out }) => {
+    expect(await runWithConfig({ kits: [{ name: "quiet" }] }, ["--help"])).toBe(
+      0,
+    );
+    expect(out.join("\n")).toContain("prune");
+  });
+
+  it<CliContext>("names the kit whose module it cannot load", async ({
+    err,
+  }) => {
+    const kits = [{ name: "greeter", cli: "./nowhere.ts" }];
+
+    expect(await runWithConfig({ kits }, ["greet", "world"])).toBe(1);
+    expect(err.join("\n")).toContain(
+      "greeter names a cli module it cannot load",
+    );
+  });
+
+  it<CliContext>("names the kit whose module exports no mount", async ({
+    err,
+  }) => {
+    const cli = new URL("./fixtures/app/not-a-mount.ts", import.meta.url).href;
+
+    expect(await runWithConfig({ kits: [{ name: "greeter", cli }] }, [])).toBe(
+      1,
+    );
+    expect(err.join("\n")).toContain("must export its mount as default");
   });
 });
 

@@ -1,11 +1,3 @@
-import type { CAC } from "cac";
-
-/**
- * The part of the `acme` CLI a kit is handed: enough to declare its own
- * commands, and nothing that would let it rename the program or its help.
- */
-export type KitCommands = Pick<CAC, "command">;
-
 /**
  * One capability an app takes on, such as a database or an error reporter.
  *
@@ -16,10 +8,21 @@ export interface Kit {
   /** Names the kit when something goes wrong. Conventionally the package's short name. */
   name: string;
   /**
-   * Adds this kit's commands to `acme`, if it has any.
+   * What the app declared, for whoever reads it back.
    *
-   * What a command needs is already in scope: the app passed it to the
-   * function that built the kit.
+   * The kit's own code is the only thing that knows this shape, so it is
+   * `unknown` here and cast where the type is known. It reaches the kit's
+   * commands, and an app can read it straight off the config it imported.
    */
-  commands?: (cli: KitCommands) => void;
+  config?: unknown;
+  /**
+   * Where this kit's commands live, as a specifier the CLI imports. The
+   * module's default export is its `KitMount`.
+   *
+   * A specifier rather than a function because `acme.config.ts` is imported by
+   * the app too, and command code is node-only: a function would drag it into
+   * the worker's bundle. Written by the kit's own package, pointing at itself,
+   * which needs no public export: `new URL("./cli/commands.ts", import.meta.url).href`
+   */
+  cli?: string;
 }

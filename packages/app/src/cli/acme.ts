@@ -3,6 +3,7 @@ import path from "node:path";
 import { type CAC, cac } from "cac";
 import type { AcmeConfig, Kit } from "../config";
 import { CONFIG_FILE, loadAcmeConfig } from "./config";
+import { mountCommands } from "./mount";
 import { pruneDeployTree } from "./prune";
 
 const { version } = JSON.parse(
@@ -19,26 +20,7 @@ export function getConfigFile(argv: string[]): string | undefined {
   return typeof config === "string" ? config : undefined;
 }
 
-// One kit shadowing another's command would otherwise resolve silently to
-// whichever was mounted first.
-function mountCommands(cli: CAC, kits: Kit[]): void {
-  const owner = new Map(cli.commands.map((cmd) => [cmd.name, cli.name]));
-
-  for (const kit of kits) {
-    const added = cli.commands.length;
-    kit.commands?.(cli);
-    for (const { name } of cli.commands.slice(added)) {
-      const taken = owner.get(name);
-      if (taken !== undefined) {
-        throw new Error(`${kit.name} and ${taken} both declare "${name}"`);
-      }
-
-      owner.set(name, kit.name);
-    }
-  }
-}
-
-function buildCli(kits: Kit[]): CAC {
+async function buildCli(kits: Kit[]): Promise<CAC> {
   const cli = cac("acme");
   cli.option("-c, --config <file>", "the config to read", {
     default: CONFIG_FILE,
@@ -55,7 +37,7 @@ function buildCli(kits: Kit[]): CAC {
       console.log(`pruned ${named} named, ${stranded} stranded, ${live} left`);
     });
 
-  mountCommands(cli, kits);
+  await mountCommands(cli, kits);
   cli.help();
   cli.version(version);
   return cli;
@@ -89,7 +71,7 @@ export async function runWithConfig(
   argv: string[],
 ): Promise<number> {
   try {
-    const cli = buildCli(config.kits ?? []);
+    const cli = await buildCli(config.kits ?? []);
     // Parsing prints help or the version itself; running is ours to do, so the
     // action's promise is awaited rather than left dangling.
     cli.parse(["node", "acme", ...argv], { run: false });
