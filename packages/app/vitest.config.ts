@@ -14,7 +14,8 @@ export default defineConfig({
     coverage: {
       provider: "istanbul",
       reporter: ["text", "lcovonly"],
-      exclude: ["*.config.ts"],
+      // Fixtures are scaffolding a test drives, not code the package ships.
+      exclude: ["*.config.ts", "src/**/fixtures/**"],
     },
     projects: [
       { test: { name: "node", include } },
