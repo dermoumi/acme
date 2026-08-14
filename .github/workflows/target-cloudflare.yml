@@ -83,7 +83,7 @@ jobs:
     name: Deploy ${{ inputs.app }} (${{ inputs.environment }})
     runs-on: ubuntu-latest
     environment:
-      name: ${{ inputs.app }}-${{ inputs.environment == 'production' && 'production' || 'staging' }}
+      name: ${{ inputs.app }}-${{ inputs.environment }}
       url: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
     concurrency:
       group: deploy-${{ inputs.app }}-${{ inputs.environment }}${{ inputs.branch && '-' || '' }}${{ inputs.branch }}

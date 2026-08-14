@@ -1,4 +1,4 @@
-name: Reset Posy database
+name: Posy reset
 
 # Redeploy is mandatory: the recreated database gets a new id and the live worker
 # would stay bound to the deleted one. Run this FROM the branch you want reset.
@@ -16,8 +16,8 @@ jobs:
   delete:
     name: Delete ${{ github.ref == 'refs/heads/main' && 'staging' || 'preview' }} database
     runs-on: ubuntu-latest
-    # staging CF account; production is a separate account and unreachable from here
-    environment: posy-staging
+    # follows the tier being reset; production is a separate CF account, unreachable from here
+    environment: posy-${{ github.ref == 'refs/heads/main' && 'staging' || 'preview' }}
     permissions:
       contents: read
     env:
