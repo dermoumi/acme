@@ -6,9 +6,9 @@ packages:
 minimumReleaseAge: 2880
 
 catalog:
-  "@cloudflare/vite-plugin": "1.51.2"
+  "@cloudflare/vite-plugin": "1.51.3"
   "@hono/node-server": "2.1.0"
-  "@cloudflare/vitest-pool-workers": "0.21.0"
+  "@cloudflare/vitest-pool-workers": "0.21.1"
   "@cloudflare/workers-types": "5.20260811.1"
   "@sentry/cloudflare": "10.70.0"
   "@sentry/core": "10.70.0"
@@ -44,7 +44,7 @@ catalog:
   vitest: "4.1.10"
   workbox-window: "7.4.1"
   wouter: "3.10.0"
-  wrangler: "4.120.1"
+  wrangler: "4.121.0"
 
 allowBuilds:
   # downloads the sentry-cli binary, which @sentry/vite-plugin shells out to

@@ -13,6 +13,7 @@ export default defineConfig({
     // The workers pool rejects the v8 provider: it needs node:inspector.
     coverage: {
       provider: "istanbul",
+      reporter: ["text", "lcovonly"],
       exclude: ["*.config.ts"],
     },
     projects: [

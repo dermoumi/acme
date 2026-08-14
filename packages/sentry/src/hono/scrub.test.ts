@@ -61,7 +61,7 @@ describe("scrubEvent", () => {
 
   it("masks cookie values by name", () => {
     const { request } = scrub();
-    expect(request?.cookies?.posy_session).not.toBe(SESSION);
+    expect(request?.cookies).toEqual({ posy_session: "[redacted]" });
   });
 
   it("keeps the url path and method so the failing route stays identifiable", () => {
