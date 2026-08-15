@@ -5,6 +5,31 @@ import { urlVarFor } from "../internal/db/url-var";
 import { dialectFromUrl } from "../internal/uri/uri.node.ts";
 import type { AnyDatabaseConfig } from "../kit";
 
+// Which deployment of a binding to act on.
+interface BindingOptions {
+  /** Wrangler environment to reach. Its absence means act locally. */
+  wranglerEnv?: string;
+}
+
+/**
+ * Opens one of the app's databases by binding, and closes it afterwards.
+ *
+ * What the database kit registers under `withDatabase`, already bound to the
+ * databases the app declared, so a command names a binding and nothing else:
+ *
+ * ```ts
+ * const withDatabase = require<WithDatabase>("withDatabase");
+ * await withDatabase<Database>("DATABASE", options, async (db) => { ... });
+ * ```
+ */
+export interface WithDatabase {
+  <DB>(
+    binding: string,
+    options: BindingOptions,
+    run: (db: Kysely<DB>) => Promise<void>,
+  ): Promise<void>;
+}
+
 // One value per name, in the same positions, so a caller can destructure.
 type EnvValues<Keys extends string[]> = { [Index in keyof Keys]: string };
 
@@ -73,11 +98,6 @@ async function remoteD1Id(binding: string, env: string): Promise<string> {
   return declared.database_id;
 }
 
-export interface OpenOptions {
-  /** Wrangler environment to reach. Its absence means act locally. */
-  wranglerEnv?: string;
-}
-
 // Answers what went wrong rather than throwing, so cleanup can carry on.
 async function failureGuard(work: Promise<void> | undefined): Promise<unknown> {
   try {
@@ -97,7 +117,7 @@ interface DbHandle<DB> {
 
 async function open<DB>(
   target: AnyDatabaseConfig,
-  options: OpenOptions,
+  options: BindingOptions,
 ): Promise<DbHandle<DB>> {
   const { binding } = target;
   // If there's a wrangler environment, then we're targeting a remote D1
@@ -136,7 +156,7 @@ async function open<DB>(
  */
 export async function withDb<DB>(
   target: AnyDatabaseConfig,
-  options: OpenOptions,
+  options: BindingOptions,
   run: (db: Kysely<DB>) => Promise<void>,
 ): Promise<void> {
   const { db, dispose } = await open<DB>(target, options);

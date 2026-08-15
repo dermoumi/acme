@@ -4,12 +4,27 @@ import type { Kysely } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { createMigrator } from "../internal/migrator";
 import type { AnyDatabaseConfig } from "../kit";
-import { withDb } from "./with-db";
+import { type WithDatabase, withDb } from "./with-db";
 
 interface Options {
   db?: string;
   wranglerEnv?: string;
   revertAll?: boolean;
+}
+
+function one(
+  declared: AnyDatabaseConfig[],
+  binding: string,
+): AnyDatabaseConfig {
+  const found = declared.find((entry) => entry.binding === binding);
+  if (!found) {
+    const known = declared.map((entry) => entry.binding).join(", ");
+    throw new Error(
+      `no database bound to ${binding}${known ? `: ${known}` : ""}`,
+    );
+  }
+
+  return found;
 }
 
 function select(
@@ -20,17 +35,7 @@ function select(
     throw new Error("no databases are declared");
   }
 
-  if (binding === undefined) {
-    return declared;
-  }
-
-  const one = declared.find((entry) => entry.binding === binding);
-  if (!one) {
-    const bindings = declared.map((entry) => entry.binding).join(", ");
-    throw new Error(`no database bound to ${binding}: ${bindings}`);
-  }
-
-  return [one];
+  return binding === undefined ? declared : [one(declared, binding)];
 }
 
 // Sequential on purpose: one connection, and one wrangler proxy, at a time.
@@ -130,8 +135,15 @@ function targeting(command: Command): Command {
  * rather than by import: this module is node-only, and `acme.config.ts` is
  * imported by the app as well as the CLI.
  */
-export default function commands({ cli, config }: KitCli): void {
+export default function commands({ cli, config, register }: KitCli): void {
   const declared = (config as AnyDatabaseConfig[] | undefined) ?? [];
+
+  // Bound to what the app declared, so another kit's command names a binding
+  // and never has to find the config for itself.
+  const withDatabase: WithDatabase = async (binding, options, run) => {
+    await withDb(one(declared, binding), options, run);
+  };
+  register("withDatabase", withDatabase);
 
   targeting(
     cli.command("migrate [migration]", "bring a database to a migration"),

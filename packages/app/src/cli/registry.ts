@@ -8,7 +8,7 @@ export interface KitRegistry {
    *
    * @throws If another kit already registered that key.
    */
-  register(key: string, value: unknown): void;
+  register: (key: string, value: unknown) => void;
   /**
    * Takes what another kit registered, cast to what the caller says it is.
    *
@@ -18,7 +18,7 @@ export interface KitRegistry {
    *
    * @throws If no declared kit registered that key.
    */
-  require<Value>(key: string): Value;
+  require: <Value>(key: string) => Value;
 }
 
 /**

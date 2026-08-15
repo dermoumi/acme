@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { CONFIG_FILE, getConfigFile, kitRegistry } from "@acme/app/cli";
 import { type CAC, cac } from "cac";
-import { type AnyDatabaseConfig, KIT_NAME } from "../kit";
+import type { AnyDatabaseConfig } from "../kit";
 import commands from "./commands";
 import { loadDatabases } from "./config";
 
@@ -17,7 +17,7 @@ function buildCli(declared: AnyDatabaseConfig[]): CAC {
     default: CONFIG_FILE,
   });
   // Its own registry: acme-db mounts the one kit, so nothing else registers.
-  commands({ cli, config: declared, registry: kitRegistry()(KIT_NAME) });
+  commands({ cli, config: declared, ...kitRegistry()("database") });
   cli.help();
   cli.version(version);
   return cli;

@@ -9,12 +9,10 @@ import { type KitRegistry, kitRegistry } from "./registry";
 export type KitCommands = Pick<CAC, "command">;
 
 /** What a kit's `cli` module is handed when the CLI mounts it. */
-export interface KitCli {
+export interface KitCli extends KitRegistry {
   cli: KitCommands;
   /** The kit's own config, as the app declared it. */
   config: unknown;
-  /** The other kits this app declared, to register with and ask of. */
-  registry: KitRegistry;
 }
 
 /**
@@ -67,7 +65,7 @@ export async function mountCommands(cli: CAC, kits: Kit[]): Promise<void> {
     }
 
     const added = cli.commands.length;
-    mountHandler({ cli, config: kit.config, registry: registryFor(kit.name) });
+    mountHandler({ cli, config: kit.config, ...registryFor(kit.name) });
     for (const { name } of cli.commands.slice(added)) {
       const taken = owner.get(name);
       if (taken !== undefined) {

@@ -18,7 +18,7 @@
     "test": "vitest run",
     "migrate": "acme migrate",
     "seed": "acme seed",
-    "set-password": "tsx scripts/set-password.ts",
+    "set-password": "acme set-password",
     "test:cov": "vitest run --coverage",
     "cf-typegen": "wrangler types"
   },

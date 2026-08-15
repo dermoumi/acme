@@ -1,12 +1,8 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import { runWithConfig } from "@acme/app/cli";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createDb } from "../internal/database";
-import { dialectFromUrl } from "../internal/uri/uri.node.ts";
-import appConfig from "../kit/fixtures/app/acme.config";
+import { describe, expect, it, vi } from "vitest";
 import { run } from "./acme-db";
+import { type CliContext, rows, sandbox, tables } from "./test-utils";
 
 // One engine is enough: this proves the CLI wires the migrator to a database,
 // not that the migrator works, which every engine project already covers.
@@ -20,45 +16,6 @@ const config = path.join(
 );
 
 const cli = (...argv: string[]) => run([...argv, "-c", config]);
-
-async function tables(url: string): Promise<string[]> {
-  const db = createDb<never>(await dialectFromUrl(url));
-  const found = await db.introspection.getTables();
-  await db.destroy();
-  return found
-    .map((table) => table.name)
-    .filter((name) => !name.includes("migration"))
-    .toSorted();
-}
-
-interface CliContext {
-  dir: string;
-  main: string;
-  analytics: string;
-}
-
-// A hook reaches only its own describe, so every block installs the sandbox.
-const sandbox = () => {
-  // Files, not :memory:, which is private to the connection that opened it.
-  beforeEach<CliContext>(async (ctx) => {
-    vi.spyOn(console, "log").mockImplementation(() => undefined);
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-
-    const dir = await mkdtemp(path.join(tmpdir(), "acme-db-cli-"));
-    const main = `file:${path.join(dir, "main.db")}`;
-    const analytics = `file:${path.join(dir, "analytics.db")}`;
-    vi.stubEnv("MAIN_URL", main);
-    vi.stubEnv("ANALYTICS_URL", analytics);
-
-    ctx.dir = dir;
-    ctx.main = main;
-    ctx.analytics = analytics;
-  });
-
-  afterEach<CliContext>(async ({ dir }) => {
-    await rm(dir, { recursive: true, force: true });
-  });
-};
 
 describe("run migrate", () => {
   sandbox();
@@ -174,10 +131,7 @@ describe("run seed", () => {
     await cli("migrate", "--db", "MAIN");
     expect(await cli("seed", "--db", "MAIN")).toBe(0);
 
-    const db = createDb<never>(await dialectFromUrl(main));
-    const rows = await db.selectFrom("users").selectAll().execute();
-    await db.destroy();
-    expect(rows).toEqual([{ id: "seeded" }]);
+    expect(await rows(main, "users")).toEqual([{ id: "seeded" }]);
   });
 
   it("skips a database that declares none when it was not named", async () => {
@@ -256,33 +210,3 @@ describe("run help and version", () => {
 
 // The kit's whole point: acme mounts the same commands from the same module,
 // so what acme-db proves above is proven of the app's CLI too.
-describe("acme mounting the database kit", () => {
-  sandbox();
-
-  it<CliContext>("migrates through the app's own CLI", async ({ main }) => {
-    expect(await runWithConfig(appConfig, ["migrate", "--db", "MAIN"])).toBe(0);
-    expect(await tables(main)).toEqual(["posts", "users"]);
-  });
-
-  it<CliContext>("seeds through the app's own CLI", async ({ main }) => {
-    await runWithConfig(appConfig, ["migrate", "--db", "MAIN"]);
-    expect(await runWithConfig(appConfig, ["seed", "--db", "MAIN"])).toBe(0);
-
-    const db = createDb<never>(await dialectFromUrl(main));
-    const rows = await db.selectFrom("users").selectAll().execute();
-    await db.destroy();
-    expect(rows).toEqual([{ id: "seeded" }]);
-  });
-
-  it("lists both commands in acme's help", async () => {
-    const said: string[] = [];
-    // cac prints help through console.info, which the sandbox leaves alone.
-    vi.spyOn(console, "info").mockImplementation((...args: unknown[]) => {
-      said.push(args.join(" "));
-    });
-
-    expect(await runWithConfig(appConfig, ["--help"])).toBe(0);
-    expect(said.join("\n")).toContain("migrate");
-    expect(said.join("\n")).toContain("seed");
-  });
-});

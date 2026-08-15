@@ -1,8 +1,8 @@
 import type { KitCli } from "../../mount";
 
-export default function commands({ cli, config, registry }: KitCli): void {
+export default function commands({ cli, config, register }: KitCli): void {
   const { greeting } = config as { greeting: string };
-  registry.register("greeting", greeting);
+  register("greeting", greeting);
 
   cli
     .command("greet <name>", "say hello, to prove a kit's commands mount")

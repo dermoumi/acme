@@ -4,4 +4,4 @@ export {
   type DatabaseTarget,
   defineDbConfig,
 } from "./database";
-export { KIT_NAME, database, databasesOf } from "./kit";
+export { database, databasesOf } from "./kit";
