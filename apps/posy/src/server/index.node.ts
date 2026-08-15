@@ -20,12 +20,12 @@ function requireEnvVars<Keys extends string[]>(...keys: Keys): EnvValues<Keys> {
 
 // Defaults live in the Dockerfile. Read at boot rather than on first use, since
 // /health answers without a database and would pass the check without one.
-const [clientDir, databaseUrl] = requireEnvVars("CLIENT_DIR", "DATABASE_URL");
+const [assetsDir, databaseUrl] = requireEnvVars("ASSETS_DIR", "DATABASE_URL");
 
 // Workers builds env per request; node has one process, so the bindings are
 // built once here and reused. @acme/db opens DATABASE_URL on first use.
 const env: AppBindings = {
-  ASSETS: staticAssets(clientDir),
+  ASSETS: staticAssets(assetsDir),
   DATABASE_URL: databaseUrl,
   REQUIRE_AUTH: process.env.REQUIRE_AUTH,
   BASIC_AUTH: process.env.BASIC_AUTH,
