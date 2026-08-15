@@ -3,8 +3,9 @@ import type { Command } from "cac";
 import type { Kysely } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { createMigrator } from "../internal/migrator";
+import type { WithDatabase } from "../internal/shared";
 import type { DatabaseConfig } from "../kit";
-import { type WithDatabase, withDb } from "./with-db";
+import { withDb } from "./with-db";
 
 interface Options {
   db?: string;

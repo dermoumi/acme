@@ -3,32 +3,8 @@ import { d1MigrationDialect, remoteD1Dialect } from "../d1";
 import { createDb } from "../internal/database";
 import { urlVarFor } from "../internal/db/url-var";
 import { dialectFromUrl } from "../internal/uri/uri.node.ts";
+import type { BindingOptions } from "../internal/shared";
 import type { DatabaseConfig } from "../kit";
-
-// Which deployment of a binding to act on.
-interface BindingOptions {
-  /** Wrangler environment to reach. Its absence means act locally. */
-  wranglerEnv?: string;
-}
-
-/**
- * Opens one of the app's databases by binding, and closes it afterwards.
- *
- * What the database kit registers under `withDatabase`, already bound to the
- * databases the app declared, so a command names a binding and nothing else:
- *
- * ```ts
- * const withDatabase = require<WithDatabase>("withDatabase");
- * await withDatabase<Database>("DATABASE", options, async (db) => { ... });
- * ```
- */
-export interface WithDatabase {
-  <DB>(
-    binding: string,
-    options: BindingOptions,
-    run: (db: Kysely<DB>) => Promise<void>,
-  ): Promise<void>;
-}
 
 // One value per name, in the same positions, so a caller can destructure.
 type EnvValues<Keys extends string[]> = { [Index in keyof Keys]: string };
