@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { KIT_NAME, database } from "./kit";
+import { database } from "./kit";
 
 describe("database", () => {
   it("names itself so a reader can find it back", () => {
-    expect(database([{ binding: "MAIN" }])).toMatchObject({ name: KIT_NAME });
+    expect(database([{ binding: "MAIN" }])).toMatchObject({ name: "database" });
   });
 
   it("carries every database it was given, in order", () => {
@@ -22,7 +22,7 @@ describe("database", () => {
         { binding: "OTHER" },
         { binding: "SAME" },
       ]),
-    ).toThrow(/database kit declares SAME twice/u);
+    ).toThrow(/SAME is declared more than once/u);
   });
 
   // The commands are node-only, so the kit names them by URL rather than

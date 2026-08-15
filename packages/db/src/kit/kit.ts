@@ -1,7 +1,25 @@
 import type { Kit } from "@acme/app";
-import type { DatabaseConfig } from "./database";
+import type { Kysely } from "kysely";
+import type { Migrations } from "../internal/migrator";
 
-export const KIT_NAME = "database";
+/** One database an app declares. */
+export interface DatabaseConfig {
+  /** The D1 binding, matching what the app passed `defineDb`. */
+  binding: string;
+  /** Env var holding the url. Defaults to `${binding}_URL`. */
+  urlVar?: string;
+  /** Keyed by name, in the order the keys sort. */
+  migrations?: Migrations;
+  /**
+   * Rows an empty deployment needs. Run by `acme seed`.
+   *
+   * Any schema, because only the app knows its own: the seed carries the type
+   * it was written against, and this checks it is a database it takes at all.
+   * `Kysely<never>` would be contravariant and refuse every real seed.
+   */
+  // oxlint-disable-next-line no-explicit-any
+  seed?: (db: Kysely<any>) => Promise<void>;
+}
 
 function checkDuplicates(bindings: DatabaseConfig[]): DatabaseConfig[] {
   // Every reader, not just those that go on to pick one: a duplicate would
@@ -9,7 +27,7 @@ function checkDuplicates(bindings: DatabaseConfig[]): DatabaseConfig[] {
   const names = bindings.map((entry) => entry.binding);
   const duplicate = names.find((name, at) => names.indexOf(name) !== at);
   if (duplicate) {
-    throw new Error(`the ${KIT_NAME} kit declares ${duplicate} twice`);
+    throw new Error(`${duplicate} is declared more than once`);
   }
 
   return bindings;
@@ -26,7 +44,7 @@ function checkDuplicates(bindings: DatabaseConfig[]): DatabaseConfig[] {
  */
 export function database(bindings: DatabaseConfig[]): Kit {
   return {
-    name: KIT_NAME,
+    name: "database",
     config: checkDuplicates(bindings),
     // The literal URL, never a helper: `import.meta.url` is lexically bound, so
     // one living in @acme/app would resolve against @acme/app's own directory.
