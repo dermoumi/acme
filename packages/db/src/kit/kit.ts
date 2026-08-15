@@ -1,7 +1,6 @@
-import type { AcmeConfig, Kit } from "@acme/app";
+import type { Kit } from "@acme/app";
 import type { DatabaseConfig } from "./database";
 
-// Shared so `database` and `databasesOf` cannot disagree about the name.
 export const KIT_NAME = "database";
 
 function checkDuplicates(bindings: DatabaseConfig[]): DatabaseConfig[] {
@@ -33,11 +32,4 @@ export function database(bindings: DatabaseConfig[]): Kit {
     // one living in @acme/app would resolve against @acme/app's own directory.
     cli: new URL("../cli/commands.ts", import.meta.url).href,
   };
-}
-
-// The reverse of what `database` wrote, for readers that hold a whole config.
-export function databasesOf(config: AcmeConfig): DatabaseConfig[] {
-  const kit = config.kits?.find((entry) => entry.name === KIT_NAME);
-
-  return (kit?.config as DatabaseConfig[] | undefined) ?? [];
 }

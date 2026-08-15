@@ -48,7 +48,7 @@ function requireEnvVars<Keys extends string[]>(...keys: Keys): EnvValues<Keys> {
 // have to install it.
 async function localD1<DB>(binding: string) {
   const wrangler = await import("wrangler").catch((cause: unknown) => {
-    throw new Error("acme-db needs wrangler to reach a D1", { cause });
+    throw new Error("@acme/db needs wrangler to reach a D1", { cause });
   });
   const platform = await wrangler.getPlatformProxy();
   const database = platform.env[binding];
@@ -83,7 +83,7 @@ async function remoteD1Id(binding: string, env: string): Promise<string> {
 
   // Otherwise wrangler.jsonc holds it, one per environment.
   const wrangler = await import("wrangler").catch((cause: unknown) => {
-    throw new Error("acme-db needs wrangler to reach a D1", { cause });
+    throw new Error("@acme/db needs wrangler to reach a D1", { cause });
   });
   const declared = d1Databases(wrangler.unstable_readConfig({ env })).find(
     (database) => database.binding === binding,
@@ -151,8 +151,7 @@ async function open<DB>(
  * is local: the url env var first, which is how a node deployment migrates,
  * then the D1 wrangler serves.
  *
- * @param target - The database as the app declared it. `databaseNamed` finds
- *   one for a caller that was handed no config.
+ * @param target - The database as the app declared it.
  */
 export async function withDb<DB>(
   target: DatabaseConfig,

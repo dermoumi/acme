@@ -114,8 +114,8 @@ async function seed(chosen: DatabaseConfig[], options: Options) {
   });
 }
 
-// On each command rather than the CLI: a kit is handed `command` alone, and
-// cannot declare a global the way `acme-db` used to.
+// On each command rather than the CLI: a kit is handed `command` alone, so
+// it cannot declare a global.
 function targeting(command: Command): Command {
   return command
     .option("-d, --db <binding>", "one database it declares, not every one")

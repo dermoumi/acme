@@ -1,3 +1,5 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Kit } from "../config";
@@ -167,6 +169,28 @@ describe("run", () => {
   it<CliContext>("says which file it could not read", async ({ err }) => {
     expect(await run(["greet", "-c", fixture("missing")])).toBe(1);
     expect(err.join("\n")).toContain("could not read");
+  });
+
+  // The wording of the cause is node's or vite's, not ours; what this pins is
+  // that we pass it on instead of printing only our own message.
+  it<CliContext>("says what actually went wrong inside the config", async ({
+    err,
+  }) => {
+    const dir = await mkdtemp(path.join(tmpdir(), "acme-broken-"));
+    const broken = path.join(dir, "broken.mjs");
+    await writeFile(broken, "export default { kits: [] \n");
+
+    expect(await run(["greet", "-c", broken])).toBe(1);
+    expect(err.join("\n")).toMatch(/could not read .*broken\.mjs/u);
+    expect(err.join("\n")).toMatch(/\n {2}caused by: .+/u);
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it<CliContext>("answers 1 and prints usage for an unknown command", async ({
+    out,
+  }) => {
+    expect(await run(["frobnicate", "-c", fixture("app")])).toBe(1);
+    expect(out.join("\n")).toContain("Usage");
   });
 });
 

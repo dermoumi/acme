@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import appConfig from "./fixtures/app/acme.config";
-import { KIT_NAME, database, databasesOf } from "./kit";
+import { KIT_NAME, database } from "./kit";
 
 describe("database", () => {
   it("names itself so a reader can find it back", () => {
@@ -30,23 +29,5 @@ describe("database", () => {
   // importing them; a wrong base would resolve inside whoever called us.
   it("points at its own commands, not its caller's", () => {
     expect(database([]).cli).toMatch(/\/db\/src\/cli\/commands\.ts$/u);
-  });
-});
-
-describe("databasesOf", () => {
-  it("reads what the app declared through the kit", () => {
-    expect(databasesOf(appConfig).map((entry) => entry.binding)).toEqual([
-      "MAIN",
-      "ANALYTICS",
-      "RENAMED",
-    ]);
-  });
-
-  it("answers none for an app that took no database kit", () => {
-    expect(databasesOf({ kits: [{ name: "greeter" }] })).toEqual([]);
-  });
-
-  it("answers none for an app that declared no kits", () => {
-    expect(databasesOf({})).toEqual([]);
   });
 });
