@@ -116,10 +116,10 @@ interface DbHandle<DB> {
 }
 
 async function open<DB>(
-  target: DatabaseConfig,
+  config: DatabaseConfig,
   options: BindingOptions,
 ): Promise<DbHandle<DB>> {
-  const { binding } = target;
+  const { binding } = config;
   // If there's a wrangler environment, then we're targeting a remote D1
   const { wranglerEnv } = options;
   if (wranglerEnv !== undefined) {
@@ -134,7 +134,7 @@ async function open<DB>(
   }
 
   // If not and there's a url env var, then we're targeting that database
-  const url = process.env[urlVarFor(binding, target.urlVar)];
+  const url = process.env[urlVarFor(binding, config.urlVar)];
   if (url) {
     const dialect = await dialectFromUrl(url);
     return { db: createDb<DB>(dialect) };
@@ -151,14 +151,14 @@ async function open<DB>(
  * is local: the url env var first, which is how a node deployment migrates,
  * then the D1 wrangler serves.
  *
- * @param target - The database as the app declared it.
+ * @param config - The database as the app declared it.
  */
 export async function withDb<DB>(
-  target: DatabaseConfig,
+  config: DatabaseConfig,
   options: BindingOptions,
   run: (db: Kysely<DB>) => Promise<void>,
 ): Promise<void> {
-  const { db, dispose } = await open<DB>(target, options);
+  const { db, dispose } = await open<DB>(config, options);
 
   let failed: unknown;
   try {

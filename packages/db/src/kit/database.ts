@@ -1,16 +1,12 @@
 import type { Kysely } from "kysely";
 import type { Migrations } from "../internal/migrator";
 
-// Enough to reach a database, which is all `withDb` needs to open one.
-export interface DatabaseTarget {
+/** One database an app declares. */
+export interface DatabaseConfig {
   /** The D1 binding, matching what the app passed `defineDb`. */
   binding: string;
   /** Env var holding the url. Defaults to `${binding}_URL`. */
   urlVar?: string;
-}
-
-/** One database an app declares. */
-export interface DatabaseConfig extends DatabaseTarget {
   /** Keyed by name, in the order the keys sort. */
   migrations?: Migrations;
   /**
