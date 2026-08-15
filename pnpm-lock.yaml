@@ -265,12 +265,18 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260812.1
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 2.1.0(hono@4.13.1)
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
       '@vitest/coverage-istanbul':
         specifier: 'catalog:'
         version: 4.1.10(supports-color@10.2.2)(vitest@4.1.10)
+      hono:
+        specifier: 'catalog:'
+        version: 4.13.1
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
