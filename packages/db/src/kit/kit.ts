@@ -1,10 +1,10 @@
 import type { AcmeConfig, Kit } from "@acme/app";
-import type { AnyDatabaseConfig } from "./database";
+import type { DatabaseConfig } from "./database";
 
 // Shared so `database` and `databasesOf` cannot disagree about the name.
 export const KIT_NAME = "database";
 
-function checkBindings(declared: AnyDatabaseConfig[]): AnyDatabaseConfig[] {
+function checkBindings(declared: DatabaseConfig[]): DatabaseConfig[] {
   // Every reader, not just those that go on to pick one: a duplicate would
   // otherwise resolve silently to whichever came first.
   const bindings = declared.map((entry) => entry.binding);
@@ -25,7 +25,7 @@ function checkBindings(declared: AnyDatabaseConfig[]): AnyDatabaseConfig[] {
  * @param declared - The app's databases, in the order they migrate.
  * @throws If two of them claim the same binding.
  */
-export function database(declared: AnyDatabaseConfig[]): Kit {
+export function database(declared: DatabaseConfig[]): Kit {
   return {
     name: KIT_NAME,
     config: checkBindings(declared),
@@ -36,8 +36,8 @@ export function database(declared: AnyDatabaseConfig[]): Kit {
 }
 
 // The reverse of what `database` wrote, for readers that hold a whole config.
-export function databasesOf(config: AcmeConfig): AnyDatabaseConfig[] {
+export function databasesOf(config: AcmeConfig): DatabaseConfig[] {
   const kit = config.kits?.find((entry) => entry.name === KIT_NAME);
 
-  return (kit?.config as AnyDatabaseConfig[] | undefined) ?? [];
+  return (kit?.config as DatabaseConfig[] | undefined) ?? [];
 }

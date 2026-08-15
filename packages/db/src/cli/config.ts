@@ -1,5 +1,5 @@
 import { loadAcmeConfig } from "@acme/app/cli";
-import { type AnyDatabaseConfig, databasesOf } from "../kit";
+import { type DatabaseConfig, databasesOf } from "../kit";
 
 /**
  * The databases an app declared through the database kit.
@@ -7,9 +7,7 @@ import { type AnyDatabaseConfig, databasesOf } from "../kit";
  * @param file - Path to the config. Defaults to the one in the working
  *   directory, whose absence means an app that declares nothing.
  */
-export async function loadDatabases(
-  file?: string,
-): Promise<AnyDatabaseConfig[]> {
+export async function loadDatabases(file?: string): Promise<DatabaseConfig[]> {
   return databasesOf(await loadAcmeConfig(file));
 }
 
@@ -24,7 +22,7 @@ export async function loadDatabases(
 export async function databaseNamed(
   binding: string,
   file?: string,
-): Promise<AnyDatabaseConfig> {
+): Promise<DatabaseConfig> {
   const declared = await loadDatabases(file);
   const one = declared.find((entry) => entry.binding === binding);
   if (!one) {

@@ -3,6 +3,12 @@ import type { Kysely } from "kysely";
 import type { Migration } from "kysely/migration";
 import { database } from "../../kit";
 
+// A real schema, the way an app declares one: the seed below carries the type
+// it was written against, which is all `database` asks of it.
+interface Main {
+  users: { id: string };
+}
+
 // Typed by what a migration is, so the schema calls below are checked against
 // the same contract the migrator will hold them to.
 const table = (name: string): Migration => ({
@@ -23,7 +29,7 @@ const config = defineConfig({
           "0001_users": table("users"),
           "0002_posts": table("posts"),
         },
-        seed: async (db: Kysely<never>) => {
+        seed: async (db: Kysely<Main>) => {
           await db.insertInto("users").values({ id: "seeded" }).execute();
         },
       },

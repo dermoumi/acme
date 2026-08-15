@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { CONFIG_FILE, getConfigFile, kitRegistry } from "@acme/app/cli";
 import { type CAC, cac } from "cac";
-import type { AnyDatabaseConfig } from "../kit";
+import type { DatabaseConfig } from "../kit";
 import commands from "./commands";
 import { loadDatabases } from "./config";
 
@@ -11,7 +11,7 @@ const { version } = JSON.parse(
 ) as { version: string };
 
 // The same commands the `acme` CLI mounts, so the two entries cannot drift.
-function buildCli(declared: AnyDatabaseConfig[]): CAC {
+function buildCli(declared: DatabaseConfig[]): CAC {
   const cli = cac("acme-db");
   cli.option("-c, --config <file>", "the config to read", {
     default: CONFIG_FILE,

@@ -1,7 +1,2 @@
-export {
-  type AnyDatabaseConfig,
-  type DatabaseConfig,
-  type DatabaseTarget,
-  defineDbConfig,
-} from "./database";
+export type { DatabaseConfig, DatabaseTarget } from "./database";
 export { database, databasesOf } from "./kit";

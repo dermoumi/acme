@@ -9,32 +9,17 @@ export interface DatabaseTarget {
   urlVar?: string;
 }
 
-/** One database an app declares, typed by the schema it holds. */
-export interface DatabaseConfig<DB> extends DatabaseTarget {
+/** One database an app declares. */
+export interface DatabaseConfig extends DatabaseTarget {
   /** Keyed by name, in the order the keys sort. */
   migrations?: Migrations;
-  /** Rows an empty deployment needs. Run by `acme seed`. */
-  seed?: (db: Kysely<DB>) => Promise<void>;
-}
-
-/**
- * A declared database with its schema erased, which is all a CLI can see.
- *
- * Not `DatabaseConfig<unknown>`: `seed` takes the schema, so it is
- * contravariant, and that type would refuse every real config.
- */
-export interface AnyDatabaseConfig extends DatabaseTarget {
-  migrations?: Migrations;
-  seed?: (db: never) => Promise<void>;
-}
-
-/**
- * Identity, but it types a database without the app naming a type.
- *
- * @param config - One database, whose `seed` is checked against `DB`.
- */
-export function defineDbConfig<DB>(
-  config: DatabaseConfig<DB>,
-): DatabaseConfig<DB> {
-  return config;
+  /**
+   * Rows an empty deployment needs. Run by `acme seed`.
+   *
+   * Any schema, because only the app knows its own: the seed carries the type
+   * it was written against, and this checks it is a database it takes at all.
+   * `Kysely<never>` would be contravariant and refuse every real seed.
+   */
+  // oxlint-disable-next-line no-explicit-any
+  seed?: (db: Kysely<any>) => Promise<void>;
 }

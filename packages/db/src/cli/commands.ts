@@ -3,7 +3,7 @@ import type { Command } from "cac";
 import type { Kysely } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { createMigrator } from "../internal/migrator";
-import type { AnyDatabaseConfig } from "../kit";
+import type { DatabaseConfig } from "../kit";
 import { type WithDatabase, withDb } from "./with-db";
 
 interface Options {
@@ -12,10 +12,7 @@ interface Options {
   revertAll?: boolean;
 }
 
-function one(
-  declared: AnyDatabaseConfig[],
-  binding: string,
-): AnyDatabaseConfig {
+function one(declared: DatabaseConfig[], binding: string): DatabaseConfig {
   const found = declared.find((entry) => entry.binding === binding);
   if (!found) {
     const known = declared.map((entry) => entry.binding).join(", ");
@@ -28,9 +25,9 @@ function one(
 }
 
 function select(
-  declared: AnyDatabaseConfig[],
+  declared: DatabaseConfig[],
   binding: string | undefined,
-): AnyDatabaseConfig[] {
+): DatabaseConfig[] {
   if (declared.length === 0) {
     throw new Error("no databases are declared");
   }
@@ -40,8 +37,8 @@ function select(
 
 // Sequential on purpose: one connection, and one wrangler proxy, at a time.
 async function forEach(
-  chosen: AnyDatabaseConfig[],
-  each: (entry: AnyDatabaseConfig) => Promise<void>,
+  chosen: DatabaseConfig[],
+  each: (entry: DatabaseConfig) => Promise<void>,
 ) {
   for (const entry of chosen) {
     // oxlint-disable-next-line no-await-in-loop
@@ -50,7 +47,7 @@ async function forEach(
 }
 
 async function migrate(
-  chosen: AnyDatabaseConfig[],
+  chosen: DatabaseConfig[],
   migration: string | undefined,
   options: Options,
 ) {
@@ -97,7 +94,7 @@ async function migrate(
   });
 }
 
-async function seed(chosen: AnyDatabaseConfig[], options: Options) {
+async function seed(chosen: DatabaseConfig[], options: Options) {
   await forEach(chosen, async (entry) => {
     const seeder = entry.seed;
     if (!seeder) {
@@ -107,8 +104,8 @@ async function seed(chosen: AnyDatabaseConfig[], options: Options) {
       return;
     }
 
-    // The schema is the app's business: `defineDbConfig` already checked the
-    // seed against it, and nothing here can know it.
+    // The schema is the app's business: the seed carries the type it was
+    // written against, and nothing here can know it.
     await withDb(
       entry,
       options,
@@ -136,7 +133,7 @@ function targeting(command: Command): Command {
  * imported by the app as well as the CLI.
  */
 export default function commands({ cli, config, register }: KitCli): void {
-  const declared = (config as AnyDatabaseConfig[] | undefined) ?? [];
+  const declared = (config as DatabaseConfig[] | undefined) ?? [];
 
   // Bound to what the app declared, so another kit's command names a binding
   // and never has to find the config for itself.

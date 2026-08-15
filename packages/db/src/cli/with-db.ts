@@ -3,7 +3,7 @@ import { d1MigrationDialect, remoteD1Dialect } from "../d1";
 import { createDb } from "../internal/database";
 import { urlVarFor } from "../internal/db/url-var";
 import { dialectFromUrl } from "../internal/uri/uri.node.ts";
-import type { AnyDatabaseConfig } from "../kit";
+import type { DatabaseConfig } from "../kit";
 
 // Which deployment of a binding to act on.
 interface BindingOptions {
@@ -116,7 +116,7 @@ interface DbHandle<DB> {
 }
 
 async function open<DB>(
-  target: AnyDatabaseConfig,
+  target: DatabaseConfig,
   options: BindingOptions,
 ): Promise<DbHandle<DB>> {
   const { binding } = target;
@@ -155,7 +155,7 @@ async function open<DB>(
  *   one for a caller that was handed no config.
  */
 export async function withDb<DB>(
-  target: AnyDatabaseConfig,
+  target: DatabaseConfig,
   options: BindingOptions,
   run: (db: Kysely<DB>) => Promise<void>,
 ): Promise<void> {
