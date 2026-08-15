@@ -1,7 +1,7 @@
 import type { AcmeConfig, Kit } from "@acme/app";
 import type { AnyDatabaseConfig } from "./database";
 
-/** What the database kit calls itself in `kits`, and what reads it back. */
+// Shared so `database` and `databasesOf` cannot disagree about the name.
 export const KIT_NAME = "database";
 
 function checkBindings(declared: AnyDatabaseConfig[]): AnyDatabaseConfig[] {
@@ -35,11 +35,7 @@ export function database(declared: AnyDatabaseConfig[]): Kit {
   };
 }
 
-/**
- * The databases an app declared, or none if it took no database kit.
- *
- * @param config - The app's config, as `acme.config.ts` default-exports it.
- */
+// The reverse of what `database` wrote, for readers that hold a whole config.
 export function databasesOf(config: AcmeConfig): AnyDatabaseConfig[] {
   const kit = config.kits?.find((entry) => entry.name === KIT_NAME);
 

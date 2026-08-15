@@ -1,7 +1,7 @@
 import type { Kysely } from "kysely";
 import type { Migrations } from "../internal/migrator";
 
-/** Enough to reach a database. All any kit's CLI needs to open one. */
+// Enough to reach a database, which is all `withDb` needs to open one.
 export interface DatabaseTarget {
   /** The D1 binding, matching what the app passed `defineDb`. */
   binding: string;
