@@ -1,5 +1,6 @@
 import type { CAC } from "cac";
 import type { Kit } from "../config";
+import { type KitRegistry, kitRegistry } from "./registry";
 
 /**
  * The part of the `acme` CLI a kit is handed: enough to declare its own
@@ -12,6 +13,8 @@ export interface KitCli {
   cli: KitCommands;
   /** The kit's own config, as the app declared it. */
   config: unknown;
+  /** The other kits this app declared, to register with and ask of. */
+  registry: KitRegistry;
 }
 
 /**
@@ -46,11 +49,13 @@ async function loadMount(kit: Kit): Promise<KitMount | undefined> {
  *
  * @param cli - The CLI being built, with its own commands already on it.
  * @param kits - The app's kits. Those without a `cli` module contribute none.
- * @throws If a kit's module cannot be loaded, or if two kits declare the same
- *   command, which would otherwise resolve silently to whichever came first.
+ * @throws If a kit's module cannot be loaded, if two kits declare the same
+ *   command, which would otherwise resolve silently to whichever came first,
+ *   or if two register the same shared key.
  */
 export async function mountCommands(cli: CAC, kits: Kit[]): Promise<void> {
   const owner = new Map(cli.commands.map((cmd) => [cmd.name, cli.name]));
+  const registryFor = kitRegistry();
   // Loaded up front so one slow import does not hold up the rest, then
   // mounted in order, because that order is what the app declared.
   const mounts = await Promise.all(kits.map(async (kit) => loadMount(kit)));
@@ -62,7 +67,7 @@ export async function mountCommands(cli: CAC, kits: Kit[]): Promise<void> {
     }
 
     const added = cli.commands.length;
-    mountHandler({ cli, config: kit.config });
+    mountHandler({ cli, config: kit.config, registry: registryFor(kit.name) });
     for (const { name } of cli.commands.slice(added)) {
       const taken = owner.get(name);
       if (taken !== undefined) {

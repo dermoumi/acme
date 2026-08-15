@@ -9,14 +9,16 @@ const fixture = (app: string) =>
 
 const commandsModule = new URL("./fixtures/app/commands.ts", import.meta.url)
   .href;
+const shouterModule = new URL("./fixtures/app/shouter.ts", import.meta.url)
+  .href;
 
-// Two kits pointing at one module both declare its commands, which is the
-// clash the CLI has to catch.
-const claims = (name: string): Kit => ({
+// The greeter registers what it declares; the shouter only reads it back.
+const greeter = (name = "greeter"): Kit => ({
   name,
   config: { greeting: "hello" },
   cli: commandsModule,
 });
+const shouter = (name = "shouter"): Kit => ({ name, cli: shouterModule });
 
 interface CliContext {
   out: string[];
@@ -69,13 +71,15 @@ describe("runWithConfig", () => {
     expect(out.join("\n")).toContain("prune");
   });
 
+  // Two shouters, not two greeters: the shouter registers nothing, so this
+  // reaches the command check instead of tripping the shared-key one first.
   it<CliContext>("names both kits when they claim one command", async ({
     err,
   }) => {
-    const kits = [claims("first"), claims("second")];
+    const kits = [shouter("first"), shouter("second")];
 
-    expect(await runWithConfig({ kits }, ["greet", "world"])).toBe(1);
-    expect(err.join("\n")).toContain('second and first both declare "greet"');
+    expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(1);
+    expect(err.join("\n")).toContain('second and first both declare "shout"');
   });
 
   it<CliContext>("takes a config declaring no kits at all", async ({ out }) => {
@@ -163,5 +167,49 @@ describe("run", () => {
   it<CliContext>("says which file it could not read", async ({ err }) => {
     expect(await run(["greet", "-c", fixture("missing")])).toBe(1);
     expect(err.join("\n")).toContain("could not read");
+  });
+});
+
+describe("kits reaching what another registered", () => {
+  sandbox();
+
+  it<CliContext>("hands over what the other kit registered", async ({
+    out,
+  }) => {
+    const kits = [greeter(), shouter()];
+
+    expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(0);
+    expect(out).toContain("HELLO, world");
+  });
+
+  // The rule the slot exists for: registering happens at mount, reading at
+  // action time, so an app never has to order its kits to suit them.
+  it<CliContext>("does not care which order the app listed them in", async ({
+    out,
+  }) => {
+    const kits = [shouter(), greeter()];
+
+    expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(0);
+    expect(out).toContain("HELLO, world");
+  });
+
+  it<CliContext>("names the kit asking for what nothing registers", async ({
+    err,
+  }) => {
+    expect(await runWithConfig({ kits: [shouter()] }, ["shout", "w"])).toBe(1);
+    expect(err.join("\n")).toContain(
+      'shouter requires "greeting", which no declared kit registers',
+    );
+  });
+
+  it<CliContext>("names both kits when two register one key", async ({
+    err,
+  }) => {
+    const kits = [greeter("first"), greeter("second")];
+
+    expect(await runWithConfig({ kits }, ["greet", "world"])).toBe(1);
+    expect(err.join("\n")).toContain(
+      'second and first both register "greeting"',
+    );
   });
 });
