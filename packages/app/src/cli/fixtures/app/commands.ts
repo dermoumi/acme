@@ -1,5 +1,13 @@
 import type { KitCli } from "../../mount";
 
+// A real kit augments "@acme/app"; this one is inside it, so it names the
+// declaring module by path.
+declare module "../../../internal/shared" {
+  interface KitShared {
+    greeting: string;
+  }
+}
+
 export default function commands({ cli, config, register }: KitCli): void {
   const { greeting } = config as { greeting: string };
   register("greeting", greeting);

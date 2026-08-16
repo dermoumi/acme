@@ -1,6 +1,5 @@
 import { createInterface } from "node:readline";
 import type { KitCli } from "@acme/app/cli";
-import type { WithDatabase } from "@acme/db";
 import { hashPassword } from "../server/auth";
 import type { Database } from "../server/db";
 
@@ -40,7 +39,7 @@ export default function commands({ cli, require }: KitCli): void {
       }
 
       const hash = await hashPassword(password);
-      const withDatabase = require<WithDatabase>("withDatabase");
+      const withDatabase = require("withDatabase");
       await withDatabase<Database>("DATABASE", options, async (db) => {
         await db
           .insertInto("users")

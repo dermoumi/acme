@@ -24,3 +24,9 @@ export interface WithDatabase {
     run: (db: Kysely<DB>) => Promise<void>,
   ): Promise<void>;
 }
+
+declare module "@acme/app" {
+  interface KitShared {
+    withDatabase: WithDatabase;
+  }
+}

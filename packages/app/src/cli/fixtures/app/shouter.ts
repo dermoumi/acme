@@ -6,6 +6,6 @@ export default function shouter({ cli, require }: KitCli): void {
   cli
     .command("shout <name>", "prove a kit reaches what another registered")
     .action((name: string) => {
-      console.log(`${require<string>("greeting").toUpperCase()}, ${name}`);
+      console.log(`${require("greeting").toUpperCase()}, ${name}`);
     });
 }
