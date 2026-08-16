@@ -56,3 +56,12 @@ describe("/health", () => {
     expect(await res.json()).toMatchObject({ database: "ok" });
   });
 });
+
+describe("the catch-all", () => {
+  it("serves the shell for a route the router does not claim", async () => {
+    const res = await app.request("/deep/unknown/route", {}, createBindings());
+
+    expect(res.status).toBe(200);
+    await expect(res.text()).resolves.toContain("posy fixture");
+  });
+});
