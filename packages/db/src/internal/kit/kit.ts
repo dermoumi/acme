@@ -13,9 +13,8 @@ export interface DatabaseConfig {
   /**
    * Rows an empty deployment needs. Run by `acme seed`.
    *
-   * Any schema, because only the app knows its own: the seed carries the type
-   * it was written against, and this checks it is a database it takes at all.
-   * `Kysely<never>` would be contravariant and refuse every real seed.
+   * Any schema: only the app knows its own, and the seed already carries the
+   * type it was written against.
    */
   // oxlint-disable-next-line no-explicit-any
   seed?: (db: Kysely<any>) => Promise<void>;
@@ -46,8 +45,6 @@ export function database(bindings: DatabaseConfig[]): Kit {
   return {
     name: "database",
     config: checkDuplicates(bindings),
-    // The literal URL, never a helper: `import.meta.url` is lexically bound, so
-    // one living in @acme/app would resolve against @acme/app's own directory.
     cli: new URL("../cli/commands.ts", import.meta.url).href,
   };
 }

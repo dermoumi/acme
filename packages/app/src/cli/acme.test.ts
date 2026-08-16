@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Kit } from "../config";
+import type { Kit } from "../internal/config";
 import { getConfigFile, run, runWithConfig } from "./acme";
 import appConfig from "./fixtures/app/acme.config";
 

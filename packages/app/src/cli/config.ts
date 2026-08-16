@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { AcmeConfig } from "../config";
+import type { AcmeConfig } from "../internal/config";
 
 export const CONFIG_FILE = "acme.config.ts";
 const DEFAULT_CONFIG: Readonly<AcmeConfig> = Object.freeze({});

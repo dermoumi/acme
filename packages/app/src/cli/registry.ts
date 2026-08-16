@@ -21,13 +21,7 @@ export interface KitRegistry {
   require: <Value>(key: string) => Value;
 }
 
-/**
- * Opens a registry, and answers one kit's view of it.
- *
- * `mountCommands` calls this for the `acme` CLI. Anything else mounting a kit's
- * commands itself, such as a kit's own bin, needs one too: each view knows
- * which kit holds it, so both errors below can name who is at fault.
- */
+// A view per kit, so both errors below can name who is at fault.
 export function kitRegistry(): (kit: string) => KitRegistry {
   const values = new Map<string, unknown>();
   const owner = new Map<string, string>();

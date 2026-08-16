@@ -1,5 +1,5 @@
 import type { CAC } from "cac";
-import type { Kit } from "../config";
+import type { Kit } from "../internal/config";
 import { type KitRegistry, kitRegistry } from "./registry";
 
 /**
