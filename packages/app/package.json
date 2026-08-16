@@ -7,17 +7,9 @@
   },
   "type": "module",
   "imports": {
-    "#assets": {
-      "workerd": "./src/internal/assets/assets.workerd.ts",
-      "default": "./src/internal/assets/assets.node.ts"
-    },
     "#runtime": {
       "workerd": "./src/internal/runtime/runtime.workerd.ts",
       "default": "./src/internal/runtime/runtime.node.ts"
-    },
-    "#testing/assets": {
-      "workerd": "./src/internal/assets/testing/env.workerd.ts",
-      "default": "./src/internal/assets/testing/env.node.ts"
     }
   },
   "exports": {
@@ -38,24 +30,10 @@
     "@acme/tsconfig": "workspace:*",
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
-    "@hono/node-server": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
-    "hono": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
-  },
-  "peerDependencies": {
-    "@hono/node-server": "catalog:",
-    "hono": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "@hono/node-server": {
-      "optional": true
-    },
-    "hono": {
-      "optional": true
-    }
   }
 }

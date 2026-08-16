@@ -5,8 +5,6 @@ import { defineConfig } from "vitest/config";
 const include = ["src/**/*.test.ts"];
 // A CLI is a process with argv and a filesystem, which workerd is not.
 const CLI = "src/cli/**";
-// The fixture the node arm serves off disk and the pool serves as a binding.
-const ASSETS = "./src/internal/assets/fixtures/assets";
 
 export default defineConfig({
   test: {
@@ -17,34 +15,15 @@ export default defineConfig({
       provider: "istanbul",
       reporter: ["text", "lcovonly"],
       // Fixtures are scaffolding a test drives, not code the package ships.
-      exclude: ["*.config.ts", "src/**/fixtures/**", "src/**/testing/**"],
+      exclude: ["*.config.ts", "src/**/fixtures/**"],
     },
     projects: [
-      {
-        test: { name: "node", include, exclude: ["**/*.workerd.test.ts"] },
-      },
+      { test: { name: "node", include } },
       {
         plugins: [
-          cloudflareTest({
-            miniflare: {
-              compatibilityDate: "2026-07-01",
-              // The not_found_handling an app sets in wrangler is exactly the
-              // behaviour the node arm exists to reproduce, so pin it here.
-              assets: {
-                binding: "ASSETS",
-                directory: ASSETS,
-                assetConfig: {
-                  not_found_handling: "single-page-application",
-                },
-              },
-            },
-          }),
+          cloudflareTest({ miniflare: { compatibilityDate: "2026-07-01" } }),
         ],
-        test: {
-          name: "workerd",
-          include,
-          exclude: [CLI, "**/*.node.test.ts"],
-        },
+        test: { name: "workerd", include, exclude: [CLI] },
       },
     ],
   },
