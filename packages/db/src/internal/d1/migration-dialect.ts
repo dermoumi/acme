@@ -7,7 +7,7 @@ import {
   type TableMetadata,
 } from "kysely";
 import { D1Dialect } from "kysely-d1";
-import { tagDialect } from "../internal/dialect";
+import { tagDialect } from "../dialect";
 
 // D1 rejects the pragma_table_info() join in kysely's sqlite introspector
 // (SQLITE_AUTH); the Migrator only needs table names, so read sqlite_master.

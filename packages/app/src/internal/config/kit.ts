@@ -1,3 +1,10 @@
+// @cloudflare/workers-types declares no ImportMeta, and `cli` below needs it.
+declare global {
+  interface ImportMeta {
+    url: string;
+  }
+}
+
 /**
  * One capability an app takes on, such as a database or an error reporter.
  *
@@ -17,7 +24,7 @@ export interface Kit {
   config?: unknown;
   /**
    * Where this kit's commands live, as a specifier the CLI imports. The
-   * module's default export is its `KitMount`.
+   * module's default export is its `KitCliMount`.
    *
    * A specifier rather than a function because `acme.config.ts` is imported by
    * the app too, and command code is node-only: a function would drag it into

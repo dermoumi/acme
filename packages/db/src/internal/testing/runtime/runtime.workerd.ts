@@ -1,7 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { env } from "cloudflare:test";
 import type { Kysely } from "kysely";
-import { d1MigrationDialect } from "../../../d1";
+import { d1MigrationDialect } from "../../d1";
 import { createDb } from "../../database";
 import type { CreateEmptyDialect, CreateEmptyEnv } from "./contract";
 

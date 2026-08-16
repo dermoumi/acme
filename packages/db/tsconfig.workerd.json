@@ -5,10 +5,12 @@
     "customConditions": ["workerd"]
   },
   "include": ["src"],
+  // The CLI is node-only by definition; tsconfig.node.json is what checks it.
   "exclude": [
     "**/*.node.ts",
     "**/*.node.test.ts",
     "**/*.sqlite.test.ts",
-    "**/*.postgres.test.ts"
+    "**/*.postgres.test.ts",
+    "src/internal/commands/**"
   ]
 }

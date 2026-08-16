@@ -1,4 +1,4 @@
-import { defineConfig, type Kit } from "../../../config";
+import { defineConfig, type Kit } from "../../../internal/config";
 
 // What a real kit looks like: a function taking the app's options, answering a
 // kit that points at its own commands rather than carrying them.

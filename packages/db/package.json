@@ -2,9 +2,6 @@
   "name": "@acme/db",
   "version": "0.1.0",
   "private": true,
-  "bin": {
-    "acme-db": "./src/cli/bin/acme-db.js"
-  },
   "type": "module",
   "imports": {
     "#runtime": {
@@ -18,9 +15,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./d1": "./src/d1/index.ts",
-    "./testing": "./src/testing/index.ts",
-    "./cli": "./src/cli/index.ts"
+    "./testing": "./src/testing/index.ts"
   },
   "scripts": {
     "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc -b",
@@ -29,10 +24,10 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@acme/app": "workspace:*",
     "cac": "catalog:",
     "kysely": "catalog:",
     "kysely-d1": "catalog:",
-    "tsx": "catalog:",
     "valibot": "catalog:"
   },
   "devDependencies": {

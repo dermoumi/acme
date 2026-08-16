@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 // One include for both projects, so the same test file runs on both runtimes.
 const include = ["src/**/*.test.ts"];
 // A CLI is a process with argv and a filesystem, which workerd is not.
-const CLI = "src/cli/**";
+const NODE_ONLY = ["src/cli/**", "src/internal/commands/**"];
 
 export default defineConfig({
   test: {
@@ -23,7 +23,7 @@ export default defineConfig({
         plugins: [
           cloudflareTest({ miniflare: { compatibilityDate: "2026-07-01" } }),
         ],
-        test: { name: "workerd", include, exclude: [CLI] },
+        test: { name: "workerd", include, exclude: NODE_ONLY },
       },
     ],
   },

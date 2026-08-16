@@ -1,16 +1,12 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { Kysely } from "kysely";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { withDb } from "./with-db";
 
-const configFile = path.join(
-  import.meta.dirname,
-  "fixtures",
-  "app",
-  "acme.config.ts",
-);
+const MAIN = { binding: "MAIN" };
+const RENAMED = { binding: "RENAMED", urlVar: "RENAMED_DSN" };
 
 describe("withDb", () => {
   let dir = "";
@@ -26,7 +22,7 @@ describe("withDb", () => {
 
   it("opens the database the url env var names", async () => {
     let opened: Kysely<never> | undefined;
-    await withDb<never>("MAIN", { configFile }, async (db) => {
+    await withDb<never>(MAIN, {}, async (db) => {
       opened = db;
       await db.schema.createTable("proof").addColumn("id", "text").execute();
     });
@@ -41,7 +37,7 @@ describe("withDb", () => {
   it("closes the database even when the callback throws", async () => {
     let opened: Kysely<never> | undefined;
     await expect(
-      withDb<never>("MAIN", { configFile }, async (db) => {
+      withDb<never>(MAIN, {}, async (db) => {
         opened = db;
         await db.schema.createTable("proof").addColumn("id", "text").execute();
         throw new Error("boom");
@@ -63,7 +59,7 @@ describe("withDb", () => {
 
   it("keeps the caller's error when closing fails too", async () => {
     await expect(
-      withDb<never>("MAIN", { configFile }, (db) => {
+      withDb<never>(MAIN, {}, (db) => {
         breakClose(db);
         return Promise.reject(new Error("what the caller hit"));
       }),
@@ -72,7 +68,7 @@ describe("withDb", () => {
 
   it("surfaces a closing failure when the caller had none", async () => {
     await expect(
-      withDb<never>("MAIN", { configFile }, (db) => {
+      withDb<never>(MAIN, {}, (db) => {
         breakClose(db);
         return Promise.resolve();
       }),
@@ -83,7 +79,7 @@ describe("withDb", () => {
     vi.stubEnv("MAIN_URL", "");
     vi.stubEnv("RENAMED_DSN", url);
     await expect(
-      withDb<never>("RENAMED", { configFile }, () => Promise.resolve()),
+      withDb<never>(RENAMED, {}, () => Promise.resolve()),
     ).resolves.toBeUndefined();
   });
 
@@ -93,7 +89,7 @@ describe("withDb", () => {
     vi.stubEnv("MAIN_ID", "an-id");
     vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
     await expect(
-      withDb<never>("MAIN", { wranglerEnv: "production", configFile }, () =>
+      withDb<never>(MAIN, { wranglerEnv: "production" }, () =>
         Promise.resolve(),
       ),
     ).rejects.toThrow(
@@ -106,7 +102,7 @@ describe("withDb", () => {
     vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "acct");
     vi.stubEnv("CLOUDFLARE_API_TOKEN", "");
     await expect(
-      withDb<never>("MAIN", { wranglerEnv: "production", configFile }, () =>
+      withDb<never>(MAIN, { wranglerEnv: "production" }, () =>
         Promise.resolve(),
       ),
     ).rejects.toThrow("CLOUDFLARE_API_TOKEN must be set");
@@ -116,24 +112,7 @@ describe("withDb", () => {
     vi.stubEnv("MAIN_ID", "an-id");
     vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
     await expect(
-      withDb<never>("MAIN", { configFile }, () => Promise.resolve()),
+      withDb<never>(MAIN, {}, () => Promise.resolve()),
     ).resolves.toBeUndefined();
-  });
-
-  it("refuses a config declaring a binding twice", async () => {
-    const duplicate = path.join(dir, "duplicate.mjs");
-    await writeFile(
-      duplicate,
-      'export default { db: [{ binding: "SAME" }, { binding: "SAME" }] };',
-    );
-    await expect(
-      withDb<never>("SAME", { configFile: duplicate }, () => Promise.resolve()),
-    ).rejects.toThrow(/declares SAME twice/u);
-  });
-
-  it("refuses a binding the config does not declare", async () => {
-    await expect(
-      withDb<never>("NOPE", { configFile }, () => Promise.resolve()),
-    ).rejects.toThrow(/no database bound to NOPE: MAIN, ANALYTICS, RENAMED/u);
   });
 });

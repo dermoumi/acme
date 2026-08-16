@@ -1,17 +1,17 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { type CAC, cac } from "cac";
-import type { AcmeConfig, Kit } from "../config";
+import type { AcmeConfig, Kit } from "../internal/config";
 import { CONFIG_FILE, loadAcmeConfig } from "./config";
+import { acmeCommands } from "../internal/commands";
 import { mountCommands } from "./mount";
-import { pruneDeployTree } from "./prune";
 
 const { version } = JSON.parse(
   readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
 ) as { version: string };
 
 // Which commands exist depends on the config, and cac matches against the
-// commands it already has, so a throwaway CLI reads the flag in a first pass.
+// commands it already has, so a throwaway CLI reads the flag first.
 export function getConfigFile(argv: string[]): string | undefined {
   const probe = cac().option("-c, --config <file>", "the config to read");
   const parsed = probe.parse(["node", "acme", ...argv], { run: false });
@@ -26,18 +26,8 @@ async function buildCli(kits: Kit[]): Promise<CAC> {
     default: CONFIG_FILE,
   });
 
-  cli
-    .command(
-      "prune <...packages>",
-      "drop packages from a deployed tree, then whatever nothing reaches",
-    )
-    .option("-r, --root <dir>", "the tree to prune", { default: "." })
-    .action((packages: string[], options: { root: string }) => {
-      const { named, stranded, live } = pruneDeployTree(packages, options.root);
-      console.log(`pruned ${named} named, ${stranded} stranded, ${live} left`);
-    });
-
-  await mountCommands(cli, kits);
+  // Its own commands first, through the same path a kit's take.
+  await mountCommands(cli, [acmeCommands, ...kits]);
   cli.help();
   cli.version(version);
   return cli;
