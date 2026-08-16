@@ -6,10 +6,10 @@ packages:
 minimumReleaseAge: 2880
 
 catalog:
-  "@cloudflare/vite-plugin": "1.51.3"
-  "@hono/node-server": "2.1.0"
-  "@cloudflare/vitest-pool-workers": "0.21.1"
-  "@cloudflare/workers-types": "5.20260812.1"
+  "@cloudflare/vite-plugin": "1.52.1"
+  "@hono/node-server": "2.1.1"
+  "@cloudflare/vitest-pool-workers": "0.21.3"
+  "@cloudflare/workers-types": "5.20260814.1"
   "@sentry/cloudflare": "10.70.0"
   "@sentry/core": "10.70.0"
   "@sentry/node": "10.70.0"
@@ -24,7 +24,7 @@ catalog:
   "@vitest/coverage-istanbul": "4.1.10"
   better-sqlite3: "13.0.3"
   cac: "7.0.0"
-  hono: "4.13.1"
+  hono: "4.13.2"
   hono-rate-limiter: "0.5.3"
   husky: "9.1.7"
   kysely: "0.29.5"
@@ -44,7 +44,7 @@ catalog:
   vitest: "4.1.10"
   workbox-window: "7.4.1"
   wouter: "3.10.0"
-  wrangler: "4.121.0"
+  wrangler: "4.123.0"
 
 allowBuilds:
   # downloads the sentry-cli binary, which @sentry/vite-plugin shells out to
