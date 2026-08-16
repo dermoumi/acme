@@ -1,3 +1,3 @@
 export { run, runWithConfig } from "./acme";
 export { loadAcmeConfig } from "./config";
-export type { KitCli, KitCommands, KitMount } from "./mount";
+export type { KitCli, KitCommands, KitCliMount } from "./mount";

@@ -21,9 +21,9 @@ export interface KitCli extends KitRegistry {
  * Declaring commands is synchronous; an action that needs to reach a database
  * or the network does that when it runs, not while the CLI is being built.
  */
-export type KitMount = (context: KitCli) => void;
+export type KitCliMount = (context: KitCli) => void;
 
-async function loadMount(kit: Kit): Promise<KitMount | undefined> {
+async function loadMount(kit: Kit): Promise<KitCliMount | undefined> {
   const specifier = kit.cli;
   if (specifier === undefined) {
     return undefined;
@@ -31,7 +31,7 @@ async function loadMount(kit: Kit): Promise<KitMount | undefined> {
 
   const loaded = (await import(specifier).catch((cause: unknown) => {
     throw new Error(`${kit.name} names a cli module it cannot load`, { cause });
-  })) as { default?: KitMount };
+  })) as { default?: KitCliMount };
 
   if (!loaded.default) {
     throw new Error(
