@@ -1,9 +1,9 @@
 import type { Kysely } from "kysely";
 import { d1MigrationDialect, remoteD1Dialect } from "../d1";
-import { createDb } from "../internal/database";
-import { urlVarFor } from "../internal/db/url-var";
-import { dialectFromUrl } from "../internal/uri/uri.node.ts";
-import type { BindingOptions } from "../internal/shared";
+import { createDb } from "../database";
+import { urlVarFor } from "../db/url-var";
+import { dialectFromUrl } from "../uri/uri.node.ts";
+import type { BindingOptions } from "../shared";
 import type { DatabaseConfig } from "../kit";
 
 // One value per name, in the same positions, so a caller can destructure.

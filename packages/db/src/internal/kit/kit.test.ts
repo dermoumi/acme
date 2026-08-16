@@ -28,6 +28,8 @@ describe("database", () => {
   // The commands are node-only, so the kit names them by URL rather than
   // importing them; a wrong base would resolve inside whoever called us.
   it("points at its own commands, not its caller's", () => {
-    expect(database([]).cli).toMatch(/\/db\/src\/cli\/commands\.ts$/u);
+    expect(database([]).cli).toMatch(
+      /\/db\/src\/internal\/cli\/commands\.ts$/u,
+    );
   });
 });

@@ -2,8 +2,8 @@ import type { KitCli } from "@acme/app/cli";
 import type { Command } from "cac";
 import type { Kysely } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
-import { createMigrator } from "../internal/migrator";
-import type { WithDatabase } from "../internal/shared";
+import { createMigrator } from "../migrator";
+import type { WithDatabase } from "../shared";
 import type { DatabaseConfig } from "../kit";
 import { withDb } from "./with-db";
 

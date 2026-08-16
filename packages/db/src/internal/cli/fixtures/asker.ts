@@ -1,5 +1,5 @@
 import type { KitCli } from "@acme/app/cli";
-import type { WithDatabase } from "../../internal/shared";
+import type { WithDatabase } from "../../shared";
 
 // Writes a table, so a test can tell which database was actually opened.
 export default function asker({ cli, require }: KitCli): void {

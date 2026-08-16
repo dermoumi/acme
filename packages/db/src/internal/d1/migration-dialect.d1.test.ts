@@ -2,7 +2,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { env } from "cloudflare:test";
 import { D1Dialect } from "kysely-d1";
 import { describe, expect, it } from "vitest";
-import { createDb } from "../internal/database";
+import { createDb } from "../database";
 import { d1MigrationDialect } from "./migration-dialect";
 
 // D1-only facts. The migrator and query contracts run on every engine, from

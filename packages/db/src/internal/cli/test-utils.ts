@@ -2,8 +2,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, vi } from "vitest";
-import { createDb } from "../internal/database";
-import { dialectFromUrl } from "../internal/uri/uri.node.ts";
+import { createDb } from "../database";
+import { dialectFromUrl } from "../uri/uri.node.ts";
 
 export interface CliContext {
   dir: string;

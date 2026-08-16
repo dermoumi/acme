@@ -10,8 +10,8 @@ const include = ["src/**/*.test.ts"];
 const testTimeout = 30_000;
 // One project, not a suffix on every file, and deliberately no engine matrix:
 // the CLI is wiring, and everything it reaches for is proven per engine by the
-// projects below. Keep it that way by keeping engine code out of src/cli.
-const CLI = "src/cli/**";
+// projects below. Keep it that way by keeping engine code out of internal/cli.
+const CLI = "src/internal/cli/**";
 const NODE = "src/**/*.node.test.ts";
 const WORKERD = "src/**/*.workerd.test.ts";
 const SQLITE = "src/**/*.sqlite.test.ts";

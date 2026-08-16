@@ -1,6 +1,6 @@
 import type { Kit } from "@acme/app";
 import type { Kysely } from "kysely";
-import type { Migrations } from "../internal/migrator";
+import type { Migrations } from "../migrator";
 
 /** One database an app declares. */
 export interface DatabaseConfig {
