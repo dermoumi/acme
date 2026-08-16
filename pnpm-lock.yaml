@@ -283,6 +283,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@acme/app':
+        specifier: workspace:*
+        version: link:../app
       cac:
         specifier: 'catalog:'
         version: 7.0.0
@@ -292,9 +295,6 @@ importers:
       kysely-d1:
         specifier: 'catalog:'
         version: 0.4.0(kysely@0.29.5)
-      tsx:
-        specifier: 'catalog:'
-        version: 4.23.12
       valibot:
         specifier: 'catalog:'
         version: 1.4.2(typescript@7.0.2)

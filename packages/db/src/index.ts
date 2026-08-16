@@ -1,9 +1,6 @@
-export { createDb } from "./internal/database";
-export { type DialectKind, dialectKind, generatedId } from "./internal/dialect";
-export {
-  type DatabaseAccessor,
-  type DatabaseOptions,
-  defineDb,
-} from "./internal/db";
+export { defineDb } from "./internal/db";
+export { generatedId } from "./internal/dialect";
 export { jsonText, parseJsonText } from "./internal/json";
 export { createMigrator, type Migrations } from "./internal/migrator";
+export type { WithDatabase } from "./internal/shared";
+export { database } from "./internal/kit";

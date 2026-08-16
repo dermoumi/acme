@@ -60,9 +60,8 @@ export function compileTrustedProxies(
   return cidrs.map((cidr) => {
     const compiled = compile(cidr);
     if (!compiled) {
-      throw new Error(
-        `not a usable trusted proxy range: ${JSON.stringify(cidr)}`,
-      );
+      const message = `not a usable trusted proxy range: ${JSON.stringify(cidr)}`;
+      throw new Error(message);
     }
     return compiled;
   });

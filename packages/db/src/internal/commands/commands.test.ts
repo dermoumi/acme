@@ -1,62 +1,21 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createDb } from "../internal/database";
-import { dialectFromUrl } from "../internal/uri/uri.node.ts";
-import { run } from "./acme-db";
+import type { Kit } from "@acme/app";
+import { runWithConfig } from "@acme/app/cli";
+import { describe, expect, it, vi } from "vitest";
+import appConfig from "../kit/fixtures/app/acme.config";
+import { type CliContext, rows, sandbox, tables } from "./test-utils";
 
-// One engine is enough: this proves the CLI wires the migrator to a database,
-// not that the migrator works, which every engine project already covers.
-const config = path.join(
-  import.meta.dirname,
-  "fixtures",
-  "app",
-  "acme.config.ts",
-);
+// One engine is enough: this proves the commands wire the migrator to a
+// database, not that the migrator works, which every engine project covers.
+const cli = (...argv: string[]) => runWithConfig(appConfig, argv);
 
-const cli = (...argv: string[]) => run([...argv, "-c", config]);
+const asker = (name = "asker"): Kit => ({
+  name,
+  cli: new URL("./fixtures/asker.ts", import.meta.url).href,
+});
 
-async function tables(url: string): Promise<string[]> {
-  const db = createDb<never>(await dialectFromUrl(url));
-  const found = await db.introspection.getTables();
-  await db.destroy();
-  return found
-    .map((table) => table.name)
-    .filter((name) => !name.includes("migration"))
-    .toSorted();
-}
+const withAsker = (): Kit[] => [asker(), ...(appConfig.kits ?? [])];
 
-interface CliContext {
-  dir: string;
-  main: string;
-  analytics: string;
-}
-
-// A hook reaches only its own describe, so every block installs the sandbox.
-const sandbox = () => {
-  // Files, not :memory:, which is private to the connection that opened it.
-  beforeEach<CliContext>(async (ctx) => {
-    vi.spyOn(console, "log").mockImplementation(() => undefined);
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-
-    const dir = await mkdtemp(path.join(tmpdir(), "acme-db-cli-"));
-    const main = `file:${path.join(dir, "main.db")}`;
-    const analytics = `file:${path.join(dir, "analytics.db")}`;
-    vi.stubEnv("MAIN_URL", main);
-    vi.stubEnv("ANALYTICS_URL", analytics);
-
-    ctx.dir = dir;
-    ctx.main = main;
-    ctx.analytics = analytics;
-  });
-
-  afterEach<CliContext>(async ({ dir }) => {
-    await rm(dir, { recursive: true, force: true });
-  });
-};
-
-describe("run migrate", () => {
+describe("migrate", () => {
   sandbox();
 
   it<CliContext>("applies every declared migration of every database", async ({
@@ -163,17 +122,14 @@ describe("run migrate", () => {
   });
 });
 
-describe("run seed", () => {
+describe("seed", () => {
   sandbox();
 
   it<CliContext>("runs the seed a database declares", async ({ main }) => {
     await cli("migrate", "--db", "MAIN");
     expect(await cli("seed", "--db", "MAIN")).toBe(0);
 
-    const db = createDb<never>(await dialectFromUrl(main));
-    const rows = await db.selectFrom("users").selectAll().execute();
-    await db.destroy();
-    expect(rows).toEqual([{ id: "seeded" }]);
+    expect(await rows(main, "users")).toEqual([{ id: "seeded" }]);
   });
 
   it("skips a database that declares none when it was not named", async () => {
@@ -187,65 +143,61 @@ describe("run seed", () => {
   });
 });
 
-describe("run --config", () => {
+describe("the commands acme mounts", () => {
   sandbox();
 
-  it<CliContext>("takes the long form as well as -c", async ({ main }) => {
-    expect(await run(["migrate", "--config", config])).toBe(0);
-    expect(await tables(main)).toEqual(["posts", "users"]);
-  });
-
-  it<CliContext>("says what actually went wrong inside the config", async ({
-    dir,
-  }) => {
-    const broken = path.join(dir, "broken.mjs");
-    await writeFile(broken, "export default { db: { binding: 'X' } \n");
+  it("lists both of them in acme's help", async () => {
     const said: string[] = [];
-    vi.mocked(console.error).mockImplementation((line: unknown) => {
-      said.push(String(line));
+    // cac prints help through console.info, which the sandbox leaves alone.
+    vi.spyOn(console, "info").mockImplementation((...args: unknown[]) => {
+      said.push(args.join(" "));
     });
 
-    // The wording of the cause is node's or vite's, not ours; what this
-    // pins is that we pass it on instead of printing only our own message.
-    expect(await run(["migrate", "-c", broken])).toBe(1);
-    expect(said.join("\n")).toMatch(/could not read .*broken\.mjs/u);
-    expect(said.join("\n")).toMatch(/\n {2}caused by: .+/u);
-  });
-
-  it<CliContext>("names a config it cannot read", async ({ dir, main }) => {
-    expect(await run(["migrate", "-c", path.join(dir, "nope.ts")])).toBe(1);
-    expect(await tables(main)).toEqual([]);
-  });
-});
-
-describe("run", () => {
-  sandbox();
-
-  it("answers 1 and prints usage for an unknown command", async () => {
-    expect(await cli("frobnicate")).toBe(1);
-  });
-});
-
-describe("run help and version", () => {
-  sandbox();
-
-  it("answers 0 for --help", async () => {
-    expect(await run(["--help"])).toBe(0);
+    expect(await cli("--help")).toBe(0);
+    expect(said.join("\n")).toContain("migrate");
+    expect(said.join("\n")).toContain("seed");
   });
 
   it("answers 0 for a command's own --help", async () => {
-    expect(await run(["migrate", "--help"])).toBe(0);
-  });
-
-  it("answers 0 for --version", async () => {
-    expect(await run(["--version"])).toBe(0);
+    expect(await cli("migrate", "--help")).toBe(0);
   });
 
   it("answers 1 for an unknown option", async () => {
     expect(await cli("migrate", "--nope")).toBe(1);
   });
 
+  // --revert-all sits on migrate alone, which is what makes this an error.
   it("answers 1 when seed is given a migrate-only option", async () => {
     expect(await cli("seed", "--revert-all")).toBe(1);
+  });
+});
+
+// Stands in for @acme/auth: a kit reaching a database it never configured.
+describe("the database kit registering how to open one", () => {
+  sandbox();
+
+  it<CliContext>("opens the database a binding names", async ({ main }) => {
+    expect(await runWithConfig({ kits: withAsker() }, ["ask", "MAIN"])).toBe(0);
+    expect(await tables(main)).toContain("asked");
+  });
+
+  it<CliContext>("opens the one it names, not the first declared", async ({
+    analytics,
+  }) => {
+    expect(
+      await runWithConfig({ kits: withAsker() }, ["ask", "ANALYTICS"]),
+    ).toBe(0);
+    expect(await tables(analytics)).toContain("asked");
+  });
+
+  it<CliContext>("refuses a binding the app never declared", async ({
+    main,
+  }) => {
+    expect(await runWithConfig({ kits: withAsker() }, ["ask", "NOPE"])).toBe(1);
+    expect(await tables(main)).toEqual([]);
+  });
+
+  it<CliContext>("says so when no database kit is declared at all", async () => {
+    expect(await runWithConfig({ kits: [asker()] }, ["ask", "MAIN"])).toBe(1);
   });
 });

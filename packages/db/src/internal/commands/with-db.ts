@@ -1,9 +1,10 @@
 import type { Kysely } from "kysely";
 import { d1MigrationDialect, remoteD1Dialect } from "../d1";
-import { createDb } from "../internal/database";
-import { urlVarFor } from "../internal/db/url-var";
-import { dialectFromUrl } from "../internal/uri/uri.node.ts";
-import { databaseTarget, loadAcmeConfig } from "./config";
+import { createDb } from "../database";
+import { urlVarFor } from "../db/url-var";
+import { dialectFromUrl } from "../uri/uri.node.ts";
+import type { BindingOptions } from "../shared";
+import type { DatabaseConfig } from "../kit";
 
 // One value per name, in the same positions, so a caller can destructure.
 type EnvValues<Keys extends string[]> = { [Index in keyof Keys]: string };
@@ -23,7 +24,7 @@ function requireEnvVars<Keys extends string[]>(...keys: Keys): EnvValues<Keys> {
 // have to install it.
 async function localD1<DB>(binding: string) {
   const wrangler = await import("wrangler").catch((cause: unknown) => {
-    throw new Error("acme-db needs wrangler to reach a D1", { cause });
+    throw new Error("@acme/db needs wrangler to reach a D1", { cause });
   });
   const platform = await wrangler.getPlatformProxy();
   const database = platform.env[binding];
@@ -58,26 +59,17 @@ async function remoteD1Id(binding: string, env: string): Promise<string> {
 
   // Otherwise wrangler.jsonc holds it, one per environment.
   const wrangler = await import("wrangler").catch((cause: unknown) => {
-    throw new Error("acme-db needs wrangler to reach a D1", { cause });
+    throw new Error("@acme/db needs wrangler to reach a D1", { cause });
   });
   const declared = d1Databases(wrangler.unstable_readConfig({ env })).find(
     (database) => database.binding === binding,
   );
   if (!declared?.database_id) {
-    throw new Error(
-      `no id for ${binding}: set ${binding}_ID, or declare the` +
-        ` D1 in wrangler.jsonc for ${env}`,
-    );
+    const message = `no id for ${binding}: set ${binding}_ID, or declare the D1 in wrangler.jsonc for ${env}`;
+    throw new Error(message);
   }
 
   return declared.database_id;
-}
-
-export interface OpenOptions {
-  /** Wrangler environment to reach. Its absence means act locally. */
-  wranglerEnv?: string;
-  /** Path to acme.config.ts. Defaults to the one in the working directory. */
-  configFile?: string;
 }
 
 // Answers what went wrong rather than throwing, so cleanup can carry on.
@@ -98,9 +90,10 @@ interface DbHandle<DB> {
 }
 
 async function open<DB>(
-  binding: string,
-  options: OpenOptions,
+  config: DatabaseConfig,
+  options: BindingOptions,
 ): Promise<DbHandle<DB>> {
+  const { binding } = config;
   // If there's a wrangler environment, then we're targeting a remote D1
   const { wranglerEnv } = options;
   if (wranglerEnv !== undefined) {
@@ -115,10 +108,7 @@ async function open<DB>(
   }
 
   // If not and there's a url env var, then we're targeting that database
-  const { configFile } = options;
-  const config = await loadAcmeConfig(configFile);
-  const target = await databaseTarget(binding, config);
-  const url = process.env[urlVarFor(binding, target.urlVar)];
+  const url = process.env[urlVarFor(binding, config.urlVar)];
   if (url) {
     const dialect = await dialectFromUrl(url);
     return { db: createDb<DB>(dialect) };
@@ -129,18 +119,20 @@ async function open<DB>(
 }
 
 /**
- * Opens the database named by a binding, and closes it afterwards.
+ * Opens a declared database, and closes it afterwards.
  *
  * A wrangler environment takes the D1 id from wrangler.jsonc. Without one it
  * is local: the url env var first, which is how a node deployment migrates,
  * then the D1 wrangler serves.
+ *
+ * @param config - The database as the app declared it.
  */
 export async function withDb<DB>(
-  binding: string,
-  options: OpenOptions,
+  config: DatabaseConfig,
+  options: BindingOptions,
   run: (db: Kysely<DB>) => Promise<void>,
 ): Promise<void> {
-  const { db, dispose } = await open<DB>(binding, options);
+  const { db, dispose } = await open<DB>(config, options);
 
   let failed: unknown;
   try {
