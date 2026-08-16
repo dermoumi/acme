@@ -36,9 +36,9 @@ export function dialectKind<DB>(db: Kysely<DB>): DialectKind {
   const adapter: DialectAdapter & Tagged = db.getExecutor().adapter;
   const kind = adapter[KIND];
   if (!kind) {
-    throw new Error(
-      "this database's dialect is untagged, so @acme/db cannot tell which SQL it speaks; build it with dialectFromUrl or d1MigrationDialect, or pass it through tagDialect first",
-    );
+    const message =
+      "this database's dialect is untagged, so @acme/db cannot tell which SQL it speaks; build it with dialectFromUrl or d1MigrationDialect, or pass it through tagDialect first";
+    throw new Error(message);
   }
 
   return kind;

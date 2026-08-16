@@ -40,9 +40,8 @@ async function loadMount(kit: Kit): Promise<KitCliMount | undefined> {
 
   const { default: cliMount } = await importSpecifier();
   if (!cliMount) {
-    throw new Error(
-      `${kit.name}'s cli module must export its mount as default`,
-    );
+    const message = `${kit.name}'s cli module must export its mount as default`;
+    throw new Error(message);
   }
 
   return cliMount;
@@ -53,9 +52,9 @@ async function loadMount(kit: Kit): Promise<KitCliMount | undefined> {
  *
  * @param cli - The CLI being built, with its own commands already on it.
  * @param kits - The app's kits. Those without a `cli` module contribute none.
- * @throws If a kit's module cannot be loaded, if two kits declare the same
- *   command, which would otherwise resolve silently to whichever came first,
- *   or if two register the same shared key.
+ * @throws If a kit's module cannot be loaded, or if two kits register the same
+ *   command or shared key, either of which would otherwise resolve silently to
+ *   whichever came first.
  */
 export async function mountCommands(cli: CAC, kits: Kit[]): Promise<void> {
   const owner = new Map(cli.commands.map((cmd) => [cmd.name, cli.name]));
@@ -75,9 +74,8 @@ export async function mountCommands(cli: CAC, kits: Kit[]): Promise<void> {
     for (const { name } of cli.commands.slice(added)) {
       const taken = owner.get(name);
       if (taken !== undefined) {
-        throw new Error(
-          `The "${name}" command is declared by multiple kits: ${kit.name}, ${taken}`,
-        );
+        const message = `The "${name}" command is registered by multiple kits: ${kit.name}, ${taken}`;
+        throw new Error(message);
       }
 
       owner.set(name, kit.name);

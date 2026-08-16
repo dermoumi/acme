@@ -46,10 +46,8 @@ export async function explainIfMissing<Module>(
       throw cause;
     }
 
-    throw new Error(
-      `@acme/db needs the "${name}" package to open this database; add it to your app's dependencies`,
-      { cause },
-    );
+    const message = `@acme/db needs the "${name}" package to open this database; add it to your app's dependencies`;
+    throw new Error(message, { cause });
   }
 }
 
@@ -89,7 +87,6 @@ export async function dialectFromUrl(url: string): Promise<Dialect> {
   if (url.startsWith("postgres:") || url.startsWith("postgresql:")) {
     return postgresDialect(url);
   }
-  throw new Error(
-    `unsupported database url: "${startOf(url)}". Expected ":memory:", "file:...", or "postgres:..."`,
-  );
+  const message = `unsupported database url: "${startOf(url)}". Expected ":memory:", "file:...", or "postgres:..."`;
+  throw new Error(message);
 }

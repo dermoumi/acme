@@ -65,10 +65,8 @@ async function remoteD1Id(binding: string, env: string): Promise<string> {
     (database) => database.binding === binding,
   );
   if (!declared?.database_id) {
-    throw new Error(
-      `no id for ${binding}: set ${binding}_ID, or declare the` +
-        ` D1 in wrangler.jsonc for ${env}`,
-    );
+    const message = `no id for ${binding}: set ${binding}_ID, or declare the D1 in wrangler.jsonc for ${env}`;
+    throw new Error(message);
   }
 
   return declared.database_id;

@@ -80,10 +80,9 @@ export function restD1(config: RemoteD1Config): D1Database {
             const detail = body?.errors
               ?.map((err) => `${err.code}: ${err.message}`)
               .join("; ");
-            throw new Error(
-              detail ?? `D1 query failed with status ${response.status}`,
-              { cause: problem },
-            );
+            const message =
+              detail ?? `D1 query failed with status ${response.status}`;
+            throw new Error(message, { cause: problem });
           }
           const [first] = body.result ?? [];
           return {

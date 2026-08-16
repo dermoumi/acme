@@ -30,7 +30,8 @@ export function kitRegistry(): (kit: string) => KitRegistry {
     register(key, value) {
       const taken = owner.get(key);
       if (taken !== undefined) {
-        throw new Error(`${kit} and ${taken} both register "${key}"`);
+        const message = `The "${key}" value is registered by multiple kits: ${kit}, ${taken}`;
+        throw new Error(message);
       }
 
       owner.set(key, kit);
@@ -38,9 +39,8 @@ export function kitRegistry(): (kit: string) => KitRegistry {
     },
     require<Value>(key: string): Value {
       if (!values.has(key)) {
-        throw new Error(
-          `${kit} requires "${key}", which no declared kit registers`,
-        );
+        const message = `${kit} requires "${key}", which no declared kit registers`;
+        throw new Error(message);
       }
 
       return values.get(key) as Value;

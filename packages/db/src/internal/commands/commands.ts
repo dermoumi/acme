@@ -17,9 +17,8 @@ function one(declared: DatabaseConfig[], binding: string): DatabaseConfig {
   const found = declared.find((entry) => entry.binding === binding);
   if (!found) {
     const known = declared.map((entry) => entry.binding).join(", ");
-    throw new Error(
-      `no database bound to ${binding}${known ? `: ${known}` : ""}`,
-    );
+    const message = `no database bound to ${binding}${known ? `: ${known}` : ""}`;
+    throw new Error(message);
   }
 
   return found;
@@ -73,9 +72,8 @@ async function migrate(
     }
 
     if (migration !== undefined && !names.includes(migration)) {
-      throw new Error(
-        `${binding} has no migration named "${migration}": ${names.join(", ")}`,
-      );
+      const message = `${binding} has no migration named "${migration}": ${names.join(", ")}`;
+      throw new Error(message);
     }
 
     await withDb(entry, options, async (db) => {

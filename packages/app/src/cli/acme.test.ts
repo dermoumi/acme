@@ -82,7 +82,7 @@ describe("runWithConfig", () => {
 
     expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(1);
     expect(err.join("\n")).toContain(
-      'The "shout" command is declared by multiple kits: second, first',
+      'The "shout" command is registered by multiple kits: second, first',
     );
   });
 
@@ -95,7 +95,7 @@ describe("runWithConfig", () => {
 
     expect(await runWithConfig({ kits: [{ name: "other", cli }] }, [])).toBe(1);
     expect(err.join("\n")).toContain(
-      'The "prune" command is declared by multiple kits: other, acme',
+      'The "prune" command is registered by multiple kits: other, acme',
     );
   });
 
@@ -248,7 +248,7 @@ describe("kits reaching what another registered", () => {
 
     expect(await runWithConfig({ kits }, ["greet", "world"])).toBe(1);
     expect(err.join("\n")).toContain(
-      'second and first both register "greeting"',
+      'The "greeting" value is registered by multiple kits: second, first',
     );
   });
 });
