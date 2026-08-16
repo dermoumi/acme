@@ -1,8 +1,8 @@
 import { createInterface } from "node:readline";
 import type { KitCli } from "@acme/app/cli";
 import type { WithDatabase } from "@acme/db";
-import { hashPassword } from "../src/server/auth";
-import type { Database } from "../src/server/db";
+import { hashPassword } from "../server/auth";
+import type { Database } from "../server/db";
 
 // stdout carries nothing but the result, so a prompt on stderr keeps piping
 // the password in from a script workable.

@@ -29,7 +29,7 @@ describe("database", () => {
   // importing them; a wrong base would resolve inside whoever called us.
   it("points at its own commands, not its caller's", () => {
     expect(database([]).cli).toMatch(
-      /\/db\/src\/internal\/cli\/commands\.ts$/u,
+      /\/db\/src\/internal\/commands\/commands\.ts$/u,
     );
   });
 });

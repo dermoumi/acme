@@ -11,6 +11,6 @@
     "**/*.node.test.ts",
     "**/*.sqlite.test.ts",
     "**/*.postgres.test.ts",
-    "src/internal/cli/**"
+    "src/internal/commands/**"
   ]
 }

@@ -81,7 +81,22 @@ describe("runWithConfig", () => {
     const kits = [shouter("first"), shouter("second")];
 
     expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(1);
-    expect(err.join("\n")).toContain('second and first both declare "shout"');
+    expect(err.join("\n")).toContain(
+      'The "shout" command is declared by multiple kits: second, first',
+    );
+  });
+
+  // prune comes from acme's own kit now, so it clashes like any other command.
+  it<CliContext>("names acme when a kit declares prune as well", async ({
+    err,
+  }) => {
+    const cli = new URL("../internal/commands/commands.ts", import.meta.url)
+      .href;
+
+    expect(await runWithConfig({ kits: [{ name: "other", cli }] }, [])).toBe(1);
+    expect(err.join("\n")).toContain(
+      'The "prune" command is declared by multiple kits: other, acme',
+    );
   });
 
   it<CliContext>("takes a config declaring no kits at all", async ({ out }) => {
@@ -103,7 +118,7 @@ describe("runWithConfig", () => {
 
     expect(await runWithConfig({ kits }, ["greet", "world"])).toBe(1);
     expect(err.join("\n")).toContain(
-      "greeter names a cli module it cannot load",
+      "Cli module from greeter cannot be loaded",
     );
   });
 

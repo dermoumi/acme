@@ -2,7 +2,7 @@
   "extends": "@acme/tsconfig/tsconfig.node.json",
   "include": [
     "acme.config.ts",
-    "scripts",
+    "src/commands",
     "src/server",
     "vite.config.ts",
     "vitest.config.ts"

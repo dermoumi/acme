@@ -29,17 +29,23 @@ async function loadMount(kit: Kit): Promise<KitCliMount | undefined> {
     return undefined;
   }
 
-  const loaded = (await import(specifier).catch((cause: unknown) => {
-    throw new Error(`${kit.name} names a cli module it cannot load`, { cause });
-  })) as { default?: KitCliMount };
+  const importSpecifier = async () => {
+    try {
+      return (await import(specifier)) as { default?: KitCliMount };
+    } catch (cause: unknown) {
+      const message = `Cli module from ${kit.name} cannot be loaded.`;
+      throw new Error(message, { cause });
+    }
+  };
 
-  if (!loaded.default) {
+  const { default: cliMount } = await importSpecifier();
+  if (!cliMount) {
     throw new Error(
       `${kit.name}'s cli module must export its mount as default`,
     );
   }
 
-  return loaded.default;
+  return cliMount;
 }
 
 /**
@@ -69,7 +75,9 @@ export async function mountCommands(cli: CAC, kits: Kit[]): Promise<void> {
     for (const { name } of cli.commands.slice(added)) {
       const taken = owner.get(name);
       if (taken !== undefined) {
-        throw new Error(`${kit.name} and ${taken} both declare "${name}"`);
+        throw new Error(
+          `The "${name}" command is declared by multiple kits: ${kit.name}, ${taken}`,
+        );
       }
 
       owner.set(name, kit.name);

@@ -45,6 +45,6 @@ export function database(bindings: DatabaseConfig[]): Kit {
   return {
     name: "database",
     config: checkDuplicates(bindings),
-    cli: new URL("../cli/commands.ts", import.meta.url).href,
+    cli: new URL("../commands/commands.ts", import.meta.url).href,
   };
 }
