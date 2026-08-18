@@ -30,7 +30,7 @@ ARG APP_NAME=posy \
     APP_REVISION=dev
 RUN pnpm exec turbo build:node --filter=@acme/posy
 
-# `acme-db migrate` loads acme.config.ts through tsx, so it needs the tree the
+# `acme migrate` loads acme.config.ts through tsx, so it needs the tree the
 # bundle inlined away. Injected, or workspace packages stay monorepo symlinks.
 RUN pnpm --config.inject-workspace-packages=true \
     deploy --filter=@acme/posy --prod /deploy
@@ -69,7 +69,7 @@ ENV NODE_ENV=production \
 COPY --from=build /deploy ./
 
 # Only a package manager puts .bin on the path, and this stage has none. Earns
-# its keep on `docker exec <container> acme-db seed`, not just on CMD.
+# its keep on `docker exec <container> acme seed`, not just on CMD.
 ENV PATH="/app/node_modules/.bin:$PATH"
 
 ARG APP_NAME=posy \
@@ -93,4 +93,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD \
 
 # exec so node, which handles its own signals, replaces sh as PID 1. sh does
 # not forward them, so a stop during the migration still waits for the timeout.
-CMD ["sh", "-c", "acme-db migrate && exec node dist/server/index.mjs"]
+CMD ["sh", "-c", "acme migrate && exec node dist/server/index.mjs"]

@@ -7,11 +7,18 @@ on:
     tags: ["posy-v*"]
 
 jobs:
-  publish:
+  verify:
     permissions:
       contents: read
-      packages: write
     uses: ./.github/workflows/target-docker.yml
     with:
       app: posy
-      push: true
+
+  publish:
+    needs: verify
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/target-docker-publish.yml
+    with:
+      app: posy
