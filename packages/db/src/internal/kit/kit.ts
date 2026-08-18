@@ -1,5 +1,15 @@
+/// <reference types="hono" />
 import type { Kit } from "@acme/app";
 import type { Kysely } from "kysely";
+import { buildGetDb, type GetDb, openDbAccessors } from "./get-db";
+
+// What this kit puts on every request, declared beside the `vars` that puts it
+// there, so a route reads ctx.var.getDb with nothing to import.
+declare module "hono" {
+  interface ContextVariableMap {
+    getDb: GetDb;
+  }
+}
 
 /**
  * What a seed module default-exports.
@@ -39,16 +49,16 @@ export interface DatabaseConfig {
   seed?: string;
 }
 
-function checkDuplicates(bindings: DatabaseConfig[]): DatabaseConfig[] {
+function checkDuplicates(databases: DatabaseConfig[]): DatabaseConfig[] {
   // Every reader, not just those that go on to pick one: a duplicate would
   // otherwise resolve silently to whichever came first.
-  const names = bindings.map((entry) => entry.binding);
+  const names = databases.map((entry) => entry.binding);
   const duplicate = names.find((name, at) => names.indexOf(name) !== at);
   if (duplicate) {
     throw new Error(`${duplicate} is declared more than once`);
   }
 
-  return bindings;
+  return databases;
 }
 
 /**
@@ -57,13 +67,21 @@ function checkDuplicates(bindings: DatabaseConfig[]): DatabaseConfig[] {
  * An app declares it once, however many databases it holds, because a command
  * such as `migrate` acts on all of them unless `--db` names one.
  *
- * @param bindings - The app's databases, in the order they migrate.
+ * Every request it reaches gets a `getDb`, over connections opened once.
+ *
+ * @param databases - The app's databases, in the order they migrate.
  * @throws If two of them claim the same binding.
  */
-export function database(bindings: DatabaseConfig[]): Kit {
+export function databaseKit(databases: DatabaseConfig[]): Kit {
+  const config = checkDuplicates(databases);
+  const accessors = openDbAccessors(config);
+
   return {
     name: "database",
-    config: checkDuplicates(bindings),
+    config,
     cli: new URL("../commands/commands.ts", import.meta.url).href,
+    vars: (env) => {
+      return { getDb: buildGetDb(accessors, env) };
+    },
   };
 }

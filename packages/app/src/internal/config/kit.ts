@@ -6,6 +6,18 @@ declare global {
 }
 
 /**
+ * What a kit puts on every request's context.
+ *
+ * ```ts
+ * vars: (env) => ({ getDb: (name) => open(name, env) })
+ * ```
+ *
+ * Run per request with the bindings on workerd, or the environment variables
+ * on node.
+ */
+export type KitVars = (env: unknown) => Record<string, unknown>;
+
+/**
  * One capability an app takes on, such as a database or an error reporter.
  *
  * A kit is a plain object; a package exports a function taking the app's
@@ -32,4 +44,8 @@ export interface Kit {
    * which needs no public export: `new URL("./cli/commands.ts", import.meta.url).href`
    */
   cli?: string;
+  /**
+   * What this kit puts on every request's context. See {@link KitVars}.
+   */
+  vars?: KitVars;
 }

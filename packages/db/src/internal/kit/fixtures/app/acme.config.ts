@@ -1,9 +1,9 @@
 import { defineConfig } from "@acme/app";
-import { database } from "../../kit";
+import { databaseKit } from "../../kit";
 
 const config = defineConfig({
   kits: [
-    database([
+    databaseKit([
       {
         binding: "MAIN",
         migrations: "./migrations/main.ts",

@@ -1,5 +1,5 @@
 import { defineConfig, type Kit } from "@acme/app";
-import { database } from "@acme/db";
+import { databaseKit } from "@acme/db";
 
 // Everything an app owns itself, until it has a package to belong to.
 const posy: Kit = {
@@ -11,7 +11,7 @@ export default defineConfig({
   // Listed before the kit it requires, which the registry allows on purpose.
   kits: [
     posy,
-    database([
+    databaseKit([
       {
         binding: "DATABASE",
         migrations: "./src/server/db/migrator.ts",
