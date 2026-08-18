@@ -15,7 +15,7 @@ function varsOf(config: AcmeConfig): KitVars[] {
  * Builds an app, hands it to the caller to route, and serves it.
  *
  * ```ts
- * export default createApp(config, (app) => {
+ * export default serve(config, (app) => {
  *   app.get("/health", (ctx) => ctx.json({ status: "ok" }));
  * });
  * ```
@@ -27,7 +27,7 @@ function varsOf(config: AcmeConfig): KitVars[] {
  * @param setup Adds the app's routes. Returning nothing serves the app it was
  *   given; returning a handler serves that instead.
  */
-export function createApp<AppEnv extends Env>(
+export function serve<AppEnv extends Env>(
   config: AcmeConfig,
   // Returning one is for a wrapper that cannot be middleware: withSentry needs
   // the outer fetch's ExecutionContext. Goes once @acme/sentry is a kit.

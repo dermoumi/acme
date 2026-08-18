@@ -1,4 +1,5 @@
 import { createRateLimiter } from "@acme/rate-limiter";
+import { platform } from "#platform";
 import { sentryTunnel, type SentryConfig } from "@acme/sentry/hono";
 import { type Context, Hono } from "hono";
 import { sql } from "kysely";
@@ -34,20 +35,11 @@ async function databaseStatus(ctx: Context<AppEnv>): Promise<"down" | "ok"> {
   }
 }
 
-export interface AppOptions {
-  /**
-   * CIDR ranges whose `x-forwarded-for` may speak for the client behind them;
-   * malformed ones throw at startup. Inert on Workers, load-bearing on node,
-   * which is why it can look unused here.
-   */
-  trustedProxies?: readonly string[];
-}
-
-export function createApp(options: AppOptions = {}): Hono<AppEnv> {
+export function createApp(): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
-  const limiter = createRateLimiter<AppBindings>({
-    trustedProxies: options.trustedProxies,
-  });
+  // No trusted proxies: empty trusts none, and whose forwarded header to
+  // believe becomes the rate-limit kit's to decide.
+  const limiter = createRateLimiter<AppBindings>({});
 
   app.use(gate({ open: ["/health"], realm: "Posy Staging" }));
 
@@ -88,7 +80,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
 
   // Under run_worker_first the worker fronts every request; the assets binding
   // applies the configured SPA not_found_handling itself.
-  app.all("*", (ctx) => ctx.env.ASSETS.fetch(ctx.req.raw));
+  app.all("*", (ctx) => platform.assets(ctx).fetch(ctx.req.raw));
 
   return app;
 }

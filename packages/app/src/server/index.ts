@@ -1,2 +1,2 @@
 export type { Handler } from "./contract";
-export { createApp } from "./create-app";
+export { serve } from "./serve";

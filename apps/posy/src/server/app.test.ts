@@ -2,10 +2,11 @@ import { resetDb } from "@acme/db/testing";
 import { createBindings } from "#testing/runtime";
 import { beforeEach, describe, expect, it } from "vitest";
 import { migratedEnv } from "./auth/test-utils";
+import { createApp } from "./app";
 import { getDb } from "./db";
-import { app } from "./index";
 
 describe("/health", () => {
+  const app = createApp();
   // These cases deliberately run with and without a database.
   beforeEach(() => resetDb(getDb));
 
