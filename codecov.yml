@@ -23,6 +23,10 @@ component_management:
       name: "@acme/db"
       paths:
         - packages/db/**
+    - component_id: deploy
+      name: "@acme/deploy"
+      paths:
+        - packages/deploy/**
     - component_id: rate-limiter
       name: "@acme/rate-limiter"
       paths:

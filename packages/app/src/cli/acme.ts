@@ -3,7 +3,6 @@ import path from "node:path";
 import { type CAC, cac } from "cac";
 import type { AcmeConfig, Kit } from "../internal/config";
 import { CONFIG_FILE, loadAcmeConfig } from "./config";
-import { acmeCommands } from "../internal/commands";
 import { mountCommands } from "./mount";
 
 const { version } = JSON.parse(
@@ -26,8 +25,7 @@ async function buildCli(kits: Kit[]): Promise<CAC> {
     default: CONFIG_FILE,
   });
 
-  // Its own commands first, through the same path a kit's take.
-  await mountCommands(cli, [acmeCommands, ...kits]);
+  await mountCommands(cli, kits);
   cli.help();
   cli.version(version);
   return cli;

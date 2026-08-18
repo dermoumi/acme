@@ -10,7 +10,9 @@ interface PruneContext {
   store: string;
 }
 
-/** Creates a store entry, the way pnpm lays one out, and answers its directory. */
+/**
+ * Creates a store entry, the way pnpm lays one out, and answers its directory.
+ */
 function entry(store: string, dir: string, name: string): string {
   const at = path.join(store, dir, "node_modules", name);
   mkdirSync(at, { recursive: true });

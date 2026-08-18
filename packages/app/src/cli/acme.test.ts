@@ -68,11 +68,6 @@ describe("runWithConfig", () => {
     expect(out.join("\n")).toContain("greet");
   });
 
-  it<CliContext>("keeps the commands acme brought itself", async ({ out }) => {
-    expect(await runWithConfig(appConfig, ["--help"])).toBe(0);
-    expect(out.join("\n")).toContain("prune");
-  });
-
   // Two shouters, not two greeters: the shouter registers nothing, so this
   // reaches the command check instead of tripping the shared-key one first.
   it<CliContext>("names both kits when they claim one command", async ({
@@ -86,29 +81,17 @@ describe("runWithConfig", () => {
     );
   });
 
-  // prune comes from acme's own kit now, so it clashes like any other command.
-  it<CliContext>("names acme when a kit declares prune as well", async ({
-    err,
-  }) => {
-    const cli = new URL("../internal/commands/commands.ts", import.meta.url)
-      .href;
-
-    expect(await runWithConfig({ kits: [{ name: "other", cli }] }, [])).toBe(1);
-    expect(err.join("\n")).toContain(
-      'The "prune" command is registered by multiple kits: other, acme',
-    );
-  });
-
+  // cac lists Commands only when it has some, and acme now has none.
   it<CliContext>("takes a config declaring no kits at all", async ({ out }) => {
     expect(await runWithConfig({}, ["--help"])).toBe(0);
-    expect(out.join("\n")).toContain("prune");
+    expect(out.join("\n")).not.toContain("Commands:");
   });
 
   it<CliContext>("takes a kit that declares no commands", async ({ out }) => {
     expect(await runWithConfig({ kits: [{ name: "quiet" }] }, ["--help"])).toBe(
       0,
     );
-    expect(out.join("\n")).toContain("prune");
+    expect(out.join("\n")).toContain("Usage");
   });
 
   it<CliContext>("names the kit whose module it cannot load", async ({
@@ -178,7 +161,7 @@ describe("run", () => {
 
   it<CliContext>("still runs when no app declares one", async ({ out }) => {
     expect(await run(["--help"])).toBe(0);
-    expect(out.join("\n")).toContain("prune");
+    expect(out.join("\n")).toContain("Usage");
   });
 
   it<CliContext>("says which file it could not read", async ({ err }) => {

@@ -1,0 +1,9 @@
+{
+  "extends": "@acme/tsconfig/tsconfig.node.json",
+  "compilerOptions": {
+    // Without these the .js bin belongs to no project and goes unchecked.
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["src", "vitest.config.ts"]
+}
