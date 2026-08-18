@@ -4,7 +4,7 @@ import { databaseKit } from "@acme/db";
 // Everything an app owns itself, until it has a package to belong to.
 const posy: Kit = {
   name: "posy",
-  cli: () => {
+  commands: () => {
     return new URL("./src/commands/commands.ts", import.meta.url).href;
   },
 };

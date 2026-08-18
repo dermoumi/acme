@@ -127,9 +127,9 @@ function targeting(command: Command): Command {
 /**
  * Declares the database kit's commands on whichever CLI is mounting it.
  *
- * The default export because that is what `Kit.cli` names, and reached by URL
- * rather than by import: this module is node-only, and `acme.config.ts` is
- * imported by the app as well as the CLI.
+ * The default export because that is what `Kit.commands` names, reached by URL
+ * rather than import: this module is node-only, and `acme.config.ts` reaches
+ * the app too.
  */
 export default function commands({
   cli,

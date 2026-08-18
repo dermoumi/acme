@@ -27,17 +27,17 @@ describe("databaseKit", () => {
     ).toThrow(/SAME is declared more than once/u);
   });
 
-  // The commands are node-only, so the kit names them by URL rather than
-  // importing them; a wrong base would resolve inside whoever called us.
+  // Named by URL, not imported: a wrong base resolves inside the caller.
   it("points at its own commands, not its caller's", () => {
-    const cli = databaseKit([]).cli as () => string;
+    const { commands } = databaseKit([]);
 
-    expect(cli()).toMatch(/\/db\/src\/internal\/commands\/commands\.ts$/u);
+    expect(commands?.()).toMatch(
+      /\/db\/src\/internal\/commands\/commands\.ts$/u,
+    );
   });
 
-  // The app's config is evaluated in the worker, where import.meta.url is no
-  // URL: building one there throws before a single request arrives.
+  // import.meta.url is no URL in a worker, so building one throws at startup.
   it("defers building that url until something asks for it", () => {
-    expect(databaseKit([]).cli).toBeTypeOf("function");
+    expect(databaseKit([]).commands).toBeTypeOf("function");
   });
 });

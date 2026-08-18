@@ -1,4 +1,4 @@
-// @cloudflare/workers-types declares no ImportMeta, and `cli` below needs it.
+// @cloudflare/workers-types declares no ImportMeta; `commands` below needs it.
 declare global {
   interface ImportMeta {
     url: string;
@@ -20,12 +20,9 @@ export type KitVars = (env: unknown) => Record<string, unknown>;
 /**
  * One capability an app takes on, such as a database or an error reporter.
  *
- * A kit is a plain object; a package exports a function taking the app's
- * options and answering one. The app lists the results in `kits`, in order.
- *
- * That function runs where the app declares it, which includes **module scope
- * in the worker**, since the app's entry imports its config. Do no work there
- * that a Worker cannot do at startup.
+ * A package exports a function answering one; the app lists the results in
+ * `kits`, in order. That function runs at **module scope in the worker**, since
+ * the entry imports its config, so do nothing there a Worker cannot do.
  */
 export interface Kit {
   /** Names the kit when something goes wrong. Conventionally the package's short name. */
@@ -39,20 +36,18 @@ export interface Kit {
    */
   config?: unknown;
   /**
-   * Where this kit's commands live, as a specifier the CLI imports. The
-   * module's default export is its `KitCliMount`.
+   * Answers where this kit's commands live, as a specifier the CLI imports.
+   * The module's default export is its `KitCliMount`.
    *
-   * A specifier rather than the module, because `acme.config.ts` is imported by
-   * the app too and command code is node-only: importing it would drag it into
-   * the worker's bundle. Written by the kit's own package, pointing at itself,
-   * which needs no public export.
+   * ```ts
+   * commands: () => new URL("./cli/commands.ts", import.meta.url).href,
+   * ```
    *
-   * **Defer it behind a function** when computing it does work, as
-   * `new URL("./cli/commands.ts", import.meta.url).href` does: the app's config
-   * is evaluated in the worker, where `import.meta.url` is no URL and building
-   * one throws before a single request arrives.
+   * A specifier, so node-only command code stays out of the worker's bundle.
+   * A function, because naming it is work: `import.meta.url` is no URL in a
+   * worker, and building one throws before any request arrives.
    */
-  cli?: string | (() => string);
+  commands?: () => string;
   /**
    * What this kit puts on every request's context. See {@link KitVars}.
    */

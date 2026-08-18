@@ -54,10 +54,9 @@ export interface DatabaseConfig {
    * Where this database's migrations live, as a specifier the CLI imports.
    * The module's default export is its {@link Migrations}.
    *
-   * A specifier rather than the record itself, for the reason `Kit.cli` is one:
-   * `acme.config.ts` is imported by the app as well as the CLI, and a value
-   * here would carry every migration into the app's bundle forever, where
-   * nothing runs them. Written by the app, pointing at itself:
+   * A specifier for the reason `Kit.commands` is one: `acme.config.ts` reaches
+   * the app too, and a value here would carry every migration into its bundle,
+   * where nothing runs them. The app points at itself:
    * `new URL("./src/server/db/migrator.ts", import.meta.url).href`
    */
   migrations?: string;
@@ -100,7 +99,7 @@ export function databaseKit(databases: DatabaseConfig[]): Kit {
     name: KIT_NAME,
     config,
     context: { accessors } satisfies DatabaseContext,
-    cli: () => {
+    commands: () => {
       return new URL("../commands/commands.ts", import.meta.url).href;
     },
     vars: (env) => {

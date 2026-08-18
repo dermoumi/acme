@@ -17,7 +17,7 @@ const cli = (...argv: string[]) => runWithConfig(appConfig, argv, CONFIG_URL);
 
 const asker = (name = "asker"): Kit => ({
   name,
-  cli: new URL("./fixtures/asker.ts", import.meta.url).href,
+  commands: () => new URL("./fixtures/asker.ts", import.meta.url).href,
 });
 
 const withAsker = (): Kit[] => [asker(), ...(appConfig.kits ?? [])];

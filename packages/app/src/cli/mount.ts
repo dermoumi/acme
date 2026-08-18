@@ -8,7 +8,9 @@ import { type KitRegistry, kitRegistry } from "./registry";
  */
 export type KitCommands = Pick<CAC, "command">;
 
-/** What a kit's `cli` module is handed when the CLI mounts it. */
+/**
+ * What a kit's `commands` module is handed when mounted.
+ */
 export interface KitCli extends KitRegistry {
   cli: KitCommands;
   /** The kit's own config, as the app declared it. */
@@ -28,7 +30,7 @@ export interface KitCli extends KitRegistry {
 }
 
 /**
- * What a kit's `cli` module default-exports.
+ * What a kit's `commands` module default-exports.
  *
  * Declaring commands is synchronous; an action that needs to reach a database
  * or the network does that when it runs, not while the CLI is being built.
@@ -36,24 +38,24 @@ export interface KitCli extends KitRegistry {
 export type KitCliMount = (context: KitCli) => void;
 
 async function loadMount(kit: Kit): Promise<KitCliMount | undefined> {
-  if (kit.cli === undefined) {
+  if (kit.commands === undefined) {
     return undefined;
   }
 
-  const specifier = typeof kit.cli === "function" ? kit.cli() : kit.cli;
+  const specifier = kit.commands();
 
   const importSpecifier = async () => {
     try {
       return (await import(specifier)) as { default?: KitCliMount };
     } catch (cause: unknown) {
-      const message = `Cli module from ${kit.name} cannot be loaded.`;
+      const message = `Commands module from ${kit.name} cannot be loaded.`;
       throw new Error(message, { cause });
     }
   };
 
   const { default: cliMount } = await importSpecifier();
   if (!cliMount) {
-    const message = `${kit.name}'s cli module must export its mount as default`;
+    const message = `${kit.name}'s commands module must export its mount as default`;
     throw new Error(message);
   }
 
@@ -75,7 +77,7 @@ function resolverFor(configUrl: string | undefined) {
  * Mounts every kit's commands onto the CLI, in the order the app declared.
  *
  * @param cli - The CLI being built, with its own commands already on it.
- * @param kits - The app's kits. Those without a `cli` module contribute none.
+ * @param kits - The app's kits. Those declaring no `commands` add nothing.
  * @param configUrl - Where the app's config was read from, which specifiers
  *   inside it resolve against. Absent when the caller passed a config in hand.
  * @throws If a kit's module cannot be loaded, or if two kits register the same
