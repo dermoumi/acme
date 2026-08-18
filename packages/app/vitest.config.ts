@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 // One include for both projects, so the same test file runs on both runtimes.
 const include = ["src/**/*.test.ts"];
 // A CLI is a process with argv and a filesystem, which workerd is not.
-const NODE_ONLY = ["src/cli/**", "src/internal/commands/**"];
+const NODE_ONLY = ["src/cli/**"];
 
 export default defineConfig({
   test: {

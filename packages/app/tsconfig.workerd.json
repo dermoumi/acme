@@ -5,11 +5,6 @@
     "customConditions": ["workerd"]
   },
   "include": ["src"],
-  // The CLI and its commands are node-only; tsconfig.node.json checks those.
-  "exclude": [
-    "**/*.node.ts",
-    "**/*.node.test.ts",
-    "src/cli/**",
-    "src/internal/commands/**"
-  ]
+  // The CLI is node-only; tsconfig.node.json checks it.
+  "exclude": ["**/*.node.ts", "**/*.node.test.ts", "src/cli/**"]
 }

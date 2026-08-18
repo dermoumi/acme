@@ -4,17 +4,27 @@ import path from "node:path";
 // The stranded half is not a list: the tree is installed and its lockfile still
 // names everything, so reachability is all there is to go on.
 
-/** What one prune took out, and what it left behind. */
+/**
+ * What one prune took out, and what it left behind.
+ */
 export interface PruneResult {
-  /** Store entries matched by name, before reachability was considered. */
+  /**
+   * Store entries matched by name, before reachability was considered.
+   */
   named: number;
-  /** Store entries nothing reached once the named ones were gone. */
+  /**
+   * Store entries nothing reached once the named ones were gone.
+   */
   stranded: number;
-  /** Store entries still reachable from the tree's own dependencies. */
+  /**
+   * Store entries still reachable from the tree's own dependencies.
+   */
   live: number;
 }
 
-/** Every package directory in the virtual store, by its directory name. */
+/**
+ * Every package directory in the virtual store, by its directory name.
+ */
 function stored(store: string): string[] {
   return readdirSync(store).filter((name) => name !== "node_modules");
 }
@@ -65,7 +75,9 @@ function linksIn(nodeModules: string): string[] {
     });
 }
 
-/** Walks out from the app's own dependencies, the only way into the store. */
+/**
+ * Walks out from the app's own dependencies, the only way into the store.
+ */
 function reachable(root: string, store: string): Set<string> {
   const seen = new Set<string>();
   const queue = linksIn(path.join(root, "node_modules"))

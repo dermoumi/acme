@@ -14,6 +14,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/posy/package.json apps/posy/
 COPY packages/app/package.json packages/app/
 COPY packages/db/package.json packages/db/
+COPY packages/deploy/package.json packages/deploy/
 COPY packages/rate-limiter/package.json packages/rate-limiter/
 COPY packages/sentry/package.json packages/sentry/
 COPY packages/tsconfig/package.json packages/tsconfig/
@@ -49,8 +50,8 @@ RUN set -eu; \
     done
 
 # Optional peers of @sentry/cloudflare and valibot: no Worker or tsc runs here.
-# 'pnpm acme prune' fails because we bundle packages without installing them.
-RUN node packages/app/src/cli/bin/acme.js prune --root=/deploy \
+# By path: the workspace root has no package's bin on PATH.
+RUN node packages/deploy/src/cli/bin/acme-deploy.js prune --root=/deploy \
       wrangler miniflare workerd '@cloudflare/workerd-*' \
       typescript '@typescript/*'
 
