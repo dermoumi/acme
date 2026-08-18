@@ -30,8 +30,14 @@ describe("databaseKit", () => {
   // The commands are node-only, so the kit names them by URL rather than
   // importing them; a wrong base would resolve inside whoever called us.
   it("points at its own commands, not its caller's", () => {
-    expect(databaseKit([]).cli).toMatch(
-      /\/db\/src\/internal\/commands\/commands\.ts$/u,
-    );
+    const cli = databaseKit([]).cli as () => string;
+
+    expect(cli()).toMatch(/\/db\/src\/internal\/commands\/commands\.ts$/u);
+  });
+
+  // The app's config is evaluated in the worker, where import.meta.url is no
+  // URL: building one there throws before a single request arrives.
+  it("defers building that url until something asks for it", () => {
+    expect(databaseKit([]).cli).toBeTypeOf("function");
   });
 });

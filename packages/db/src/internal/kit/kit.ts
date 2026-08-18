@@ -100,7 +100,9 @@ export function databaseKit(databases: DatabaseConfig[]): Kit {
     name: KIT_NAME,
     config,
     context: { accessors } satisfies DatabaseContext,
-    cli: new URL("../commands/commands.ts", import.meta.url).href,
+    cli: () => {
+      return new URL("../commands/commands.ts", import.meta.url).href;
+    },
     vars: (env) => {
       return { getDb: buildGetDb(accessors, env) };
     },

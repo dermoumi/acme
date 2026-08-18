@@ -36,10 +36,11 @@ export interface KitCli extends KitRegistry {
 export type KitCliMount = (context: KitCli) => void;
 
 async function loadMount(kit: Kit): Promise<KitCliMount | undefined> {
-  const specifier = kit.cli;
-  if (specifier === undefined) {
+  if (kit.cli === undefined) {
     return undefined;
   }
+
+  const specifier = typeof kit.cli === "function" ? kit.cli() : kit.cli;
 
   const importSpecifier = async () => {
     try {
