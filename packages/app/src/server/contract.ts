@@ -1,5 +1,3 @@
-import type { Context } from "hono";
-
 /**
  * What an app exports for its runtime to serve.
  */
@@ -22,10 +20,6 @@ export interface Handler {
  * workerd, a node process listening on a port everywhere else.
  */
 export interface Host {
-  /**
-   * What a kit's vars are built from on this runtime.
-   */
-  env: (ctx: Context) => unknown;
   /**
    * Puts the app in front of requests, answering what the entry exports.
    *

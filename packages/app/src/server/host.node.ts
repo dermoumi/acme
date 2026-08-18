@@ -58,18 +58,13 @@ function drain(server: Server): void {
 }
 
 export const host: Host = {
-  // No platform hands a node process anything, so the process environment is
-  // the only environment there is.
-  env: () => {
-    return process.env;
-  },
   serve: (handler: Handler) => {
     const server = serve(
       {
-        // Nothing on ctx.env: a node process has no bindings, and putting the
-        // environment there would hand every route every variable.
+        // The same place workerd puts a deployment's values: bindings are what
+        // node lacks, and kits are what answer for those.
         fetch: (request: Request) => {
-          return handler.fetch(request, {});
+          return handler.fetch(request, process.env);
         },
         port: Number(process.env.PORT ?? 3000),
         hostname: "0.0.0.0",

@@ -4,15 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import type { Handler } from "./contract";
 import { createApp } from "./create-app";
 
-// The seam is what each runtime answers differently; standing in for it is what
-// lets one suite cover createApp on both. Serving is identity here, so nothing
-// binds a port, and the arms themselves are proven by an app that runs.
+// Serving is the only thing a host does differently, and on node it binds a
+// port; standing in for it is what lets one suite cover both runtimes.
 vi.mock("#host", () => {
   return {
     host: {
-      env: () => {
-        return { GREETING: "hei" };
-      },
       serve: (handler: Handler) => {
         return handler;
       },
@@ -36,8 +32,11 @@ describe("createApp", () => {
     },
   };
 
-  const ask = async (handler: Handler) => {
-    const response = await handler.fetch(new Request("http://app.test/who"));
+  const ask = async (handler: Handler, env: unknown = {}) => {
+    const response = await handler.fetch(
+      new Request("http://app.test/who"),
+      env,
+    );
 
     return response.text();
   };
@@ -61,7 +60,7 @@ describe("createApp", () => {
       });
     });
 
-    await expect(ask(handler)).resolves.toBe("hei");
+    await expect(ask(handler, { GREETING: "hei" })).resolves.toBe("hei");
   });
 
   it("leaves a kit declaring no variables alone", async () => {

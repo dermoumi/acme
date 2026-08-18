@@ -39,9 +39,8 @@ export function createApp<AppEnv extends Env>(
 
   if (vars.length > 0) {
     app.use(async (ctx, next) => {
-      const env = host.env(ctx);
       for (const contribute of vars) {
-        for (const [key, value] of Object.entries(contribute(env))) {
+        for (const [key, value] of Object.entries(contribute(ctx.env))) {
           ctx.set(key as never, value as never);
         }
       }
