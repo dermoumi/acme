@@ -1,7 +1,6 @@
 import { emptyDbEnv } from "../../testing/empty-env";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
-import { resetDb } from "../../testing/reset";
 import { defineDb } from "./define";
 
 interface TestSchema {
@@ -18,7 +17,7 @@ describe("defineDb", () => {
 
     const rows = await sql<{ one: number }>`select 1 as one`.execute(db);
     expect(rows.rows[0]?.one).toBe(1);
-    await resetDb(getDb);
+    await getDb.clear();
   });
 
   it("hands back the same database on every call", async () => {
@@ -26,7 +25,7 @@ describe("defineDb", () => {
     const ctx = { env: await emptyDbEnv("DATABASE") };
 
     expect(await getDb(ctx)).toBe(await getDb(ctx));
-    await resetDb(getDb);
+    await getDb.clear();
   });
 
   // The point of caching: a second request must not open a second connection,
@@ -44,7 +43,7 @@ describe("defineDb", () => {
       second,
     );
     expect(rows.rows).toEqual([{ id: "w1" }]);
-    await resetDb(getDb);
+    await getDb.clear();
   });
 
   it("ignores the env it is handed after the first resolve", async () => {
@@ -52,7 +51,7 @@ describe("defineDb", () => {
     const db = await getDb({ env: await emptyDbEnv("DATABASE") });
 
     expect(await getDb({ env: {} })).toBe(db);
-    await resetDb(getDb);
+    await getDb.clear();
   });
 
   it("keeps two accessors independent", async () => {
@@ -61,8 +60,8 @@ describe("defineDb", () => {
     const env = await emptyDbEnv("DATABASE");
 
     expect(await first({ env })).not.toBe(await second({ env }));
-    await resetDb(first);
-    await resetDb(second);
+    await first.clear();
+    await second.clear();
   });
 
   it("refuses an environment that names no database", async () => {
@@ -77,25 +76,21 @@ describe("defineDb", () => {
     // A cached rejection would reject again whatever env arrived next.
     const db = await getDb({ env: await emptyDbEnv("DATABASE") });
     expect(db).toBeDefined();
-    await resetDb(getDb);
+    await getDb.clear();
   });
 });
 
-describe("resetDb", () => {
+describe("an accessor's clear", () => {
   it("makes the next call open a new database", async () => {
     const getDb = defineDb<TestSchema>("DATABASE");
     const first = await getDb({ env: await emptyDbEnv("DATABASE") });
 
-    await resetDb(getDb);
+    await getDb.clear();
     expect(await getDb({ env: await emptyDbEnv("DATABASE") })).not.toBe(first);
-    await resetDb(getDb);
+    await getDb.clear();
   });
 
   it("is safe on an accessor that never resolved", async () => {
-    await expect(resetDb(defineDb("DATABASE"))).resolves.toBeUndefined();
-  });
-
-  it("refuses anything that is not an accessor", async () => {
-    await expect(resetDb({})).rejects.toThrow(/expects an accessor/u);
+    await expect(defineDb("DATABASE").clear()).resolves.toBeUndefined();
   });
 });

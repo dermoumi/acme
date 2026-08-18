@@ -1,5 +1,13 @@
 import type { Generated } from "kysely";
 
+// What gives ctx.var.getDb("DATABASE") its type, declared beside the schema it
+// names so nothing has to import one to reach the other.
+declare module "@acme/db" {
+  interface Databases {
+    DATABASE: Database;
+  }
+}
+
 // All timestamps are unix ms integers.
 export interface UsersTable {
   id: string;

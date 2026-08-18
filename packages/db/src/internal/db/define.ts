@@ -1,7 +1,6 @@
 import { resolveDialect } from "#runtime";
 import type { Kysely } from "kysely";
 import { createDb } from "../database";
-import { CACHE, type ClearCache } from "./cache";
 
 export interface DatabaseOptions {
   /**
@@ -12,10 +11,19 @@ export interface DatabaseOptions {
   urlVar?: string;
 }
 
-/** Hands a request its database. Build one with {@link defineDb}. */
-export type DatabaseAccessor<DB> = (ctx: {
-  env: unknown;
-}) => Promise<Kysely<DB>>;
+/**
+ * Hands a request its database. Build one with {@link defineDb}.
+ */
+export interface DatabaseAccessor<DB> {
+  (ctx: { env: unknown }): Promise<Kysely<DB>>;
+  /**
+   * Closes what it holds and forgets it, so the next call opens again.
+   *
+   * For tests: an accessor caches for the life of the process, and a suite
+   * wanting a private database per case resets between them.
+   */
+  clear: () => Promise<void>;
+}
 
 /**
  * Names a database, without opening it.
@@ -41,25 +49,25 @@ export function defineDb<DB>(
     return createDb<DB>(dialect);
   }
 
-  const accessor: DatabaseAccessor<DB> = (ctx) => {
-    // Cleared on failure, so a transient one cannot disable the accessor for
-    // the life of the process.
-    cached ??= open(ctx.env).catch((error: unknown) => {
-      cached = undefined;
-      throw error;
-    });
+  return Object.assign(
+    (ctx: { env: unknown }) => {
+      // Cleared on failure, so a transient one cannot disable the accessor for
+      // the life of the process.
+      cached ??= open(ctx.env).catch((error: unknown) => {
+        cached = undefined;
+        throw error;
+      });
 
-    return cached;
-  };
-
-  const clear: ClearCache = async () => {
-    const pending = cached;
-    cached = undefined;
-    // A rejected cache has nothing to close, and rethrowing here would fail the
-    // test that is trying to clean up after it.
-    await pending?.then((db) => db.destroy()).catch(() => undefined);
-  };
-  Reflect.defineProperty(accessor, CACHE, { value: clear });
-
-  return accessor;
+      return cached;
+    },
+    {
+      clear: async () => {
+        const pending = cached;
+        cached = undefined;
+        // A rejected cache has nothing to close, and rethrowing here would fail
+        // the test that is trying to clean up after it.
+        await pending?.then((db) => db.destroy()).catch(() => undefined);
+      },
+    },
+  );
 }

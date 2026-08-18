@@ -6,6 +6,7 @@ import { databaseKit } from "../internal/kit/kit";
 import { emptyDbEnv } from "./empty-env";
 import { migrateDb } from "./migrate";
 import { getTestDb } from "./get-test-db";
+import { resetDb } from "./reset";
 
 const migrations = {
   "0001_items": {
@@ -74,5 +75,23 @@ describe("migrateDb", () => {
     await expect(
       db.insertInto("items").values({ id: "one" }).execute(),
     ).resolves.toBeDefined();
+  });
+});
+
+describe("resetDb", () => {
+  const config = () => {
+    return defineConfig({ kits: [databaseKit([{ binding: "DATABASE" }])] });
+  };
+
+  it("drops what an accessor was holding, so the next open is a new one", async () => {
+    const declared = config();
+    const env = await emptyDbEnv("DATABASE");
+    const before = await getTestDb("DATABASE", { config: declared, env });
+
+    await resetDb(declared);
+
+    expect(await getTestDb("DATABASE", { config: declared, env })).not.toBe(
+      before,
+    );
   });
 });

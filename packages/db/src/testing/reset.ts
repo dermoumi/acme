@@ -1,17 +1,25 @@
-import { CACHE, type ClearCache } from "../internal/db/cache";
+import type { AcmeConfig } from "@acme/app";
+import { kitOf } from "./get-test-db";
 
 /**
- * Closes the database an accessor holds and forgets it.
+ * Closes every database the config declares and forgets them.
  *
- * An accessor caches for the life of the process, so a suite wanting a private
- * database per case resets between them. Import it only from tests: production
- * code has no reason to drop a live connection.
+ * ```ts
+ * beforeEach(() => resetDb(config));
+ * ```
+ *
+ * An accessor holds its connection for the life of the process, so a suite
+ * wanting a private database per case resets between them. Import it only from
+ * tests: production code has no reason to drop a live connection.
+ *
+ * @throws If the config declares no database kit.
  */
-export async function resetDb(accessor: object): Promise<void> {
-  const clear = (accessor as Record<symbol, ClearCache | undefined>)[CACHE];
-  if (!clear) {
-    throw new Error("resetDb expects an accessor returned by defineDb");
-  }
+export async function resetDb(config: AcmeConfig): Promise<void> {
+  const held = [...kitOf(config).accessors.values()];
 
-  await clear();
+  await Promise.all(
+    held.map((accessor) => {
+      return accessor.clear();
+    }),
+  );
 }

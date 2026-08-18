@@ -1,22 +1,24 @@
-import { createMigrator, jsonText, parseJsonText } from "@acme/db";
-import { emptyDbEnv, resetDb } from "@acme/db/testing";
+import { jsonText, parseJsonText } from "@acme/db";
+import { createMigrator } from "@acme/db";
+import { getTestDb, migrateDb, resetDb } from "@acme/db/testing";
 import { type Kysely, sql } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { beforeEach, describe, expect, it } from "vitest";
-import { getDb, migrations } from "./index";
+import config from "../../../acme.config";
+import migrations from "./migrator";
 import type { Database } from "./schema";
 
 // Only tables no feature covers yet: auth's tests already prove users and
 // sessions. Drop each block when its own feature brings its own tests.
 
 async function emptyDb(): Promise<Kysely<Database>> {
-  return getDb({ env: await emptyDbEnv("DATABASE") });
+  return getTestDb("DATABASE", { config });
 }
 
 async function migratedDb(): Promise<Kysely<Database>> {
   const db = await emptyDb();
-  const { error } = await createMigrator(db, migrations).migrateToLatest();
-  if (error) throw new Error("migration failed", { cause: error });
+  await migrateDb(db, migrations);
+
   return db;
 }
 
@@ -54,7 +56,7 @@ async function seedItem(db: Kysely<Database>, id: string): Promise<void> {
 }
 
 describe("posy's migration set", () => {
-  beforeEach(() => resetDb(getDb));
+  beforeEach(() => resetDb(config));
 
   it("builds every table the schema declares", async () => {
     const db = await emptyDb();
@@ -88,7 +90,7 @@ describe("posy's migration set", () => {
 });
 
 describe("posy's schema", () => {
-  beforeEach(() => resetDb(getDb));
+  beforeEach(() => resetDb(config));
 
   it("keeps items.tags as JSON, with color and art_key nullable", async () => {
     const db = await migratedDb();

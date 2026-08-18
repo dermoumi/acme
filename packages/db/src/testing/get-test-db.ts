@@ -9,12 +9,15 @@ import {
 import { type DatabaseContext, KIT_NAME } from "../internal/kit/kit";
 import { emptyDbEnv } from "./empty-env";
 
-interface Declared {
+/**
+ * The database kit a config declared, resolved to what it holds.
+ */
+export interface DbKit {
   accessors: Accessors;
   databases: DatabaseConfig[];
 }
 
-function kitOf(config: AcmeConfig): Declared {
+export function kitOf(config: AcmeConfig): DbKit {
   const kit = (config.kits ?? []).find((declared) => {
     return declared.name === KIT_NAME;
   });

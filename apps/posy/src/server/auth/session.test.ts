@@ -1,7 +1,7 @@
 import { resetDb } from "@acme/db/testing";
 import { beforeEach, describe, expect, it } from "vitest";
-import { createApp } from "../app";
-import { getDb } from "../db";
+import { testApp } from "../testing/app";
+import config from "../../../acme.config";
 import {
   createSession,
   resolveSession,
@@ -15,7 +15,7 @@ import { hashToken } from "./tokens";
 const HOUR_MS = 60 * 60 * 1000;
 
 describe("createSession", () => {
-  beforeEach(() => resetDb(getDb));
+  beforeEach(() => resetDb(config));
 
   it("stores only the token hash", async () => {
     const { db, store } = await seeded();
@@ -31,7 +31,7 @@ describe("createSession", () => {
 });
 
 describe("resolveSession", () => {
-  beforeEach(() => resetDb(getDb));
+  beforeEach(() => resetDb(config));
 
   it("returns the userId for a valid token", async () => {
     const { store } = await seeded();
@@ -67,10 +67,10 @@ describe("resolveSession", () => {
 });
 
 describe("GET /session", () => {
-  beforeEach(() => resetDb(getDb));
+  beforeEach(() => resetDb(config));
 
   it("never touches the db without a cookie", async () => {
-    const app = createApp();
+    const app = testApp();
     const env = noDatabaseEnv();
     const res = await app.request("/session", {}, env);
     expect(res.status).toBe(200);
@@ -80,7 +80,7 @@ describe("GET /session", () => {
   it("resolves the cookie to a user", async () => {
     const { env, store } = await seeded();
     const token = await createSession(store, "u1", null, Date.now());
-    const app = createApp();
+    const app = testApp();
 
     const authed = await app.request(
       "/session",

@@ -5,7 +5,6 @@ import { type Context, Hono } from "hono";
 import { sql } from "kysely";
 import { authRoutes } from "./auth";
 import type { AppBindings, AppEnv } from "./bindings";
-import { getDb } from "./db";
 import { debugRoutes, isDebugEnabled } from "./debug";
 import { gate } from "./gate";
 
@@ -27,7 +26,9 @@ export const RATE_TUNNEL_PERIOD = 60;
 // A query, not a binding check: the url is only opened on first use.
 async function databaseStatus(ctx: Context<AppEnv>): Promise<"down" | "ok"> {
   try {
-    await sql`select 1`.execute(await getDb(ctx));
+    const db = await ctx.var.getDb("DATABASE");
+
+    await sql`select 1`.execute(db);
 
     return "ok";
   } catch {

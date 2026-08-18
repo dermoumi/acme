@@ -1,5 +1,5 @@
 import { host } from "#host";
-import { type Env, Hono } from "hono";
+import { type Env, Hono, type MiddlewareHandler } from "hono";
 import type { AcmeConfig, KitVars } from "../internal/config";
 import type { Handler } from "./contract";
 
@@ -9,6 +9,30 @@ function varsOf(config: AcmeConfig): KitVars[] {
       return kit.vars;
     })
     .filter((vars) => vars !== undefined);
+}
+
+/**
+ * Puts every declared kit's variables on each request.
+ *
+ * ```ts
+ * app.use(kitVars(config));
+ * ```
+ *
+ * {@link serve} mounts this itself. Reach for it where an app is built without
+ * being served, which in practice means a test driving routes directly.
+ */
+export function kitVars(config: AcmeConfig): MiddlewareHandler {
+  const vars = varsOf(config);
+
+  return async (ctx, next) => {
+    for (const contribute of vars) {
+      for (const [key, value] of Object.entries(contribute(ctx.env))) {
+        ctx.set(key as never, value as never);
+      }
+    }
+
+    return next();
+  };
 }
 
 /**
@@ -35,19 +59,7 @@ export function serve<AppEnv extends Env>(
   setup: (app: Hono<AppEnv>) => Handler | void,
 ): Handler {
   const app = new Hono<AppEnv>();
-  const vars = varsOf(config);
-
-  if (vars.length > 0) {
-    app.use(async (ctx, next) => {
-      for (const contribute of vars) {
-        for (const [key, value] of Object.entries(contribute(ctx.env))) {
-          ctx.set(key as never, value as never);
-        }
-      }
-
-      return next();
-    });
-  }
+  app.use(kitVars(config));
 
   return host.serve(setup(app) ?? app);
 }

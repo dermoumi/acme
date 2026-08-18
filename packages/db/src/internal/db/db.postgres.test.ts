@@ -1,7 +1,6 @@
 import { emptyDbEnv } from "../../testing/empty-env";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
-import { resetDb } from "../../testing/reset";
 import { defineDb } from "./define";
 
 describe("defineDb over postgres", () => {
@@ -19,7 +18,7 @@ describe("defineDb over postgres", () => {
 
     expect(rows.rows[0]?.total).toBe("2");
     expect(Number(rows.rows[0]?.total)).toBe(2);
-    await resetDb(getDb);
+    await getDb.clear();
   });
 
   it("holds one backend connection across calls", async () => {
@@ -32,6 +31,6 @@ describe("defineDb over postgres", () => {
 
     expect(first).toBeTypeOf("number");
     expect(second).toBe(first);
-    await resetDb(getDb);
+    await getDb.clear();
   });
 });

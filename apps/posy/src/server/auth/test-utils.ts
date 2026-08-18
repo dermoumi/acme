@@ -1,28 +1,24 @@
-import { createMigrator } from "@acme/db";
-import { emptyDbEnv } from "@acme/db/testing";
+import { emptyDbEnv, getTestDb, migrateDb } from "@acme/db/testing";
 import { createBindings } from "#testing/runtime";
 import type { Kysely } from "kysely";
 import type { AppBindings } from "../bindings";
-import { type Database, getDb, migrations } from "../db";
+import config from "../../../acme.config";
+import type { Database } from "../db";
+import migrations from "../db/migrator";
 import { hashPassword } from "./password";
 import { DbSessionStore } from "./session-db";
 
 /**
  * An env whose database is migrated and empty.
  *
- * Seeded through `getDb`, the accessor the routes themselves use, so the test
- * and the handler share one database. Reset the accessor between cases.
+ * Opened through the same accessor the routes reach, so the test and the
+ * handler share one database. Reset between cases.
  */
 export async function migratedEnv(): Promise<AppBindings> {
   // The one cast: @acme/db cannot know posy's binding types.
   const database = (await emptyDbEnv("DATABASE")) as Partial<AppBindings>;
   const env = createBindings(database);
-  const migrator = createMigrator(await getDb({ env }), migrations);
-
-  const { error } = await migrator.migrateToLatest();
-  if (error) {
-    throw new Error("migration failed", { cause: error });
-  }
+  await migrateDb(await getTestDb("DATABASE", { config, env }), migrations);
 
   return env;
 }
@@ -51,7 +47,7 @@ export async function seeded(): Promise<{
   store: DbSessionStore;
 }> {
   const env = await migratedEnv();
-  const db = await getDb({ env });
+  const db = await getTestDb("DATABASE", { config, env });
   await seedUser(db, "u1");
   return { db, env, store: new DbSessionStore(db) };
 }
