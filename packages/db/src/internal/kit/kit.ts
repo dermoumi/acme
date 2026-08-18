@@ -1,6 +1,18 @@
 import type { Kit } from "@acme/app";
 import type { Kysely } from "kysely";
-import type { Migrations } from "../migrator";
+
+/**
+ * What a seed module default-exports.
+ *
+ * ```ts
+ * const seedUsers: Seed<Database> = async (db) => { ... };
+ * export default seedUsers;
+ * ```
+ *
+ * Annotate the app's seed with it: the config names the module by path, so
+ * nothing else checks that what it exports is shaped like a seed.
+ */
+export type Seed<DB = unknown> = (db: Kysely<DB>) => Promise<void>;
 
 /** One database an app declares. */
 export interface DatabaseConfig {
@@ -8,16 +20,23 @@ export interface DatabaseConfig {
   binding: string;
   /** Env var holding the url. Defaults to `${binding}_URL`. */
   urlVar?: string;
-  /** Keyed by name, in the order the keys sort. */
-  migrations?: Migrations;
   /**
-   * Rows an empty deployment needs. Run by `acme seed`.
+   * Where this database's migrations live, as a specifier the CLI imports.
+   * The module's default export is its {@link Migrations}.
    *
-   * Any schema: only the app knows its own, and the seed already carries the
-   * type it was written against.
+   * A specifier rather than the record itself, for the reason `Kit.cli` is one:
+   * `acme.config.ts` is imported by the app as well as the CLI, and a value
+   * here would carry every migration into the app's bundle forever, where
+   * nothing runs them. Written by the app, pointing at itself:
+   * `new URL("./src/server/db/migrator.ts", import.meta.url).href`
    */
-  // oxlint-disable-next-line no-explicit-any
-  seed?: (db: Kysely<any>) => Promise<void>;
+  migrations?: string;
+  /**
+   * Where the rows an empty deployment needs live, as a specifier the CLI
+   * imports. The module's default export is its {@link Seed}. Run by
+   * `acme seed`, and a specifier for the same reason `migrations` is.
+   */
+  seed?: string;
 }
 
 function checkDuplicates(bindings: DatabaseConfig[]): DatabaseConfig[] {

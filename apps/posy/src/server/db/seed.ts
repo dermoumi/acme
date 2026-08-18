@@ -1,4 +1,4 @@
-import type { Kysely } from "kysely";
+import type { Seed } from "@acme/db";
 import type { Database } from "./schema";
 
 // Throwaway staging credentials. Password for both accounts is "test".
@@ -10,7 +10,7 @@ const USERS = [
   { id: "sara", name: "sara", password_hash: HASH },
 ];
 
-export async function seedUsers(db: Kysely<Database>): Promise<void> {
+const seedUsers: Seed<Database> = async (db) => {
   await Promise.all(
     USERS.map((user) =>
       db
@@ -26,4 +26,6 @@ export async function seedUsers(db: Kysely<Database>): Promise<void> {
     ),
   );
   console.log("seeded users");
-}
+};
+
+export default seedUsers;

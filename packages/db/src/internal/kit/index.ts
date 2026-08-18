@@ -1,1 +1,1 @@
-export { type DatabaseConfig, database } from "./kit";
+export { type DatabaseConfig, database, type Seed } from "./kit";

@@ -13,6 +13,18 @@ export interface KitCli extends KitRegistry {
   cli: KitCommands;
   /** The kit's own config, as the app declared it. */
   config: unknown;
+  /**
+   * Turns a specifier the app wrote in its config into one that can be
+   * imported, so a kit taking paths never has to ask where the config is.
+   *
+   * Relative to the config file, because that is what the app wrote it
+   * relative to. An absolute specifier is answered unchanged, which is what a
+   * kit pointing at itself with `import.meta.url` produces.
+   *
+   * @throws If the app's config never came from a file, leaving nothing to be
+   *   relative to.
+   */
+  resolve: (specifier: string) => string;
 }
 
 /**
@@ -47,18 +59,36 @@ async function loadMount(kit: Kit): Promise<KitCliMount | undefined> {
   return cliMount;
 }
 
+function resolverFor(configUrl: string | undefined) {
+  return (specifier: string): string => {
+    if (configUrl === undefined) {
+      const message = `cannot resolve "${specifier}": no config file was read`;
+      throw new Error(message);
+    }
+
+    return new URL(specifier, configUrl).href;
+  };
+}
+
 /**
  * Mounts every kit's commands onto the CLI, in the order the app declared.
  *
  * @param cli - The CLI being built, with its own commands already on it.
  * @param kits - The app's kits. Those without a `cli` module contribute none.
+ * @param configUrl - Where the app's config was read from, which specifiers
+ *   inside it resolve against. Absent when the caller passed a config in hand.
  * @throws If a kit's module cannot be loaded, or if two kits register the same
  *   command or shared key, either of which would otherwise resolve silently to
  *   whichever came first.
  */
-export async function mountCommands(cli: CAC, kits: Kit[]): Promise<void> {
+export async function mountCommands(
+  cli: CAC,
+  kits: Kit[],
+  configUrl?: string,
+): Promise<void> {
   const owner = new Map(cli.commands.map((cmd) => [cmd.name, cli.name]));
   const registryFor = kitRegistry();
+  const resolve = resolverFor(configUrl);
   // Loaded up front so one slow import does not hold up the rest, then
   // mounted in order, because that order is what the app declared.
   const mounts = await Promise.all(kits.map(async (kit) => loadMount(kit)));
@@ -70,7 +100,12 @@ export async function mountCommands(cli: CAC, kits: Kit[]): Promise<void> {
     }
 
     const added = cli.commands.length;
-    mountHandler({ cli, config: kit.config, ...registryFor(kit.name) });
+    mountHandler({
+      cli,
+      config: kit.config,
+      resolve,
+      ...registryFor(kit.name),
+    });
     for (const { name } of cli.commands.slice(added)) {
       const taken = owner.get(name);
       if (taken !== undefined) {

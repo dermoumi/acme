@@ -13,6 +13,8 @@ const commandsModule = new URL("./fixtures/app/commands.ts", import.meta.url)
   .href;
 const shouterModule = new URL("./fixtures/app/shouter.ts", import.meta.url)
   .href;
+const resolverModule = new URL("./fixtures/app/resolver.ts", import.meta.url)
+  .href;
 
 // The greeter registers what it declares; the shouter only reads it back.
 const greeter = (name = "greeter"): Kit => ({
@@ -249,6 +251,38 @@ describe("kits reaching what another registered", () => {
     expect(await runWithConfig({ kits }, ["greet", "world"])).toBe(1);
     expect(err.join("\n")).toContain(
       'The "greeting" value is registered by multiple kits: second, first',
+    );
+  });
+});
+
+describe("resolving a specifier the app wrote in its config", () => {
+  sandbox();
+
+  it<CliContext>("takes the config file as the base", async ({ out }) => {
+    const argv = ["resolve", "./src/server/db/migrator.ts"];
+
+    expect(await run([...argv, "-c", fixture("app")])).toBe(0);
+    expect(out.join("\n")).toContain(
+      "cli/fixtures/app/src/server/db/migrator.ts",
+    );
+  });
+
+  // What a kit pointing at itself with import.meta.url produces.
+  it<CliContext>("hands back an absolute specifier unchanged", async ({
+    out,
+  }) => {
+    expect(await run(["resolve", commandsModule, "-c", fixture("app")])).toBe(
+      0,
+    );
+    expect(out).toContain(commandsModule);
+  });
+
+  it<CliContext>("says so when no config file was read", async ({ err }) => {
+    const kits = [{ name: "resolver", cli: resolverModule }];
+
+    expect(await runWithConfig({ kits }, ["resolve", "./anywhere.ts"])).toBe(1);
+    expect(err.join("\n")).toContain(
+      'cannot resolve "./anywhere.ts": no config file was read',
     );
   });
 });

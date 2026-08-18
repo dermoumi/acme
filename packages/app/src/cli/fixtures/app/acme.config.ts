@@ -8,6 +8,12 @@ const greeter = (greeting: string): Kit => ({
   cli: new URL("./commands.ts", import.meta.url).href,
 });
 
-const config = defineConfig({ kits: [greeter("hello")] });
+// Declares no config of its own: all it needs is where this file is.
+const resolver: Kit = {
+  name: "resolver",
+  cli: new URL("./resolver.ts", import.meta.url).href,
+};
+
+const config = defineConfig({ kits: [greeter("hello"), resolver] });
 
 export default config;
