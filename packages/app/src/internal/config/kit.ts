@@ -48,4 +48,11 @@ export interface Kit {
    * What this kit puts on every request's context. See {@link KitVars}.
    */
   vars?: KitVars;
+  /**
+   * What this kit made of `config` when it was declared — connections it
+   * opened, a compiled matcher — for its own other parts to read back.
+   *
+   * `unknown` because only the kit knows the shape, as with `config`.
+   */
+  context?: unknown;
 }

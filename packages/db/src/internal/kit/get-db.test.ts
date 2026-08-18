@@ -2,21 +2,9 @@ import type { Kit } from "@acme/app";
 import { Kysely } from "kysely";
 import { describe, expect, it } from "vitest";
 import { emptyDbEnv } from "../../testing";
+import type { Items } from "./fixtures/schema";
 import type { GetDb } from "./get-db";
 import { databaseKit } from "./kit";
-
-interface Items {
-  items: { id: string };
-}
-
-// What an app declares beside its schema, and what gives getDb its type. A real
-// one augments "@acme/db"; this is inside the package, so it names the module.
-declare module "./get-db" {
-  interface Databases {
-    DATABASE: Items;
-    OTHER: Items;
-  }
-}
 
 describe("the databases a kit puts on a request", () => {
   // DATABASE because that is the binding the workers pool provides; OTHER only
@@ -31,10 +19,11 @@ describe("the databases a kit puts on a request", () => {
     return kit.vars?.(env).getDb as GetDb;
   };
 
-  it("opens the one a binding names", async () => {
+  it("opens the one a binding names, typed by what the app declared", async () => {
     const getDb = onRequest(newKit(), await emptyDbEnv("DATABASE"));
+    const db: Kysely<Items> = await getDb("DATABASE");
 
-    await expect(getDb("DATABASE")).resolves.toBeInstanceOf(Kysely);
+    expect(db).toBeInstanceOf(Kysely);
   });
 
   it("hands every request the same connection", async () => {

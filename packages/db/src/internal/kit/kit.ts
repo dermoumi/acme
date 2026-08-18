@@ -1,7 +1,12 @@
 /// <reference types="hono" />
 import type { Kit } from "@acme/app";
 import type { Kysely } from "kysely";
-import { buildGetDb, type GetDb, openDbAccessors } from "./get-db";
+import {
+  type Accessors,
+  buildGetDb,
+  type GetDb,
+  openDbAccessors,
+} from "./get-db";
 
 // What this kit puts on every request, declared beside the `vars` that puts it
 // there, so a route reads ctx.var.getDb with nothing to import.
@@ -9,6 +14,21 @@ declare module "hono" {
   interface ContextVariableMap {
     getDb: GetDb;
   }
+}
+
+/**
+ * What the database kit calls itself, for whoever looks it up in a config.
+ */
+export const KIT_NAME = "database";
+
+/**
+ * An object rather than the accessors alone, so what it keeps next joins it.
+ */
+export interface DatabaseContext {
+  /**
+   * One per declared database, holding the connections requests use.
+   */
+  accessors: Accessors;
 }
 
 /**
@@ -77,8 +97,9 @@ export function databaseKit(databases: DatabaseConfig[]): Kit {
   const accessors = openDbAccessors(config);
 
   return {
-    name: "database",
+    name: KIT_NAME,
     config,
+    context: { accessors } satisfies DatabaseContext,
     cli: new URL("../commands/commands.ts", import.meta.url).href,
     vars: (env) => {
       return { getDb: buildGetDb(accessors, env) };
