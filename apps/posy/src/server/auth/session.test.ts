@@ -1,7 +1,7 @@
 import { resetDb } from "@acme/db/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import { testApp } from "../testing/app";
-import config from "../../../acme.config";
+import config from "virtual:acme-config";
 import {
   createSession,
   resolveSession,

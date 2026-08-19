@@ -4,7 +4,7 @@ import type { Kysely } from "kysely";
 import { beforeEach, describe, expect, it } from "vitest";
 import { testApp } from "../testing/app";
 import type { AppBindings, AppEnv } from "../bindings";
-import config from "../../../acme.config";
+import config from "virtual:acme-config";
 import type { Database } from "../db";
 import { SESSION_COOKIE } from "./session";
 import { migratedEnv, seedUser } from "./test-utils";

@@ -2,7 +2,7 @@ import { emptyDbEnv, getTestDb, migrateDb } from "@acme/db/testing";
 import { createBindings } from "#testing/runtime";
 import type { Kysely } from "kysely";
 import type { AppBindings } from "../bindings";
-import config from "../../../acme.config";
+import config from "virtual:acme-config";
 import type { Database } from "../db";
 import migrations from "../db/migrator";
 import { hashPassword } from "./password";

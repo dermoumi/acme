@@ -20,6 +20,7 @@
     ".": "./src/index.ts",
     "./cli": "./src/cli/index.ts",
     "./server": "./src/server/index.ts",
+    "./testing": "./src/testing/index.ts",
     "./types": {
       "types": "./src/types.d.ts"
     },

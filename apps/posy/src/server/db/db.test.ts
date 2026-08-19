@@ -4,7 +4,7 @@ import { getTestDb, migrateDb, resetDb } from "@acme/db/testing";
 import { type Kysely, sql } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { beforeEach, describe, expect, it } from "vitest";
-import config from "../../../acme.config";
+import config from "virtual:acme-config";
 import migrations from "./migrator";
 import type { Database } from "./schema";
 

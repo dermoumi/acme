@@ -1,6 +1,5 @@
-import { kitVars } from "@acme/app/server";
+import { kitVars } from "@acme/app/testing";
 import { Hono } from "hono";
-import config from "../../../acme.config";
 import { createApp } from "../app";
 import type { AppEnv } from "../bindings";
 
@@ -12,7 +11,10 @@ import type { AppEnv } from "../bindings";
  */
 export function testApp(): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
-  app.use(kitVars(config));
+
+  const middleware = kitVars();
+  app.use(middleware);
+
   app.route("/", createApp());
 
   return app;

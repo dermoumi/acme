@@ -1,40 +1,8 @@
 import { host } from "#host";
-import virtualConfig from "virtual:acme-config";
-import { type Env, Hono, type MiddlewareHandler } from "hono";
-import type { AcmeConfig, KitVars } from "../internal/config";
+import { type Env, Hono } from "hono";
+import type { AcmeConfig } from "../internal/config";
 import type { Handler } from "./contract";
-
-function varsOf(config: AcmeConfig): KitVars[] {
-  return (config.kits ?? [])
-    .map((kit) => {
-      return kit.vars;
-    })
-    .filter((vars) => vars !== undefined);
-}
-
-/**
- * Puts every declared kit's variables on each request.
- *
- * ```ts
- * app.use(kitVars(config));
- * ```
- *
- * {@link serve} mounts this itself. Reach for it where an app is built without
- * being served, which in practice means a test driving routes directly.
- */
-export function kitVars(config: AcmeConfig): MiddlewareHandler {
-  const vars = varsOf(config);
-
-  return async (ctx, next) => {
-    for (const contribute of vars) {
-      for (const [key, value] of Object.entries(contribute(ctx.env))) {
-        ctx.set(key as never, value as never);
-      }
-    }
-
-    return next();
-  };
-}
+import { kitVars } from "./kit-vars";
 
 /**
  * Builds an app, hands it to the caller to route, and serves it.
@@ -58,7 +26,7 @@ export function serve<AppEnv extends Env>(
   // the outer fetch's ExecutionContext. Goes once @acme/sentry is a kit.
   // oxlint-disable-next-line no-invalid-void-type
   setup: (app: Hono<AppEnv>) => Handler | void,
-  config: AcmeConfig = virtualConfig,
+  config?: AcmeConfig,
 ): Handler {
   const app = new Hono<AppEnv>();
   app.use(kitVars(config));

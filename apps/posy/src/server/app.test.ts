@@ -3,7 +3,7 @@ import { createBindings } from "#testing/runtime";
 import { beforeEach, describe, expect, it } from "vitest";
 import { migratedEnv } from "./auth/test-utils";
 import { testApp } from "./testing/app";
-import config from "../../acme.config";
+import config from "virtual:acme-config";
 
 describe("/health", () => {
   const app = testApp();
