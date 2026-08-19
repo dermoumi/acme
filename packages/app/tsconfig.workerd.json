@@ -5,6 +5,6 @@
     "customConditions": ["workerd"]
   },
   "include": ["src"],
-  // The CLI is node-only; tsconfig.node.json checks it.
-  "exclude": ["**/*.node.ts", "**/*.node.test.ts", "src/cli/**"]
+  // The CLI and the vite plugin are node-only; tsconfig.node.json checks them.
+  "exclude": ["**/*.node.ts", "**/*.node.test.ts", "src/cli/**", "src/vite/**"]
 }

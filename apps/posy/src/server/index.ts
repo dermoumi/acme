@@ -1,6 +1,6 @@
 import { type Handler, serve } from "@acme/app/server";
 import { withSentry } from "@acme/sentry/hono";
-import config from "../../acme.config";
+import config from "virtual:acme-config";
 import { createApp, sentryConfig } from "./app";
 import type { AppEnv } from "./bindings";
 

@@ -1,11 +1,6 @@
 {
   "extends": "@acme/tsconfig/tsconfig.node.json",
-  "include": [
-    "acme.config.ts",
-    "src/commands",
-    "src/server",
-    "vite.config.ts",
-    "vitest.config.ts"
-  ],
+  "compilerOptions": { "types": ["node", "@acme/app/types"] },
+  "include": ["acme.config.ts", "src/commands", "src/server", "vite.config.ts"],
   "exclude": ["**/*.workerd.ts"]
 }

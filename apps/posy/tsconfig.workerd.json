@@ -3,7 +3,8 @@
   "compilerOptions": {
     // Resolve #testing/runtime the way the pool does, so node-only code
     // (better-sqlite3 pulls in an ambient node types reference) stays out.
-    "customConditions": ["workerd"]
+    "customConditions": ["workerd"],
+    "types": ["@cloudflare/workers-types", "@acme/app/types"]
   },
   "include": ["src/server"],
   "exclude": ["**/*.node.ts"]

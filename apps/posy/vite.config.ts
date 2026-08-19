@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { acmeVite } from "@acme/app/vite";
 import { sentryVite } from "@acme/sentry/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
@@ -80,6 +81,7 @@ const test: UserConfig["test"] = {
     { test: { name: "node", include } },
     {
       plugins: [
+        acmeVite(),
         cloudflareTest({
           wrangler: { configPath: "./wrangler.jsonc" },
           miniflare: {
@@ -118,6 +120,7 @@ function nodeBuild(isSsrBuild: boolean) {
 
 function buildPlugins(mode: string, isSsrBuild: boolean): PluginOption[] {
   return [
+    acmeVite(),
     react(),
     ...(mode === "node" ? [] : [cloudflare()]),
     ...(isSsrBuild ? [] : [VitePWA(pwa)]),
