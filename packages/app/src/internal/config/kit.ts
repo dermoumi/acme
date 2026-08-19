@@ -19,10 +19,6 @@ export type KitVars = (env: unknown) => Record<string, unknown>;
 
 /**
  * What a kit's {@link Kit.init} answers.
- *
- * What a kit builds for its OWN other parts stays the kit's, held wherever it
- * likes: handing it back here would make one kit's private state something
- * anyone holding the app's config could read.
  */
 export interface KitState {
   /**
@@ -35,12 +31,14 @@ export interface KitState {
  * One capability an app takes on, such as a database or an error reporter.
  *
  * A package exports a function answering one; the app lists the results in
- * `kits`, in order. That function is **inert**: it may check what it was
- * handed, but everything it builds belongs in {@link Kit.init}, because a
- * config is read on a build machine as well as inside the worker.
+ * `kits`, in order. That function is inert: what it builds belongs in
+ * {@link Kit.init}, since a config is read on build machines too.
  */
 export interface Kit {
-  /** Names the kit when something goes wrong. Conventionally the package's short name. */
+  /**
+   * The specifier an app imports this kit's package by. A kit an app declares
+   * in its own config takes that app's name.
+   */
   name: string;
   /**
    * What the app declared, for whoever reads it back.
@@ -66,15 +64,8 @@ export interface Kit {
   /**
    * Builds what this kit holds, and answers it. See {@link KitState}.
    *
-   * ```ts
-   * init: () => ({ vars: (env) => ({ getDb: open(config, env) }) }),
-   * ```
-   *
-   * Run once, where the app is served: `serve` mounts the middleware that asks
-   * for it at the worker's module scope. What a kit needs to survive a second
-   * call is the kit's to hold.
-   *
-   * Synchronous, since that module scope cannot await.
+   * Synchronous, and called at the worker's module scope, which cannot await.
+   * What a kit needs across calls is the kit's own to hold.
    */
   init?: () => KitState;
 }

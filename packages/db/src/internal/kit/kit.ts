@@ -13,11 +13,6 @@ declare module "hono" {
 }
 
 /**
- * What the database kit calls itself, for whoever looks it up in a config.
- */
-export const KIT_NAME = "database";
-
-/**
  * What a seed module default-exports.
  *
  * ```ts
@@ -72,8 +67,7 @@ function checkDuplicates(databases: DatabaseConfig[]): DatabaseConfig[] {
  * An app declares it once, however many databases it holds, because a command
  * such as `migrate` acts on all of them unless `--db` names one.
  *
- * Every request it reaches gets a `getDb`, over connections opened once when
- * `@acme/app` first builds the kit.
+ * Every request it reaches gets a `getDb`, over connections opened once.
  *
  * @param databases - The app's databases, in the order they migrate.
  * @throws If two of them claim the same binding.
@@ -82,7 +76,7 @@ export function databaseKit(databases: DatabaseConfig[]): Kit {
   const config = checkDuplicates(databases);
 
   return {
-    name: KIT_NAME,
+    name: "@acme/db",
     config,
     commands: () => {
       return new URL("../commands/commands.ts", import.meta.url).href;

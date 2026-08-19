@@ -60,14 +60,14 @@ describe("getTestDb", () => {
     ).rejects.toThrow(/no database kit is declared/u);
   });
 
-  // Nothing but the name says a kit is this one, so a config naming something
-  // else "database" must not be reported as declaring none.
+  // Nothing but the name says a kit is this one, so a config declaring
+  // something else under it must not be reported as declaring none.
   it("says so when what it finds under that name is another kit", async () => {
-    const impostor = defineConfig({ kits: [{ name: "database" }] });
+    const impostor = defineConfig({ kits: [{ name: "@acme/db" }] });
 
     await expect(
       getTestDb("DATABASE", { config: impostor, env: {} }),
-    ).rejects.toThrow(/is not the database kit/u);
+    ).rejects.toThrow(/is not this kit/u);
   });
 });
 

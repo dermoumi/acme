@@ -5,8 +5,7 @@ export interface DatabaseContext {
   accessors: Accessors;
 }
 
-// Keyed on the array `databaseKit` answered, one per declaration, so this holds
-// without a handle to pass around and a second build opens nothing new.
+// Keyed on the array `databaseKit` answered, which is one per declaration.
 const held = new WeakMap<readonly DatabaseConfig[], DatabaseContext>();
 
 export function contextFor(config: readonly DatabaseConfig[]): DatabaseContext {

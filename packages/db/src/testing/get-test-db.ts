@@ -6,7 +6,6 @@ import type { Kysely } from "kysely";
 import type { DatabaseConfig } from "../internal/kit";
 import { type Accessors, buildGetDb, type Databases } from "../internal/db";
 import { contextFor } from "../internal/kit/context";
-import { KIT_NAME } from "../internal/kit/kit";
 import { emptyDbEnv } from "./empty-env";
 
 /**
@@ -17,11 +16,9 @@ export interface DbKit {
   databases: DatabaseConfig[];
 }
 
-// Two guards, not one: declaring no database kit and declaring something else
-// under that name are different faults, and one message would misdirect.
 export function kitOf(config: AcmeConfig): DbKit {
   const kit = (config.kits ?? []).find((declared) => {
-    return declared.name === KIT_NAME;
+    return declared.name === "@acme/db";
   });
   if (!kit) {
     throw new Error("no database kit is declared in this config");
@@ -29,7 +26,7 @@ export function kitOf(config: AcmeConfig): DbKit {
 
   // A name is all that says a kit is this one, and an app writes its own.
   if (!Array.isArray(kit.config)) {
-    const message = `what this config declares as "${KIT_NAME}" is not the database kit`;
+    const message = 'what this config declares as "@acme/db" is not this kit';
     throw new Error(message);
   }
 

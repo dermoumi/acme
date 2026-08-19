@@ -12,7 +12,7 @@ declare module "hono" {
 }
 
 const greeter: Kit = {
-  name: "greeter",
+  name: "@fixture/greeter",
   init: () => ({
     vars: (env) => {
       return { greeting: (env as { GREETING?: string }).GREETING ?? "none" };
@@ -42,7 +42,7 @@ describe("kitVars", () => {
 
   it("leaves a kit declaring no variables alone", async () => {
     const app = new Hono();
-    const config = defineConfig({ kits: [{ name: "quiet" }] });
+    const config = defineConfig({ kits: [{ name: "@fixture/quiet" }] });
 
     const middleware = kitVars(config);
     app.use(middleware);

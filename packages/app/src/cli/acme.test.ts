@@ -17,12 +17,12 @@ const resolverModule = new URL("./fixtures/app/resolver.ts", import.meta.url)
   .href;
 
 // The greeter registers what it declares; the shouter only reads it back.
-const greeter = (name = "greeter"): Kit => ({
+const greeter = (name = "@fixture/greeter"): Kit => ({
   name,
   config: { greeting: "hello" },
   commands: () => commandsModule,
 });
-const shouter = (name = "shouter"): Kit => ({
+const shouter = (name = "@fixture/shouter"): Kit => ({
   name,
   commands: () => shouterModule,
 });
@@ -78,11 +78,11 @@ describe("runWithConfig", () => {
   it<CliContext>("names both kits when they claim one command", async ({
     err,
   }) => {
-    const kits = [shouter("first"), shouter("second")];
+    const kits = [shouter("@fixture/first"), shouter("@fixture/second")];
 
     expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(1);
     expect(err.join("\n")).toContain(
-      'The "shout" command is registered by multiple kits: second, first',
+      'The "shout" command is registered by multiple kits: @fixture/second, @fixture/first',
     );
   });
 
@@ -93,20 +93,20 @@ describe("runWithConfig", () => {
   });
 
   it<CliContext>("takes a kit that declares no commands", async ({ out }) => {
-    expect(await runWithConfig({ kits: [{ name: "quiet" }] }, ["--help"])).toBe(
-      0,
-    );
+    expect(
+      await runWithConfig({ kits: [{ name: "@fixture/quiet" }] }, ["--help"]),
+    ).toBe(0);
     expect(out.join("\n")).toContain("Usage");
   });
 
   it<CliContext>("names the kit whose module it cannot load", async ({
     err,
   }) => {
-    const kits = [{ name: "greeter", commands: () => "./nowhere.ts" }];
+    const kits = [{ name: "@fixture/greeter", commands: () => "./nowhere.ts" }];
 
     expect(await runWithConfig({ kits }, ["greet", "world"])).toBe(1);
     expect(err.join("\n")).toContain(
-      "Commands module from greeter cannot be loaded",
+      "Commands module from @fixture/greeter cannot be loaded",
     );
   });
 
@@ -118,7 +118,7 @@ describe("runWithConfig", () => {
 
     expect(
       await runWithConfig(
-        { kits: [{ name: "greeter", commands: () => mount }] },
+        { kits: [{ name: "@fixture/greeter", commands: () => mount }] },
         [],
       ),
     ).toBe(1);
@@ -229,18 +229,18 @@ describe("kits reaching what another registered", () => {
   }) => {
     expect(await runWithConfig({ kits: [shouter()] }, ["shout", "w"])).toBe(1);
     expect(err.join("\n")).toContain(
-      'shouter requires "greeting", which no declared kit registers',
+      '@fixture/shouter requires "greeting", which no declared kit registers',
     );
   });
 
   it<CliContext>("names both kits when two register one key", async ({
     err,
   }) => {
-    const kits = [greeter("first"), greeter("second")];
+    const kits = [greeter("@fixture/first"), greeter("@fixture/second")];
 
     expect(await runWithConfig({ kits }, ["greet", "world"])).toBe(1);
     expect(err.join("\n")).toContain(
-      'The "greeting" value is registered by multiple kits: second, first',
+      'The "greeting" value is registered by multiple kits: @fixture/second, @fixture/first',
     );
   });
 });
@@ -268,7 +268,9 @@ describe("resolving a specifier the app wrote in its config", () => {
   });
 
   it<CliContext>("says so when no config file was read", async ({ err }) => {
-    const kits = [{ name: "resolver", commands: () => resolverModule }];
+    const kits = [
+      { name: "@fixture/resolver", commands: () => resolverModule },
+    ];
 
     expect(await runWithConfig({ kits }, ["resolve", "./anywhere.ts"])).toBe(1);
     expect(err.join("\n")).toContain(

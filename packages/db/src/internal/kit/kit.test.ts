@@ -2,8 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { openDbAccessors } from "../db";
 import { databaseKit } from "./kit";
 
-// Spied rather than replaced: what opening a database does is get-db's own
-// suite; all this needs to know is when it happens.
+// Spied, not replaced: all this needs to know is when it happens.
 vi.mock("../db", { spy: true });
 
 describe("databaseKit", () => {
@@ -11,9 +10,9 @@ describe("databaseKit", () => {
     vi.clearAllMocks();
   });
 
-  it("names itself so a reader can find it back", () => {
+  it("names itself by its specifier, so a reader can find it back", () => {
     expect(databaseKit([{ binding: "MAIN" }])).toMatchObject({
-      name: "database",
+      name: "@acme/db",
     });
   });
 
@@ -47,8 +46,8 @@ describe("databaseKit", () => {
     expect(openDbAccessors).toHaveBeenCalledOnce();
   });
 
-  // Its own memo, not @acme/app's, so a second reader of one declaration
-  // cannot end up on a second set of connections.
+  // Nothing else memoizes it, so a second reader of one declaration would
+  // otherwise land on a second set of connections.
   it("opens one declaration's databases once, however often it is built", () => {
     const kit = databaseKit([{ binding: "MAIN" }]);
 
