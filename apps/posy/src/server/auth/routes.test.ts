@@ -1,10 +1,11 @@
-import { resetDb } from "@acme/db/testing";
+import { getTestDb, resetDb } from "@acme/db/testing";
 import type { Hono } from "hono";
 import type { Kysely } from "kysely";
 import { beforeEach, describe, expect, it } from "vitest";
-import { createApp } from "../app";
+import { testApp } from "../testing/app";
 import type { AppBindings, AppEnv } from "../bindings";
-import { type Database, getDb } from "../db";
+import config from "../../../acme.config";
+import type { Database } from "../db";
 import { SESSION_COOKIE } from "./session";
 import { migratedEnv, seedUser } from "./test-utils";
 
@@ -13,9 +14,9 @@ type App = Hono<AppEnv>;
 const PASS = "test-dummy-pass";
 
 describe("auth routes", () => {
-  // The accessor holds its database for the life of the process, so each test
+  // An accessor holds its database for the life of the process, so each test
   // starts by dropping the last one's.
-  beforeEach(() => resetDb(getDb));
+  beforeEach(() => resetDb(config));
 
   async function appWithUser(): Promise<{
     app: App;
@@ -23,9 +24,9 @@ describe("auth routes", () => {
     env: AppBindings;
   }> {
     const env = await migratedEnv();
-    const db = await getDb({ env });
+    const db = await getTestDb("DATABASE", { config, env });
     await seedUser(db, "u1", "Tester", PASS);
-    return { app: createApp(), db, env };
+    return { app: testApp(), db, env };
   }
 
   // Workerd shares one login budget across the whole project run, and these
@@ -125,7 +126,7 @@ describe("auth routes", () => {
       await login(app, env, { username: "u1", password: PASS }),
     );
 
-    const res = await getSession(createApp(), env, cookie);
+    const res = await getSession(testApp(), env, cookie);
     expect(await res.json()).toEqual({ user: { id: "u1", name: "Tester" } });
   });
 

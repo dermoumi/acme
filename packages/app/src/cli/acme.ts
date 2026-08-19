@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { type CAC, cac } from "cac";
 import type { AcmeConfig, Kit } from "../internal/config";
-import { CONFIG_FILE, loadAcmeConfig } from "./config";
+import { acmeConfigUrl, CONFIG_FILE, loadAcmeConfig } from "./config";
 import { mountCommands } from "./mount";
 
 const { version } = JSON.parse(
@@ -19,13 +19,13 @@ export function getConfigFile(argv: string[]): string | undefined {
   return typeof config === "string" ? config : undefined;
 }
 
-async function buildCli(kits: Kit[]): Promise<CAC> {
+async function buildCli(kits: Kit[], configUrl?: string): Promise<CAC> {
   const cli = cac("acme");
   cli.option("-c, --config <file>", "the config to read", {
     default: CONFIG_FILE,
   });
 
-  await mountCommands(cli, kits);
+  await mountCommands(cli, kits, configUrl);
   cli.help();
   cli.version(version);
   return cli;
@@ -53,13 +53,17 @@ function report(error: unknown): number {
  * @param config - The app's config. Nothing is read from disk, and `-c` is not
  *   consulted: the caller has already decided what the app declares.
  * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
+ * @param configUrl - Where that config lives, for the kits whose specifiers are
+ *   written relative to it. Without it those kits fail when they resolve one,
+ *   which is the honest answer for a config that came from nowhere.
  */
 export async function runWithConfig(
   config: AcmeConfig,
   argv: string[],
+  configUrl?: string,
 ): Promise<number> {
   try {
-    const cli = await buildCli(config.kits ?? []);
+    const cli = await buildCli(config.kits ?? [], configUrl);
     // Parsing prints help or the version itself; running is ours to do, so the
     // action's promise is awaited rather than left dangling.
     cli.parse(["node", "acme", ...argv], { run: false });
@@ -87,8 +91,9 @@ export async function runWithConfig(
  */
 export async function run(argv: string[]): Promise<number> {
   try {
-    const config = await loadAcmeConfig(getConfigFile(argv));
-    return await runWithConfig(config, argv);
+    const file = getConfigFile(argv);
+    const config = await loadAcmeConfig(file);
+    return await runWithConfig(config, argv, acmeConfigUrl(file));
   } catch (error) {
     return report(error);
   }

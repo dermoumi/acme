@@ -77,7 +77,7 @@ function nodeBuild(isSsrBuild: boolean) {
     // every static asset inside the image.
     copyPublicDir: false,
     rolldownOptions: {
-      input: { index: "src/server/index.node.ts" },
+      input: { index: "src/server/index.ts" },
       // /app has no package.json, so .js there would be read as CommonJS.
       output: { entryFileNames: "[name].mjs" },
     },

@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "imports": {
+    "#platform": {
+      "workerd": "./src/server/platform/platform.workerd.ts",
+      "default": "./src/server/platform/platform.node.ts"
+    },
     "#testing/runtime": {
       "workerd": "./src/server/testing/runtime/runtime.workerd.ts",
       "default": "./src/server/testing/runtime/runtime.node.ts"

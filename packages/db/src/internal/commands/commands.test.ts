@@ -4,13 +4,20 @@ import { describe, expect, it, vi } from "vitest";
 import appConfig from "../kit/fixtures/app/acme.config";
 import { type CliContext, rows, sandbox, tables } from "./test-utils";
 
+// The config is imported rather than read, so the base its specifiers resolve
+// against has to be named here the way the CLI would have worked it out.
+const CONFIG_URL = new URL(
+  "../kit/fixtures/app/acme.config.ts",
+  import.meta.url,
+).href;
+
 // One engine is enough: this proves the commands wire the migrator to a
 // database, not that the migrator works, which every engine project covers.
-const cli = (...argv: string[]) => runWithConfig(appConfig, argv);
+const cli = (...argv: string[]) => runWithConfig(appConfig, argv, CONFIG_URL);
 
 const asker = (name = "asker"): Kit => ({
   name,
-  cli: new URL("./fixtures/asker.ts", import.meta.url).href,
+  commands: () => new URL("./fixtures/asker.ts", import.meta.url).href,
 });
 
 const withAsker = (): Kit[] => [asker(), ...(appConfig.kits ?? [])];

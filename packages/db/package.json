@@ -39,6 +39,7 @@
     "@types/pg": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "better-sqlite3": "catalog:",
+    "hono": "catalog:",
     "pg": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
@@ -47,6 +48,7 @@
   },
   "peerDependencies": {
     "better-sqlite3": "catalog:",
+    "hono": "catalog:",
     "kysely": "catalog:",
     "pg": "catalog:",
     "wrangler": "catalog:"

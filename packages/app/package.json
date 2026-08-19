@@ -10,11 +10,16 @@
     "#runtime": {
       "workerd": "./src/internal/runtime/runtime.workerd.ts",
       "default": "./src/internal/runtime/runtime.node.ts"
+    },
+    "#host": {
+      "workerd": "./src/server/host.workerd.ts",
+      "default": "./src/server/host.node.ts"
     }
   },
   "exports": {
     ".": "./src/index.ts",
-    "./cli": "./src/cli/index.ts"
+    "./cli": "./src/cli/index.ts",
+    "./server": "./src/server/index.ts"
   },
   "scripts": {
     "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc -b",
@@ -30,10 +35,21 @@
     "@acme/tsconfig": "workspace:*",
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
+    "@hono/node-server": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
+    "hono": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@hono/node-server": "catalog:",
+    "hono": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@hono/node-server": {
+      "optional": true
+    }
   }
 }

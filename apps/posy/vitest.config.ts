@@ -15,11 +15,7 @@ export default defineConfig({
       provider: "istanbul",
       reporter: ["text", "lcovonly"],
       // The entry starts a server; CI's container health check covers it.
-      exclude: [
-        "src/server/testing/**",
-        "src/server/index.node.ts",
-        "*.config.ts",
-      ],
+      exclude: ["src/server/testing/**", "src/server/index.ts", "*.config.ts"],
     },
     projects: [
       { test: { name: "node", include } },

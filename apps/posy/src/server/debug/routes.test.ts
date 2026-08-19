@@ -5,13 +5,13 @@ import { noDatabase } from "../testing/no-database";
 
 // The env names no database, so resolving throws: these prove debug routes
 // never reach for one.
-const app = createApp();
-
 function env(overrides: Record<string, string> = {}) {
   return { ...createBindings(noDatabase), ...overrides };
 }
 
 describe("debug routes", () => {
+  const app = createApp();
+
   it("throwing routes answer 500 off production", async () => {
     const res = await app.request("/debug/boom", {}, env());
     expect(res.status).toBe(500);

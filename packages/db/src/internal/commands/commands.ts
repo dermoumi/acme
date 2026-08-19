@@ -1,10 +1,10 @@
 import type { KitCli } from "@acme/app/cli";
 import type { Command } from "cac";
-import type { Kysely } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { createMigrator } from "../migrator";
 import type { WithDatabase } from "../shared";
 import type { DatabaseConfig } from "../kit";
+import { loadMigrations, loadSeed, type Resolve } from "./load";
 import { withDb } from "./with-db";
 
 interface Options {
@@ -50,6 +50,7 @@ async function migrate(
   chosen: DatabaseConfig[],
   migration: string | undefined,
   options: Options,
+  resolve: Resolve,
 ) {
   if (migration !== undefined && options.revertAll) {
     throw new Error("a migration and --revert-all are exclusive");
@@ -61,7 +62,8 @@ async function migrate(
   }
 
   await forEach(chosen, async (entry) => {
-    const { binding, migrations = {} } = entry;
+    const { binding } = entry;
+    const migrations = await loadMigrations(entry, resolve);
     const names = Object.keys(migrations).toSorted();
     const last = names.at(-1);
     if (!last) {
@@ -93,9 +95,13 @@ async function migrate(
   });
 }
 
-async function seed(chosen: DatabaseConfig[], options: Options) {
+async function seed(
+  chosen: DatabaseConfig[],
+  options: Options,
+  resolve: Resolve,
+) {
   await forEach(chosen, async (entry) => {
-    const seeder = entry.seed;
+    const seeder = await loadSeed(entry, resolve);
     if (!seeder) {
       if (chosen.length === 1) {
         throw new Error(`${entry.binding} declares no seed`);
@@ -103,13 +109,7 @@ async function seed(chosen: DatabaseConfig[], options: Options) {
       return;
     }
 
-    // The schema is the app's business: the seed carries the type it was
-    // written against, and nothing here can know it.
-    await withDb(
-      entry,
-      options,
-      seeder as (db: Kysely<unknown>) => Promise<void>,
-    );
+    await withDb(entry, options, seeder);
   });
 }
 
@@ -127,11 +127,16 @@ function targeting(command: Command): Command {
 /**
  * Declares the database kit's commands on whichever CLI is mounting it.
  *
- * The default export because that is what `Kit.cli` names, and reached by URL
- * rather than by import: this module is node-only, and `acme.config.ts` is
- * imported by the app as well as the CLI.
+ * The default export because that is what `Kit.commands` names, reached by URL
+ * rather than import: this module is node-only, and `acme.config.ts` reaches
+ * the app too.
  */
-export default function commands({ cli, config, register }: KitCli): void {
+export default function commands({
+  cli,
+  config,
+  register,
+  resolve,
+}: KitCli): void {
   const declared = (config as DatabaseConfig[] | undefined) ?? [];
 
   // Bound to what the app declared, so another kit's command names a binding
@@ -147,12 +152,12 @@ export default function commands({ cli, config, register }: KitCli): void {
     // Here and not on `seed`, which is what makes `seed --revert-all` an error.
     .option("--revert-all", "roll every migration back")
     .action(async (migration: string | undefined, options: Options) => {
-      await migrate(select(declared, options.db), migration, options);
+      await migrate(select(declared, options.db), migration, options, resolve);
     });
 
   targeting(
     cli.command("seed", "insert the rows an empty deployment needs"),
   ).action(async (options: Options) => {
-    await seed(select(declared, options.db), options);
+    await seed(select(declared, options.db), options, resolve);
   });
 }

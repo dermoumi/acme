@@ -1,7 +1,7 @@
 import { createBindings } from "#testing/runtime";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { app } from "../index";
+import { createApp } from "../app";
 import { gate } from "./gate";
 
 function creds(user: string, pass: string): { Authorization: string } {
@@ -26,6 +26,8 @@ describe("the ASSETS binding gate has to work around", () => {
 });
 
 describe("gate", () => {
+  const app = createApp();
+
   it("leaves everything open and unmarked when REQUIRE_AUTH is unset", async () => {
     const health = await app.request("/health", {}, createBindings());
     expect(health.status).toBe(200);
@@ -68,6 +70,8 @@ describe("gate", () => {
 });
 
 describe("gate with credentials required", () => {
+  const app = createApp();
+
   it("challenges a request with no credentials, and marks it noindex", async () => {
     const res = await app.request("/", {}, gated);
     expect(res.status).toBe(401);

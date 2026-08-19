@@ -4,7 +4,6 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { sql } from "kysely";
 import { afterAll, describe, expect, it } from "vitest";
-import { resetDb } from "../../testing/reset";
 import { defineDb } from "./define";
 
 interface TestSchema {
@@ -34,8 +33,8 @@ describe("defineDb over sqlite", () => {
       sql`select 1 from only_in_first`.execute(await second({ env })),
     ).rejects.toThrow();
 
-    await resetDb(first);
-    await resetDb(second);
+    await first.clear();
+    await second.clear();
   });
 
   it("lets two accessors over one file url see each other's writes", async () => {
@@ -52,8 +51,8 @@ describe("defineDb over sqlite", () => {
     );
     expect(rows.rows).toEqual([{ id: "w1" }]);
 
-    await resetDb(writer);
-    await resetDb(reader);
+    await writer.clear();
+    await reader.clear();
   });
 
   it("creates the database file when it does not exist", async () => {
@@ -65,6 +64,6 @@ describe("defineDb over sqlite", () => {
     await sql`create table t (id text)`.execute(db);
 
     expect(existsSync(file)).toBe(true);
-    await resetDb(getDb);
+    await getDb.clear();
   });
 });
