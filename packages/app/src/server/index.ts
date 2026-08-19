@@ -1,2 +1,2 @@
 export type { Handler } from "./contract";
-export { kitVars, serve } from "./serve";
+export { serve } from "./serve";

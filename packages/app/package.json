@@ -19,7 +19,12 @@
   "exports": {
     ".": "./src/index.ts",
     "./cli": "./src/cli/index.ts",
-    "./server": "./src/server/index.ts"
+    "./server": "./src/server/index.ts",
+    "./testing": "./src/testing/index.ts",
+    "./types": {
+      "types": "./src/types.d.ts"
+    },
+    "./vite": "./src/vite/index.ts"
   },
   "scripts": {
     "lint": "oxfmt -c ../../.oxfmtrc.json --check . && oxlint -c ../../.oxlintrc.json . && tsc -b",

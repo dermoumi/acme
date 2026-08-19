@@ -1,4 +1,7 @@
+/// <reference types="@acme/app/types" />
+
 import type { AcmeConfig } from "@acme/app";
+import virtualConfig from "virtual:acme-config";
 import type { Kysely } from "kysely";
 import type { DatabaseConfig } from "../internal/kit";
 import {
@@ -32,13 +35,14 @@ export function kitOf(config: AcmeConfig): DbKit {
 }
 
 /**
- * In an options bag because `virtual:acme/config` will make it optional.
+ * What {@link getTestDb} takes beyond the binding.
  */
 export interface TestDbOptions {
   /**
-   * The app's config, as `acme.config.ts` default-exports it.
+   * The app's own, taken from `virtual:acme-config` unless one is passed.
+   * Pass one to open a database a test declared rather than the app's.
    */
-  config: AcmeConfig;
+  config?: AcmeConfig;
   /**
    * What the app would have been handed for this request. Pass one to share a
    * database with a handler; omitting it EMPTIES the database first.
@@ -50,7 +54,7 @@ export interface TestDbOptions {
  * Opens a database the app declared, with no request in hand.
  *
  * ```ts
- * const db = await getTestDb("DATABASE", { config });
+ * const db = await getTestDb("DATABASE");
  * ```
  *
  * The same connection `ctx.var.getDb` hands a route, so a case and a handler
@@ -60,7 +64,7 @@ export interface TestDbOptions {
  */
 export async function getTestDb<Name extends keyof Databases>(
   name: Name,
-  { config, env }: TestDbOptions,
+  { config = virtualConfig, env }: TestDbOptions = {},
 ): Promise<Kysely<Databases[Name]>> {
   const { accessors, databases } = kitOf(config);
   const urlVar = databases.find((entry) => {
