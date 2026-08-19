@@ -18,11 +18,26 @@ declare global {
 export type KitVars = (env: unknown) => Record<string, unknown>;
 
 /**
+ * What a kit's {@link Kit.init} answers.
+ *
+ * What a kit builds for its OWN other parts stays the kit's, held wherever it
+ * likes: handing it back here would make one kit's private state something
+ * anyone holding the app's config could read.
+ */
+export interface KitState {
+  /**
+   * What this kit puts on every request's context. See {@link KitVars}.
+   */
+  vars?: KitVars;
+}
+
+/**
  * One capability an app takes on, such as a database or an error reporter.
  *
  * A package exports a function answering one; the app lists the results in
- * `kits`, in order. That function runs at **module scope in the worker**, since
- * the entry imports its config, so do nothing there a Worker cannot do.
+ * `kits`, in order. That function is **inert**: it may check what it was
+ * handed, but everything it builds belongs in {@link Kit.init}, because a
+ * config is read on a build machine as well as inside the worker.
  */
 export interface Kit {
   /** Names the kit when something goes wrong. Conventionally the package's short name. */
@@ -49,14 +64,17 @@ export interface Kit {
    */
   commands?: () => string;
   /**
-   * What this kit puts on every request's context. See {@link KitVars}.
-   */
-  vars?: KitVars;
-  /**
-   * What this kit made of `config` when it was declared — connections it
-   * opened, a compiled matcher — for its own other parts to read back.
+   * Builds what this kit holds, and answers it. See {@link KitState}.
    *
-   * `unknown` because only the kit knows the shape, as with `config`.
+   * ```ts
+   * init: () => ({ vars: (env) => ({ getDb: open(config, env) }) }),
+   * ```
+   *
+   * Run once, where the app is served: `serve` mounts the middleware that asks
+   * for it at the worker's module scope. What a kit needs to survive a second
+   * call is the kit's to hold.
+   *
+   * Synchronous, since that module scope cannot await.
    */
-  context?: unknown;
+  init?: () => KitState;
 }

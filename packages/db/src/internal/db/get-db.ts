@@ -1,6 +1,6 @@
 import type { Kysely } from "kysely";
-import { type DatabaseAccessor, defineDb } from "../db";
-import type { DatabaseConfig } from "./kit";
+import type { DatabaseConfig } from "../kit/kit";
+import { type DatabaseAccessor, defineDb } from "./define";
 
 /**
  * The databases an app declares, keyed by the binding naming each.

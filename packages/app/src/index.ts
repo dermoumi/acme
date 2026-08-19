@@ -2,6 +2,7 @@ export {
   type AcmeConfig,
   defineConfig,
   type Kit,
+  type KitState,
   type KitVars,
 } from "./internal/config";
 export type { KitShared } from "./internal/shared";

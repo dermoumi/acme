@@ -1,12 +1,12 @@
 import { defineConfig } from "@acme/app";
 import { Kysely } from "kysely";
 import { describe, expect, it } from "vitest";
-import type { Items } from "../internal/kit/fixtures/schema";
 import { databaseKit } from "../internal/kit/kit";
 import { emptyDbEnv } from "./empty-env";
 import { migrateDb } from "./migrate";
 import { getTestDb } from "./get-test-db";
 import { resetDb } from "./reset";
+import { getDbOnRequest } from "./test-utils";
 
 const migrations = {
   "0001_items": {
@@ -47,12 +47,10 @@ describe("getTestDb", () => {
   it("answers the very accessor the app's requests reach", async () => {
     const declared = config();
     const env = await emptyDbEnv("DATABASE");
-    const onRequest = declared.kits?.[0]?.vars?.(env).getDb as (
-      name: string,
-    ) => Promise<Kysely<Items>>;
+    const getDb = await getDbOnRequest(declared, env);
 
     expect(await getTestDb("DATABASE", { config: declared, env })).toBe(
-      await onRequest("DATABASE"),
+      await getDb("DATABASE"),
     );
   });
 
@@ -60,6 +58,16 @@ describe("getTestDb", () => {
     await expect(
       getTestDb("DATABASE", { config: defineConfig({}), env: {} }),
     ).rejects.toThrow(/no database kit is declared/u);
+  });
+
+  // Nothing but the name says a kit is this one, so a config naming something
+  // else "database" must not be reported as declaring none.
+  it("says so when what it finds under that name is another kit", async () => {
+    const impostor = defineConfig({ kits: [{ name: "database" }] });
+
+    await expect(
+      getTestDb("DATABASE", { config: impostor, env: {} }),
+    ).rejects.toThrow(/is not the database kit/u);
   });
 });
 

@@ -4,7 +4,7 @@ export interface Items {
   items: { id: string };
 }
 
-declare module "../get-db" {
+declare module "../../db/get-db" {
   interface Databases {
     DATABASE: Items;
     OTHER: Items;

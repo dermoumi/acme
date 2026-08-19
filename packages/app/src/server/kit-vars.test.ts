@@ -13,9 +13,11 @@ declare module "hono" {
 
 const greeter: Kit = {
   name: "greeter",
-  vars: (env) => {
-    return { greeting: (env as { GREETING?: string }).GREETING ?? "none" };
-  },
+  init: () => ({
+    vars: (env) => {
+      return { greeting: (env as { GREETING?: string }).GREETING ?? "none" };
+    },
+  }),
 };
 
 const ask = async (app: Hono, env: unknown = {}) => {
