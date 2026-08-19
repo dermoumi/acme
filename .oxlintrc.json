@@ -49,6 +49,9 @@
     "react/jsx-no-literals": "off",
 
     // Typescript
+    // An ambient module for an id backed by no file cannot be imported, so a
+    // reference directive is the only way to reach one.
+    "typescript/triple-slash-reference": "off",
     "typescript/no-deprecated": "error",
     "@typescript-eslint/no-deprecated": "error",
     "@typescript-eslint/array-type": "error",

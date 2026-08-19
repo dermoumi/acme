@@ -1,7 +1,6 @@
 import { resetDb } from "@acme/db/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import { testApp } from "../testing/app";
-import config from "virtual:acme-config";
 import {
   createSession,
   resolveSession,
@@ -15,7 +14,7 @@ import { hashToken } from "./tokens";
 const HOUR_MS = 60 * 60 * 1000;
 
 describe("createSession", () => {
-  beforeEach(() => resetDb(config));
+  beforeEach(() => resetDb());
 
   it("stores only the token hash", async () => {
     const { db, store } = await seeded();
@@ -31,7 +30,7 @@ describe("createSession", () => {
 });
 
 describe("resolveSession", () => {
-  beforeEach(() => resetDb(config));
+  beforeEach(() => resetDb());
 
   it("returns the userId for a valid token", async () => {
     const { store } = await seeded();
@@ -67,7 +66,7 @@ describe("resolveSession", () => {
 });
 
 describe("GET /session", () => {
-  beforeEach(() => resetDb(config));
+  beforeEach(() => resetDb());
 
   it("never touches the db without a cookie", async () => {
     const app = testApp();

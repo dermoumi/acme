@@ -1,3 +1,4 @@
+import { acmeVite } from "@acme/app/vite";
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
 import { defineConfig, type ViteUserConfig } from "vitest/config";
 
@@ -18,6 +19,12 @@ const SQLITE = "src/**/*.sqlite.test.ts";
 const POSTGRES = "src/**/*.postgres.test.ts";
 const D1 = "src/**/*.d1.test.ts";
 
+// The testing helpers import virtual:acme-config, so every project serves it.
+// This package has no config of its own: the kit fixture stands in.
+const acme = () => {
+  return acmeVite({ config: "src/internal/kit/fixtures/app/acme.config.ts" });
+};
+
 const postgresUrl = process.env.ACME_DB_TEST_POSTGRES_URL;
 
 // Defined only when a server is configured, so `pnpm test` needs no postgres.
@@ -25,6 +32,7 @@ const postgresUrl = process.env.ACME_DB_TEST_POSTGRES_URL;
 const postgres: ViteUserConfig[] = postgresUrl
   ? [
       {
+        plugins: [acme()],
         test: {
           name: "node:postgres",
           include,
@@ -51,6 +59,7 @@ export default defineConfig({
     },
     projects: [
       {
+        plugins: [acme()],
         test: {
           name: "node:sqlite",
           include,
@@ -61,6 +70,7 @@ export default defineConfig({
       },
       {
         plugins: [
+          acme(),
           cloudflareTest({
             miniflare: {
               compatibilityDate: "2026-07-01",
@@ -76,6 +86,7 @@ export default defineConfig({
         },
       },
       {
+        plugins: [acme()],
         test: {
           name: "cli",
           include: [`${CLI}/*.test.ts`],

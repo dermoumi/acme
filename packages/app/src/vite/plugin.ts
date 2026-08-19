@@ -63,9 +63,9 @@ export interface AcmeViteOptions {
  * Inert until something imports one of its ids: an app that adds the plugin and
  * never uses it is not asked to have a config.
  *
- * TypeScript needs the app to name `@acme/app/types` in the `types` of every
- * tsconfig whose files import an id, since a program only sees the ambient
- * modules it lists.
+ * A module importing one of these ids reaches its types with
+ * `/// <reference types="@acme/app/types" />`, the way `kitVars` and
+ * `@acme/db/testing` do on an app's behalf. An app itself needs nothing.
  */
 export function acmeVite(options: AcmeViteOptions = {}): Plugin {
   let acmeConfigPath = "";

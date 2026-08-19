@@ -1,3 +1,4 @@
+/// <reference path="../types.d.ts" />
 import virtualConfig from "virtual:acme-config";
 import type { MiddlewareHandler } from "hono";
 import type { AcmeConfig, KitVars } from "../internal/config";

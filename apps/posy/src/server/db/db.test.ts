@@ -4,7 +4,6 @@ import { getTestDb, migrateDb, resetDb } from "@acme/db/testing";
 import { type Kysely, sql } from "kysely";
 import { NO_MIGRATIONS } from "kysely/migration";
 import { beforeEach, describe, expect, it } from "vitest";
-import config from "virtual:acme-config";
 import migrations from "./migrator";
 import type { Database } from "./schema";
 
@@ -12,7 +11,7 @@ import type { Database } from "./schema";
 // sessions. Drop each block when its own feature brings its own tests.
 
 async function emptyDb(): Promise<Kysely<Database>> {
-  return getTestDb("DATABASE", { config });
+  return getTestDb("DATABASE");
 }
 
 async function migratedDb(): Promise<Kysely<Database>> {
@@ -56,7 +55,7 @@ async function seedItem(db: Kysely<Database>, id: string): Promise<void> {
 }
 
 describe("posy's migration set", () => {
-  beforeEach(() => resetDb(config));
+  beforeEach(() => resetDb());
 
   it("builds every table the schema declares", async () => {
     const db = await emptyDb();
@@ -90,7 +89,7 @@ describe("posy's migration set", () => {
 });
 
 describe("posy's schema", () => {
-  beforeEach(() => resetDb(config));
+  beforeEach(() => resetDb());
 
   it("keeps items.tags as JSON, with color and art_key nullable", async () => {
     const db = await migratedDb();

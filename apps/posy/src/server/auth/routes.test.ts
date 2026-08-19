@@ -4,7 +4,6 @@ import type { Kysely } from "kysely";
 import { beforeEach, describe, expect, it } from "vitest";
 import { testApp } from "../testing/app";
 import type { AppBindings, AppEnv } from "../bindings";
-import config from "virtual:acme-config";
 import type { Database } from "../db";
 import { SESSION_COOKIE } from "./session";
 import { migratedEnv, seedUser } from "./test-utils";
@@ -16,7 +15,7 @@ const PASS = "test-dummy-pass";
 describe("auth routes", () => {
   // An accessor holds its database for the life of the process, so each test
   // starts by dropping the last one's.
-  beforeEach(() => resetDb(config));
+  beforeEach(() => resetDb());
 
   async function appWithUser(): Promise<{
     app: App;
@@ -24,7 +23,7 @@ describe("auth routes", () => {
     env: AppBindings;
   }> {
     const env = await migratedEnv();
-    const db = await getTestDb("DATABASE", { config, env });
+    const db = await getTestDb("DATABASE", { env });
     await seedUser(db, "u1", "Tester", PASS);
     return { app: testApp(), db, env };
   }

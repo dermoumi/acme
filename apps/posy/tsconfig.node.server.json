@@ -1,8 +1,5 @@
 {
   "extends": "@acme/tsconfig/tsconfig.node.server.json",
-  "compilerOptions": {
-    "types": ["node", "vite/client", "@acme/app/types"]
-  },
   "include": ["src/server"],
   "exclude": ["**/*.workerd.ts"]
 }

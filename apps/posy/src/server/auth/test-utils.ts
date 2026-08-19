@@ -2,7 +2,6 @@ import { emptyDbEnv, getTestDb, migrateDb } from "@acme/db/testing";
 import { createBindings } from "#testing/runtime";
 import type { Kysely } from "kysely";
 import type { AppBindings } from "../bindings";
-import config from "virtual:acme-config";
 import type { Database } from "../db";
 import migrations from "../db/migrator";
 import { hashPassword } from "./password";
@@ -18,7 +17,8 @@ export async function migratedEnv(): Promise<AppBindings> {
   // The one cast: @acme/db cannot know posy's binding types.
   const database = (await emptyDbEnv("DATABASE")) as Partial<AppBindings>;
   const env = createBindings(database);
-  await migrateDb(await getTestDb("DATABASE", { config, env }), migrations);
+  const db = await getTestDb("DATABASE", { env });
+  await migrateDb(db, migrations);
 
   return env;
 }
@@ -47,7 +47,7 @@ export async function seeded(): Promise<{
   store: DbSessionStore;
 }> {
   const env = await migratedEnv();
-  const db = await getTestDb("DATABASE", { config, env });
+  const db = await getTestDb("DATABASE", { env });
   await seedUser(db, "u1");
   return { db, env, store: new DbSessionStore(db) };
 }
