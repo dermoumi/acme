@@ -1,10 +1,9 @@
 import { type Handler, serve } from "@acme/app/server";
 import { withSentry } from "@acme/sentry/hono";
-import config from "virtual:acme-config";
 import { createApp, sentryConfig } from "./app";
 import type { AppEnv } from "./bindings";
 
-export default serve<AppEnv>(config, (app) => {
+export default serve<AppEnv>((app) => {
   app.route("/", createApp());
 
   // withSentry's workerd arm declares ExportedHandler, whose fetch is optional

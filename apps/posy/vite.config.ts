@@ -78,7 +78,10 @@ const test: UserConfig["test"] = {
     exclude: ["src/server/testing/**", "src/server/index.ts", "*.config.ts"],
   },
   projects: [
-    { test: { name: "node", include } },
+    {
+      plugins: [acmeVite()],
+      test: { name: "node", include },
+    },
     {
       plugins: [
         acmeVite(),

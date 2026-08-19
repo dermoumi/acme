@@ -21,7 +21,7 @@
     "./cli": "./src/cli/index.ts",
     "./server": "./src/server/index.ts",
     "./types": {
-      "types": "./src/vite/types.d.ts"
+      "types": "./src/types.d.ts"
     },
     "./vite": "./src/vite/index.ts"
   },
