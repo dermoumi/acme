@@ -5,7 +5,7 @@ declare module "virtual:acme-config" {
 
   /**
    * Turns a specifier the app wrote in its config into one that can be
-   * imported, the way the CLI's `KitCli.resolve` does.
+   * imported.
    */
   export function resolve(specifier: string): string;
 
