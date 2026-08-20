@@ -61,8 +61,8 @@ catalogs:
       specifier: 7.0.0
       version: 7.0.0
     hono:
-      specifier: 4.13.2
-      version: 4.13.2
+      specifier: 4.13.3
+      version: 4.13.3
     hono-rate-limiter:
       specifier: 0.5.3
       version: 0.5.3
@@ -160,7 +160,7 @@ importers:
         version: link:../../packages/sentry
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.1(hono@4.13.2)
+        version: 2.1.1(hono@4.13.3)
       '@sentry/cloudflare':
         specifier: 'catalog:'
         version: 10.70.0(@cloudflare/workers-types@5.20260818.1)(supports-color@10.2.2)(wrangler@4.123.0(@cloudflare/workers-types@5.20260818.1))
@@ -175,7 +175,7 @@ importers:
         version: 13.0.3
       hono:
         specifier: 'catalog:'
-        version: 4.13.2
+        version: 4.13.3
       kysely:
         specifier: 'catalog:'
         version: 0.29.5
@@ -267,7 +267,7 @@ importers:
         version: 5.20260818.1
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.1(hono@4.13.2)
+        version: 2.1.1(hono@4.13.3)
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
@@ -276,7 +276,7 @@ importers:
         version: 4.1.10(supports-color@10.2.2)(vitest@4.1.10)
       hono:
         specifier: 'catalog:'
-        version: 4.13.2
+        version: 4.13.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -331,7 +331,7 @@ importers:
         version: 13.0.3
       hono:
         specifier: 'catalog:'
-        version: 4.13.2
+        version: 4.13.3
       pg:
         specifier: 'catalog:'
         version: 8.23.0
@@ -380,10 +380,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.1(hono@4.13.2)
+        version: 2.1.1(hono@4.13.3)
       hono-rate-limiter:
         specifier: 'catalog:'
-        version: 0.5.3(hono@4.13.2)
+        version: 0.5.3(hono@4.13.3)
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
@@ -402,7 +402,7 @@ importers:
         version: 4.1.10(supports-color@10.2.2)(vitest@4.1.10)
       hono:
         specifier: 'catalog:'
-        version: 4.13.2
+        version: 4.13.3
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -430,7 +430,7 @@ importers:
         version: 5.20260818.1
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.1(hono@4.13.2)
+        version: 2.1.1(hono@4.13.3)
       '@sentry/cloudflare':
         specifier: 'catalog:'
         version: 10.70.0(@cloudflare/workers-types@5.20260818.1)(supports-color@10.2.2)(wrangler@4.123.0(@cloudflare/workers-types@5.20260818.1))
@@ -454,7 +454,7 @@ importers:
         version: 4.1.10(supports-color@10.2.2)(vitest@4.1.10)
       hono:
         specifier: 'catalog:'
-        version: 4.13.2
+        version: 4.13.3
       react:
         specifier: 'catalog:'
         version: 19.2.8
@@ -2872,8 +2872,8 @@ packages:
       unstorage:
         optional: true
 
-  hono@4.13.2:
-    resolution: {integrity: sha512-JydRilDRkYBQMt9qR9U92mXxmbGqsqSn/IKOrh4e7/gEbn+0zSr8igTu0obwJoNGN4sez28DIql7FBHWydoJpA==}
+  hono@4.13.3:
+    resolution: {integrity: sha512-r8AO2mYHoLxSHkgafNeC/BXyb2vWRxD3jem4Ts+ptav8oTG5FIRifAjuJEmZI4bSvvc2ns0GxmIYiZnHqN3mMw==}
     engines: {node: '>=16.9.0'}
 
   html-escaper@2.0.2:
@@ -4816,9 +4816,9 @@ snapshots:
   '@esbuild/win32-x64@0.28.1':
     optional: true
 
-  '@hono/node-server@2.1.1(hono@4.13.2)':
+  '@hono/node-server@2.1.1(hono@4.13.3)':
     dependencies:
-      hono: 4.13.2
+      hono: 4.13.3
 
   '@img/colour@1.1.0': {}
 
@@ -6182,11 +6182,11 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono-rate-limiter@0.5.3(hono@4.13.2):
+  hono-rate-limiter@0.5.3(hono@4.13.3):
     dependencies:
-      hono: 4.13.2
+      hono: 4.13.3
 
-  hono@4.13.2: {}
+  hono@4.13.3: {}
 
   html-escaper@2.0.2: {}
 
