@@ -15,6 +15,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./commands": "./src/internal/commands/commands.ts",
     "./testing": "./src/testing/index.ts"
   },
   "scripts": {

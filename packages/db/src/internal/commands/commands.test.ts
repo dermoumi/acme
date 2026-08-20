@@ -17,7 +17,7 @@ const cli = (...argv: string[]) => runWithConfig(appConfig, argv, CONFIG_URL);
 
 const asker = (name = "asker"): Kit => ({
   name,
-  commands: () => new URL("./fixtures/asker.ts", import.meta.url).href,
+  commands: new URL("./fixtures/asker.ts", import.meta.url).href,
 });
 
 const withAsker = (): Kit[] => [asker(), ...(appConfig.kits ?? [])];
@@ -184,7 +184,9 @@ describe("the database kit registering how to open one", () => {
   sandbox();
 
   it<CliContext>("opens the database a binding names", async ({ main }) => {
-    expect(await runWithConfig({ kits: withAsker() }, ["ask", "MAIN"])).toBe(0);
+    expect(
+      await runWithConfig({ kits: withAsker() }, ["ask", "MAIN"], CONFIG_URL),
+    ).toBe(0);
     expect(await tables(main)).toContain("asked");
   });
 
@@ -192,7 +194,11 @@ describe("the database kit registering how to open one", () => {
     analytics,
   }) => {
     expect(
-      await runWithConfig({ kits: withAsker() }, ["ask", "ANALYTICS"]),
+      await runWithConfig(
+        { kits: withAsker() },
+        ["ask", "ANALYTICS"],
+        CONFIG_URL,
+      ),
     ).toBe(0);
     expect(await tables(analytics)).toContain("asked");
   });

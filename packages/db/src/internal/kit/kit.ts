@@ -78,9 +78,7 @@ export function databaseKit(databases: DatabaseConfig[]): Kit {
   return {
     name: "@acme/db",
     config,
-    commands: () => {
-      return new URL("../commands/commands.ts", import.meta.url).href;
-    },
+    commands: "@acme/db/commands",
     init: () => {
       const { accessors } = contextFor(config);
 

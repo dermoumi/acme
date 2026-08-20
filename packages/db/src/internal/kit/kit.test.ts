@@ -63,17 +63,7 @@ describe("databaseKit", () => {
     expect(vars?.({})).toHaveProperty("getDb", expect.any(Function));
   });
 
-  // Named by URL, not imported: a wrong base resolves inside the caller.
-  it("points at its own commands, not its caller's", () => {
-    const { commands } = databaseKit([]);
-
-    expect(commands?.()).toMatch(
-      /\/db\/src\/internal\/commands\/commands\.ts$/u,
-    );
-  });
-
-  // import.meta.url is no URL in a worker, so building one throws at startup.
-  it("defers building that url until something asks for it", () => {
-    expect(databaseKit([]).commands).toBeTypeOf("function");
+  it("declares where its commands live, for the CLI to resolve", () => {
+    expect(databaseKit([]).commands).toBe("@acme/db/commands");
   });
 });

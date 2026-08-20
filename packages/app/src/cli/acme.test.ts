@@ -1,13 +1,16 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Kit } from "../internal/config";
 import { getConfigFile, run, runWithConfig } from "./acme";
 import appConfig from "./fixtures/app/acme.config";
+import { type CliContext, sandbox } from "./test-utils";
 
 const fixture = (app: string) =>
   path.join(import.meta.dirname, "fixtures", app, "acme.config.ts");
+const appConfigUrl = new URL("./fixtures/app/acme.config.ts", import.meta.url)
+  .href;
 
 const commandsModule = new URL("./fixtures/app/commands.ts", import.meta.url)
   .href;
@@ -20,56 +23,36 @@ const resolverModule = new URL("./fixtures/app/resolver.ts", import.meta.url)
 const greeter = (name = "@fixture/greeter"): Kit => ({
   name,
   config: { greeting: "hello" },
-  commands: () => commandsModule,
+  commands: commandsModule,
 });
 const shouter = (name = "@fixture/shouter"): Kit => ({
   name,
-  commands: () => shouterModule,
+  commands: shouterModule,
 });
-
-interface CliContext {
-  out: string[];
-  err: string[];
-}
-
-// A hook reaches only its own describe, so every block installs the sandbox.
-const sandbox = () => {
-  beforeEach<CliContext>((ctx) => {
-    ctx.out = [];
-    ctx.err = [];
-    // cac prints help and the version through console.info, not log.
-    for (const channel of ["log", "info"] as const) {
-      vi.spyOn(console, channel).mockImplementation((...args: unknown[]) => {
-        ctx.out.push(args.join(" "));
-      });
-    }
-    vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
-      ctx.err.push(args.join(" "));
-    });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-};
 
 describe("runWithConfig", () => {
   sandbox();
 
   it<CliContext>("runs a command the kit declared", async ({ out }) => {
-    expect(await runWithConfig(appConfig, ["greet", "world"])).toBe(0);
+    expect(
+      await runWithConfig(appConfig, ["greet", "world"], appConfigUrl),
+    ).toBe(0);
     expect(out).toContain("hello, world");
   });
 
   it<CliContext>("passes the command its own options", async ({ out }) => {
-    expect(await runWithConfig(appConfig, ["greet", "world", "--loud"])).toBe(
-      0,
-    );
+    expect(
+      await runWithConfig(
+        appConfig,
+        ["greet", "world", "--loud"],
+        appConfigUrl,
+      ),
+    ).toBe(0);
     expect(out).toContain("HELLO, WORLD");
   });
 
   it<CliContext>("lists the command in help", async ({ out }) => {
-    expect(await runWithConfig(appConfig, ["--help"])).toBe(0);
+    expect(await runWithConfig(appConfig, ["--help"], appConfigUrl)).toBe(0);
     expect(out.join("\n")).toContain("greet");
   });
 
@@ -99,10 +82,30 @@ describe("runWithConfig", () => {
     expect(out.join("\n")).toContain("Usage");
   });
 
+  it<CliContext>("refuses a kit requiring one the app never declared", async ({
+    err,
+  }) => {
+    const kits = [{ ...shouter(), requires: ["@fixture/greeter"] }];
+
+    expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(1);
+    expect(err.join("\n")).toContain(
+      "@fixture/shouter requires @fixture/greeter, which this app does not declare",
+    );
+  });
+
+  it<CliContext>("takes a kit whose requirement the app declares", async ({
+    out,
+  }) => {
+    const kits = [{ ...shouter(), requires: ["@fixture/greeter"] }, greeter()];
+
+    expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(0);
+    expect(out).toContain("HELLO, world");
+  });
+
   it<CliContext>("names the kit whose module it cannot load", async ({
     err,
   }) => {
-    const kits = [{ name: "@fixture/greeter", commands: () => "./nowhere.ts" }];
+    const kits = [{ name: "@fixture/greeter", commands: "./nowhere.ts" }];
 
     expect(await runWithConfig({ kits }, ["greet", "world"])).toBe(1);
     expect(err.join("\n")).toContain(
@@ -118,7 +121,7 @@ describe("runWithConfig", () => {
 
     expect(
       await runWithConfig(
-        { kits: [{ name: "@fixture/greeter", commands: () => mount }] },
+        { kits: [{ name: "@fixture/greeter", commands: mount }] },
         [],
       ),
     ).toBe(1);
@@ -268,9 +271,7 @@ describe("resolving a specifier the app wrote in its config", () => {
   });
 
   it<CliContext>("says so when no config file was read", async ({ err }) => {
-    const kits = [
-      { name: "@fixture/resolver", commands: () => resolverModule },
-    ];
+    const kits = [{ name: "@fixture/resolver", commands: resolverModule }];
 
     expect(await runWithConfig({ kits }, ["resolve", "./anywhere.ts"])).toBe(1);
     expect(err.join("\n")).toContain(

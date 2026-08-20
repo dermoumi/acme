@@ -1,10 +1,3 @@
-// @cloudflare/workers-types declares no ImportMeta; `commands` below needs it.
-declare global {
-  interface ImportMeta {
-    url: string;
-  }
-}
-
 /**
  * What a kit puts on every request's context.
  *
@@ -49,18 +42,31 @@ export interface Kit {
    */
   config?: unknown;
   /**
-   * Answers where this kit's commands live, as a specifier the CLI imports.
-   * The module's default export is its `KitCliMount`.
+   * Where this kit's commands live, as a specifier the CLI imports. The
+   * module's default export is its `KitCommandsMount`.
    *
    * ```ts
-   * commands: () => new URL("./cli/commands.ts", import.meta.url).href,
+   * commands: "@acme/db/commands",
    * ```
    *
-   * A specifier, so node-only command code stays out of the worker's bundle.
-   * A function, because naming it is work: `import.meta.url` is no URL in a
-   * worker, and building one throws before any request arrives.
+   * Absent means this kit has none and nothing is attempted; present means it
+   * must resolve, or the CLI fails saying whose did not.
    */
-  commands?: () => string;
+  commands?: string;
+  /**
+   * Where this kit's vite plugins live, as a specifier `@acme/app` imports.
+   * The module's default export is its `KitVite`.
+   *
+   * Declared like {@link Kit.commands}, and resolved the same way.
+   */
+  vite?: string;
+  /**
+   * The kits this one needs the app to declare too, by {@link Kit.name}.
+   *
+   * Checked, never acted on: what a kit needs says nothing about where it
+   * belongs in `kits`, which is the app's to decide.
+   */
+  requires?: string[];
   /**
    * Builds what this kit holds, and answers it. See {@link KitState}.
    *
