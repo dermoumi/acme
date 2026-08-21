@@ -3,10 +3,8 @@ import { databaseKit } from "@acme/db";
 
 // Everything an app owns itself, until it has a package to belong to.
 const posy: Kit = {
-  name: "posy",
-  commands: () => {
-    return new URL("./src/commands/commands.ts", import.meta.url).href;
-  },
+  name: "@acme/posy",
+  commands: "./src/commands/commands.ts",
 };
 
 export default defineConfig({

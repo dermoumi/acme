@@ -2,15 +2,15 @@ import { defineConfig, type Kit } from "../../../internal/config";
 
 // A real kit: a function taking options, pointing at its own commands.
 const greeter = (greeting: string): Kit => ({
-  name: "greeter",
+  name: "@fixture/greeter",
   config: { greeting },
-  commands: () => new URL("./commands.ts", import.meta.url).href,
+  commands: "./commands.ts",
 });
 
 // Declares no config of its own: all it needs is where this file is.
 const resolver: Kit = {
-  name: "resolver",
-  commands: () => new URL("./resolver.ts", import.meta.url).href,
+  name: "@fixture/resolver",
+  commands: "./resolver.ts",
 };
 
 const config = defineConfig({ kits: [greeter("hello"), resolver] });

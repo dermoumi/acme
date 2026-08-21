@@ -55,11 +55,11 @@ describe("loadAcmeConfig with a file named", () => {
     const file = await write(
       dir,
       "acme.config.mjs",
-      'export default { kits: [{ name: "greeter" }] };',
+      'export default { kits: [{ name: "@fixture/greeter" }] };',
     );
 
     await expect(loadAcmeConfig(file)).resolves.toEqual({
-      kits: [{ name: "greeter" }],
+      kits: [{ name: "@fixture/greeter" }],
     });
   });
 

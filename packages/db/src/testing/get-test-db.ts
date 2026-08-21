@@ -4,12 +4,8 @@ import type { AcmeConfig } from "@acme/app";
 import virtualConfig from "virtual:acme-config";
 import type { Kysely } from "kysely";
 import type { DatabaseConfig } from "../internal/kit";
-import {
-  type Accessors,
-  buildGetDb,
-  type Databases,
-} from "../internal/kit/get-db";
-import { type DatabaseContext, KIT_NAME } from "../internal/kit/kit";
+import { type Accessors, buildGetDb, type Databases } from "../internal/db";
+import { contextFor } from "../internal/kit/context";
 import { emptyDbEnv } from "./empty-env";
 
 /**
@@ -22,16 +18,22 @@ export interface DbKit {
 
 export function kitOf(config: AcmeConfig): DbKit {
   const kit = (config.kits ?? []).find((declared) => {
-    return declared.name === KIT_NAME;
+    return declared.name === "@acme/db";
   });
-  if (!kit?.context) {
+  if (!kit) {
     throw new Error("no database kit is declared in this config");
   }
 
-  return {
-    accessors: (kit.context as DatabaseContext).accessors,
-    databases: kit.config as DatabaseConfig[],
-  };
+  // A name is all that says a kit is this one, and an app writes its own.
+  if (!Array.isArray(kit.config)) {
+    const message = 'what this config declares as "@acme/db" is not this kit';
+    throw new Error(message);
+  }
+
+  const databases = kit.config as DatabaseConfig[];
+  const { accessors } = contextFor(databases);
+
+  return { accessors, databases };
 }
 
 /**
@@ -67,12 +69,8 @@ export async function getTestDb<Name extends keyof Databases>(
   { config = virtualConfig, env }: TestDbOptions = {},
 ): Promise<Kysely<Databases[Name]>> {
   const { accessors, databases } = kitOf(config);
-  const urlVar = databases.find((entry) => {
-    return entry.binding === name;
-  })?.urlVar;
+  const { urlVar } = databases.find((entry) => entry.binding === name) ?? {};
+  const dbEnv = env ?? (await emptyDbEnv(name, { urlVar }));
 
-  return buildGetDb(
-    accessors,
-    env ?? (await emptyDbEnv(name, { urlVar })),
-  )(name);
+  return buildGetDb(accessors, dbEnv)(name);
 }

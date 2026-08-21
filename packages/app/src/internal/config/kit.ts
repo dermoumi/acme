@@ -1,10 +1,3 @@
-// @cloudflare/workers-types declares no ImportMeta; `commands` below needs it.
-declare global {
-  interface ImportMeta {
-    url: string;
-  }
-}
-
 /**
  * What a kit puts on every request's context.
  *
@@ -18,14 +11,27 @@ declare global {
 export type KitVars = (env: unknown) => Record<string, unknown>;
 
 /**
+ * What a kit's {@link Kit.init} answers.
+ */
+export interface KitState {
+  /**
+   * What this kit puts on every request's context. See {@link KitVars}.
+   */
+  vars?: KitVars;
+}
+
+/**
  * One capability an app takes on, such as a database or an error reporter.
  *
  * A package exports a function answering one; the app lists the results in
- * `kits`, in order. That function runs at **module scope in the worker**, since
- * the entry imports its config, so do nothing there a Worker cannot do.
+ * `kits`, in order. That function is inert: what it builds belongs in
+ * {@link Kit.init}, since a config is read on build machines too.
  */
 export interface Kit {
-  /** Names the kit when something goes wrong. Conventionally the package's short name. */
+  /**
+   * The specifier an app imports this kit's package by. A kit an app declares
+   * in its own config takes that app's name.
+   */
   name: string;
   /**
    * What the app declared, for whoever reads it back.
@@ -36,27 +42,36 @@ export interface Kit {
    */
   config?: unknown;
   /**
-   * Answers where this kit's commands live, as a specifier the CLI imports.
-   * The module's default export is its `KitCliMount`.
+   * Where this kit's commands live, as a specifier the CLI imports. The
+   * module's default export is its `KitCommandsMount`.
    *
    * ```ts
-   * commands: () => new URL("./cli/commands.ts", import.meta.url).href,
+   * commands: "@acme/db/commands",
    * ```
    *
-   * A specifier, so node-only command code stays out of the worker's bundle.
-   * A function, because naming it is work: `import.meta.url` is no URL in a
-   * worker, and building one throws before any request arrives.
+   * Absent means this kit has none and nothing is attempted; present means it
+   * must resolve, or the CLI fails saying whose did not.
    */
-  commands?: () => string;
+  commands?: string;
   /**
-   * What this kit puts on every request's context. See {@link KitVars}.
-   */
-  vars?: KitVars;
-  /**
-   * What this kit made of `config` when it was declared — connections it
-   * opened, a compiled matcher — for its own other parts to read back.
+   * Where this kit's vite plugins live, as a specifier `@acme/app` imports.
+   * The module's default export is its `KitVite`.
    *
-   * `unknown` because only the kit knows the shape, as with `config`.
+   * Declared like {@link Kit.commands}, and resolved the same way.
    */
-  context?: unknown;
+  vite?: string;
+  /**
+   * The kits this one needs the app to declare too, by {@link Kit.name}.
+   *
+   * Checked, never acted on: what a kit needs says nothing about where it
+   * belongs in `kits`, which is the app's to decide.
+   */
+  requires?: string[];
+  /**
+   * Builds what this kit holds, and answers it. See {@link KitState}.
+   *
+   * Synchronous, and called at the worker's module scope, which cannot await.
+   * What a kit needs across calls is the kit's own to hold.
+   */
+  init?: () => KitState;
 }

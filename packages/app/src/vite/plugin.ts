@@ -26,9 +26,12 @@ const modules: Record<string, VirtualModule> = {
 
     const url = pathToFileURL(acmeConfigPath).href;
 
+    // A bare specifier is answered unchanged: nothing here can resolve one, and
+    // whatever the caller imports it with is what can.
     return [
       `export { default } from ${JSON.stringify(acmeConfigPath)};`,
       `export function resolve(specifier) {`,
+      `  if (!specifier.startsWith(".")) return specifier;`,
       `  return new URL(specifier, ${JSON.stringify(url)}).href;`,
       `}`,
     ].join("\n");

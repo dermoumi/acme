@@ -1,10 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { openDbAccessors } from "../db";
 import { databaseKit } from "./kit";
 
+// Spied, not replaced: all this needs to know is when it happens.
+vi.mock("../db", { spy: true });
+
 describe("databaseKit", () => {
-  it("names itself so a reader can find it back", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("names itself by its specifier, so a reader can find it back", () => {
     expect(databaseKit([{ binding: "MAIN" }])).toMatchObject({
-      name: "database",
+      name: "@acme/db",
     });
   });
 
@@ -27,17 +35,35 @@ describe("databaseKit", () => {
     ).toThrow(/SAME is declared more than once/u);
   });
 
-  // Named by URL, not imported: a wrong base resolves inside the caller.
-  it("points at its own commands, not its caller's", () => {
-    const { commands } = databaseKit([]);
+  // The vite plugin reads acme.config.ts on a build machine, so a declared kit
+  // that opened anything would be opening it there.
+  it("opens nothing until something builds it", () => {
+    const kit = databaseKit([{ binding: "MAIN" }]);
+    expect(openDbAccessors).not.toHaveBeenCalled();
 
-    expect(commands?.()).toMatch(
-      /\/db\/src\/internal\/commands\/commands\.ts$/u,
-    );
+    kit.init?.();
+
+    expect(openDbAccessors).toHaveBeenCalledOnce();
   });
 
-  // import.meta.url is no URL in a worker, so building one throws at startup.
-  it("defers building that url until something asks for it", () => {
-    expect(databaseKit([]).commands).toBeTypeOf("function");
+  // Nothing else memoizes it, so a second reader of one declaration would
+  // otherwise land on a second set of connections.
+  it("opens one declaration's databases once, however often it is built", () => {
+    const kit = databaseKit([{ binding: "MAIN" }]);
+
+    kit.init?.();
+    kit.init?.();
+
+    expect(openDbAccessors).toHaveBeenCalledOnce();
+  });
+
+  it("puts a getDb on every request it reaches", () => {
+    const { vars } = databaseKit([{ binding: "MAIN" }]).init?.() ?? {};
+
+    expect(vars?.({})).toHaveProperty("getDb", expect.any(Function));
+  });
+
+  it("declares where its commands live, for the CLI to resolve", () => {
+    expect(databaseKit([]).commands).toBe("@acme/db/commands");
   });
 });
