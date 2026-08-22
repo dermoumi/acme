@@ -2,7 +2,8 @@ import { host } from "#host";
 import { type Env, Hono } from "hono";
 import type { AcmeConfig } from "../internal/config";
 import type { Handler } from "./contract";
-import { kitVars } from "./kit-vars";
+import { addKitRoutes } from "./kit-routes";
+import { getKitVars } from "./kit-vars";
 
 /**
  * Builds an app, hands it to the caller to route, and serves it.
@@ -14,7 +15,8 @@ import { kitVars } from "./kit-vars";
  * ```
  *
  * Every kit the config declares puts its variables on each request before the
- * app sees it, so a route reads `ctx.var` rather than knowing what a kit is.
+ * app sees it, so a route reads `ctx.var` rather than knowing what a kit is,
+ * and adds whatever routes it contributes behind the app's own.
  *
  * @param setup Adds the app's routes. Returning nothing serves the app it was
  *   given; returning a handler serves that instead.
@@ -29,7 +31,12 @@ export function serve<AppEnv extends Env>(
   config?: AcmeConfig,
 ): Handler {
   const app = new Hono<AppEnv>();
-  app.use(kitVars(config));
+  app.use(getKitVars(config));
 
-  return host.serve(setup(app) ?? app);
+  const handler = setup(app) ?? app;
+  // After the setup, not beside getKitVars: a kit contributing a catch-all would
+  // swallow every route the app was about to register.
+  addKitRoutes(app, config);
+
+  return host.serve(handler);
 }

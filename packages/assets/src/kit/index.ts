@@ -1,0 +1,1 @@
+export { assetsKit } from "./kit";

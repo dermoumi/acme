@@ -1,3 +1,5 @@
+import type { Hono } from "hono";
+
 /**
  * What a kit puts on every request's context.
  *
@@ -5,10 +7,28 @@
  * vars: (env) => ({ getDb: (name) => open(name, env) })
  * ```
  *
- * Run per request with the bindings on workerd, or the environment variables
- * on node.
+ * Called once per environment — the bindings on workerd, the environment
+ * variables on node — and what it answers is set on every request from then
+ * on, so build values here rather than doing per-request work.
  */
 export type KitVars = (env: unknown) => Record<string, unknown>;
+
+/**
+ * What a kit adds to an app's routes.
+ *
+ * ```ts
+ * routes: (app) => {
+ *   app.all("*", serveAssets);
+ * }
+ * ```
+ *
+ * Run behind the routes the app added itself, and in the order the config
+ * lists the kits, so a kit contributing a catch-all belongs last.
+ */
+// A kit's routes read the bindings its own package declares, and an app's are
+// whatever it has, so neither end of this boundary can name the other's.
+// oxlint-disable-next-line no-explicit-any
+export type KitRoutes = (app: Hono<any>) => void;
 
 /**
  * What a kit's {@link Kit.init} answers.
@@ -18,6 +38,10 @@ export interface KitState {
    * What this kit puts on every request's context. See {@link KitVars}.
    */
   vars?: KitVars;
+  /**
+   * What this kit adds to the app's routes. See {@link KitRoutes}.
+   */
+  routes?: KitRoutes;
 }
 
 /**
@@ -71,7 +95,7 @@ export interface Kit {
    * Builds what this kit holds, and answers it. See {@link KitState}.
    *
    * Synchronous, and called at the worker's module scope, which cannot await.
-   * What a kit needs across calls is the kit's own to hold.
+   * Called once per declared kit, however many slots read what it answered.
    */
   init?: () => KitState;
 }

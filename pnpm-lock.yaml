@@ -287,6 +287,43 @@ importers:
         specifier: 'catalog:'
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.11)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))
 
+  packages/assets:
+    dependencies:
+      '@acme/app':
+        specifier: workspace:*
+        version: link:../app
+    devDependencies:
+      '@acme/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@cloudflare/vitest-pool-workers':
+        specifier: 'catalog:'
+        version: 0.22.0(@cloudflare/workers-types@5.20260819.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20260819.1
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 2.1.1(hono@4.13.3)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 4.1.11(supports-color@10.2.2)(vitest@4.1.11)
+      hono:
+        specifier: 'catalog:'
+        version: 4.13.3
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vite:
+        specifier: 'catalog:'
+        version: 8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(@vitest/coverage-istanbul@4.1.11)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.12))
+
   packages/db:
     dependencies:
       '@acme/app':
