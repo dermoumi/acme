@@ -1,7 +1,7 @@
 import { defineConfig, type Kit } from "@acme/app";
 import { Hono } from "hono";
-import { describe, expect, it } from "vitest";
-import { kitVars } from "./kit-vars";
+import { describe, expect, it, vi } from "vitest";
+import { setupKitVars } from "./kit-vars";
 
 // What the kit's own package would declare, so a route reads ctx.var.greeting
 // with nothing to import.
@@ -20,6 +20,15 @@ const greeter: Kit = {
   }),
 };
 
+const createCountingKit = () => {
+  const vars = vi.fn(() => ({ greeting: "hei" }));
+
+  return {
+    kit: { name: "@fixture/counting", init: () => ({ vars }) },
+    vars,
+  };
+};
+
 const ask = async (app: Hono, env: unknown = {}) => {
   const request = new Request("http://app.test/who");
   const response = await app.fetch(request, env);
@@ -27,26 +36,64 @@ const ask = async (app: Hono, env: unknown = {}) => {
   return response.text();
 };
 
-describe("kitVars", () => {
+describe("setupKitVars", () => {
   it("puts every declared kit's variables on the request", async () => {
     const app = new Hono();
     const config = defineConfig({ kits: [greeter] });
 
-    const middleware = kitVars(config);
-    app.use(middleware);
-
+    setupKitVars(app, config);
     app.get("/who", (ctx) => ctx.text(ctx.var.greeting));
 
     await expect(ask(app, { GREETING: "hei" })).resolves.toBe("hei");
+  });
+
+  // Every request in a workerd isolate gets the same env object, so building
+  // the values per request would allocate a record and an entry list per kit.
+  it("builds a kit's variables once for an environment it has seen", async () => {
+    const { kit, vars } = createCountingKit();
+    const app = new Hono();
+    const config = defineConfig({ kits: [kit] });
+    setupKitVars(app, config);
+    app.get("/who", (ctx) => ctx.text(ctx.var.greeting));
+
+    const env = { GREETING: "hei" };
+    await ask(app, env);
+    await ask(app, env);
+
+    expect(vars).toHaveBeenCalledOnce();
+  });
+
+  it("builds them again for an environment it has not", async () => {
+    const { kit, vars } = createCountingKit();
+    const app = new Hono();
+    const config = defineConfig({ kits: [kit] });
+    setupKitVars(app, config);
+    app.get("/who", (ctx) => ctx.text(ctx.var.greeting));
+
+    await ask(app, { GREETING: "hei" });
+    await ask(app, { GREETING: "hei" });
+
+    expect(vars).toHaveBeenCalledTimes(2);
+  });
+
+  it("sets them on every request, not only the one that built them", async () => {
+    const { kit } = createCountingKit();
+    const app = new Hono();
+    const config = defineConfig({ kits: [kit] });
+    setupKitVars(app, config);
+    app.get("/who", (ctx) => ctx.text(ctx.var.greeting));
+
+    const env = { GREETING: "hei" };
+    await ask(app, env);
+
+    await expect(ask(app, env)).resolves.toBe("hei");
   });
 
   it("leaves a kit declaring no variables alone", async () => {
     const app = new Hono();
     const config = defineConfig({ kits: [{ name: "@fixture/quiet" }] });
 
-    const middleware = kitVars(config);
-    app.use(middleware);
-
+    setupKitVars(app, config);
     app.get("/who", (ctx) => ctx.text("routed"));
 
     await expect(ask(app)).resolves.toBe("routed");

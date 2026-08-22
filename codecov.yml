@@ -19,6 +19,10 @@ component_management:
       name: "@acme/app"
       paths:
         - packages/app/**
+    - component_id: assets
+      name: "@acme/assets"
+      paths:
+        - packages/assets/**
     - component_id: db
       name: "@acme/db"
       paths:

@@ -2,6 +2,7 @@ export {
   type AcmeConfig,
   defineConfig,
   type Kit,
+  type KitRoutes,
   type KitState,
   type KitVars,
 } from "./internal/config";

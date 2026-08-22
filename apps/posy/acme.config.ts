@@ -1,4 +1,5 @@
 import { defineConfig, type Kit } from "@acme/app";
+import { assetsKit } from "@acme/assets";
 import { databaseKit } from "@acme/db";
 
 // Everything an app owns itself, until it has a package to belong to.
@@ -18,5 +19,7 @@ export default defineConfig({
         seed: "./src/server/db/seed.ts",
       },
     ]),
+    // Last: it mounts the catch-all every unclaimed path falls through to.
+    assetsKit(),
   ],
 });
