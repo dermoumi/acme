@@ -39,7 +39,7 @@ catalog:
   turbo: "2.10.11"
   typescript: "7.0.2"
   valibot: "1.4.2"
-  vite: "8.2.1"
+  vite: "8.2.2"
   vite-plugin-pwa: "1.3.0"
   vitest: "4.1.11"
   workbox-window: "7.4.1"
