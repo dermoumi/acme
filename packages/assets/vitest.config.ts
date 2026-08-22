@@ -15,10 +15,22 @@ export default defineConfig({
       exclude: ["*.config.ts"],
     },
     projects: [
-      { test: { name: "node", include } },
+      {
+        test: { name: "node", include, exclude: ["**/*.workerd.test.ts"] },
+      },
       {
         plugins: [
-          cloudflareTest({ miniflare: { compatibilityDate: "2026-07-01" } }),
+          cloudflareTest({
+            miniflare: {
+              compatibilityDate: "2026-07-01",
+              assets: {
+                binding: "ASSETS",
+                directory: "./test/fixtures/assets",
+                // Nested and snake_case: the camelCase top-level key is ignored.
+                assetConfig: { not_found_handling: "single-page-application" },
+              },
+            },
+          }),
         ],
         test: { name: "workerd", include, exclude: ["**/*.node.test.ts"] },
       },
