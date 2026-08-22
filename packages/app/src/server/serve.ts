@@ -2,8 +2,8 @@ import { host } from "#host";
 import { type Env, Hono } from "hono";
 import type { AcmeConfig } from "../internal/config";
 import type { Handler } from "./contract";
-import { addKitRoutes } from "./kit-routes";
-import { getKitVars } from "./kit-vars";
+import { setupKitRoutes } from "./kit-routes";
+import { setupKitVars } from "./kit-vars";
 
 /**
  * Builds an app, hands it to the caller to route, and serves it.
@@ -31,12 +31,12 @@ export function serve<AppEnv extends Env>(
   config?: AcmeConfig,
 ): Handler {
   const app = new Hono<AppEnv>();
-  app.use(getKitVars(config));
+  setupKitVars(app, config);
 
   const handler = setup(app) ?? app;
-  // After the setup, not beside getKitVars: a kit contributing a catch-all would
-  // swallow every route the app was about to register.
-  addKitRoutes(app, config);
+  // After the setup, unlike the variables: a kit contributing a catch-all
+  // would swallow every route the app was about to register.
+  setupKitRoutes(app, config);
 
   return host.serve(handler);
 }

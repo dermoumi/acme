@@ -67,7 +67,7 @@ export interface AcmeViteOptions {
  * never uses it is not asked to have a config.
  *
  * A module importing one of these ids reaches its types with
- * `/// <reference types="@acme/app/types" />`, the way `getKitVars` and
+ * `/// <reference types="@acme/app/types" />`, the way `setupKitVars` and
  * `@acme/db/testing` do on an app's behalf. An app itself needs nothing.
  */
 export function acmeVite(options: AcmeViteOptions = {}): Plugin {

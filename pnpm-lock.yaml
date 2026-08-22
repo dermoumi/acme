@@ -149,6 +149,9 @@ importers:
       '@acme/app':
         specifier: workspace:*
         version: link:../../packages/app
+      '@acme/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@acme/db':
         specifier: workspace:*
         version: link:../../packages/db

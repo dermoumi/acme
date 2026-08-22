@@ -1,5 +1,4 @@
 import { createRateLimiter } from "@acme/rate-limiter";
-import { platform } from "#platform";
 import { sentryTunnel, type SentryConfig } from "@acme/sentry/hono";
 import { type Context, Hono } from "hono";
 import { sql } from "kysely";
@@ -78,10 +77,6 @@ export function createApp(): Hono<AppEnv> {
       database: await databaseStatus(ctx),
     }),
   );
-
-  // Under run_worker_first the worker fronts every request; the assets binding
-  // applies the configured SPA not_found_handling itself.
-  app.all("*", (ctx) => platform.assets(ctx).fetch(ctx.req.raw));
 
   return app;
 }

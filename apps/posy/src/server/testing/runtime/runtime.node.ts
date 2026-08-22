@@ -1,5 +1,5 @@
+import type { AssetsFetcher } from "@acme/assets";
 import indexHtml from "../../../../test/fixtures/assets/index.html?raw";
-import type { GateBindings } from "../../gate";
 import type { CreateBindings } from "./contract";
 
 // workerd hands back binding responses with immutable headers; reproduce that
@@ -18,7 +18,7 @@ function seal(res: Response): Response {
 }
 
 // Matches the fixture's not_found_handling: every path serves index.html.
-function assets(): GateBindings["ASSETS"] {
+function createAssets(): AssetsFetcher {
   return {
     fetch: () =>
       Promise.resolve(
@@ -34,6 +34,6 @@ function assets(): GateBindings["ASSETS"] {
 // No limiters: node builds its own from the policies createApp was given, so
 // binding one here would override the thing under test.
 export const createBindings: CreateBindings = (overrides = {}) => ({
-  ASSETS: assets(),
+  ASSETS: createAssets(),
   ...overrides,
 });

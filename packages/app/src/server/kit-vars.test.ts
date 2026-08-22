@@ -1,7 +1,7 @@
 import { defineConfig, type Kit } from "@acme/app";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
-import { getKitVars } from "./kit-vars";
+import { setupKitVars } from "./kit-vars";
 
 // What the kit's own package would declare, so a route reads ctx.var.greeting
 // with nothing to import.
@@ -36,14 +36,12 @@ const ask = async (app: Hono, env: unknown = {}) => {
   return response.text();
 };
 
-describe("getKitVars", () => {
+describe("setupKitVars", () => {
   it("puts every declared kit's variables on the request", async () => {
     const app = new Hono();
     const config = defineConfig({ kits: [greeter] });
 
-    const middleware = getKitVars(config);
-    app.use(middleware);
-
+    setupKitVars(app, config);
     app.get("/who", (ctx) => ctx.text(ctx.var.greeting));
 
     await expect(ask(app, { GREETING: "hei" })).resolves.toBe("hei");
@@ -54,7 +52,8 @@ describe("getKitVars", () => {
   it("builds a kit's variables once for an environment it has seen", async () => {
     const { kit, vars } = createCountingKit();
     const app = new Hono();
-    app.use(getKitVars(defineConfig({ kits: [kit] })));
+    const config = defineConfig({ kits: [kit] });
+    setupKitVars(app, config);
     app.get("/who", (ctx) => ctx.text(ctx.var.greeting));
 
     const env = { GREETING: "hei" };
@@ -67,7 +66,8 @@ describe("getKitVars", () => {
   it("builds them again for an environment it has not", async () => {
     const { kit, vars } = createCountingKit();
     const app = new Hono();
-    app.use(getKitVars(defineConfig({ kits: [kit] })));
+    const config = defineConfig({ kits: [kit] });
+    setupKitVars(app, config);
     app.get("/who", (ctx) => ctx.text(ctx.var.greeting));
 
     await ask(app, { GREETING: "hei" });
@@ -79,7 +79,8 @@ describe("getKitVars", () => {
   it("sets them on every request, not only the one that built them", async () => {
     const { kit } = createCountingKit();
     const app = new Hono();
-    app.use(getKitVars(defineConfig({ kits: [kit] })));
+    const config = defineConfig({ kits: [kit] });
+    setupKitVars(app, config);
     app.get("/who", (ctx) => ctx.text(ctx.var.greeting));
 
     const env = { GREETING: "hei" };
@@ -92,9 +93,7 @@ describe("getKitVars", () => {
     const app = new Hono();
     const config = defineConfig({ kits: [{ name: "@fixture/quiet" }] });
 
-    const middleware = getKitVars(config);
-    app.use(middleware);
-
+    setupKitVars(app, config);
     app.get("/who", (ctx) => ctx.text("routed"));
 
     await expect(ask(app)).resolves.toBe("routed");

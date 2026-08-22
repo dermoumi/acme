@@ -1,7 +1,7 @@
 import { defineConfig, type Kit } from "@acme/app";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { addKitRoutes } from "./kit-routes";
+import { setupKitRoutes } from "./kit-routes";
 
 // A catch-all, since that is the shape the ordering has to hold for: mounted
 // first it would answer everything the app was about to register.
@@ -26,34 +26,39 @@ const addRoutes = (app: Hono) => {
   app.get("/who", (ctx) => ctx.text("routed"));
 };
 
-describe("addKitRoutes", () => {
+describe("setupKitRoutes", () => {
   it("adds a declared kit's routes to the app", async () => {
     const app = new Hono();
-    addKitRoutes(app, defineConfig({ kits: [answeringKit("kit")] }));
+    const config = defineConfig({ kits: [answeringKit("kit")] });
+    setupKitRoutes(app, config);
 
     await expect(ask(app)).resolves.toBe("kit");
   });
 
   it("leaves the routes the app already claimed alone", async () => {
     const app = new Hono();
+    const config = defineConfig({ kits: [answeringKit("kit")] });
     addRoutes(app);
-    addKitRoutes(app, defineConfig({ kits: [answeringKit("kit")] }));
+    setupKitRoutes(app, config);
 
     await expect(ask(app)).resolves.toBe("routed");
   });
 
   it("asks kits in the order the config lists them", async () => {
     const app = new Hono();
-    const kits = [answeringKit("first"), answeringKit("second")];
-    addKitRoutes(app, defineConfig({ kits }));
+    const config = defineConfig({
+      kits: [answeringKit("first"), answeringKit("second")],
+    });
+    setupKitRoutes(app, config);
 
     await expect(ask(app)).resolves.toBe("first");
   });
 
   it("leaves a kit contributing no routes alone", async () => {
     const app = new Hono();
+    const config = defineConfig({ kits: [{ name: "@fixture/quiet" }] });
     addRoutes(app);
-    addKitRoutes(app, defineConfig({ kits: [{ name: "@fixture/quiet" }] }));
+    setupKitRoutes(app, config);
 
     await expect(ask(app)).resolves.toBe("routed");
   });
@@ -61,7 +66,7 @@ describe("addKitRoutes", () => {
   it("takes the app's own config when none is passed", async () => {
     const app = new Hono();
     addRoutes(app);
-    addKitRoutes(app);
+    setupKitRoutes(app);
 
     await expect(ask(app)).resolves.toBe("routed");
   });
