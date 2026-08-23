@@ -6,10 +6,10 @@ packages:
 minimumReleaseAge: 2880
 
 catalog:
-  "@cloudflare/vite-plugin": "1.52.1"
+  "@cloudflare/vite-plugin": "1.53.1"
   "@hono/node-server": "2.1.1"
   "@cloudflare/vitest-pool-workers": "0.22.0"
-  "@cloudflare/workers-types": "5.20260819.1"
+  "@cloudflare/workers-types": "5.20260821.1"
   "@sentry/cloudflare": "10.70.0"
   "@sentry/core": "10.70.0"
   "@sentry/node": "10.70.0"
@@ -20,7 +20,7 @@ catalog:
   "@types/pg": "8.23.1"
   "@types/react": "19.2.18"
   "@types/react-dom": "19.2.4"
-  "@vitejs/plugin-react": "6.0.5"
+  "@vitejs/plugin-react": "6.1.0"
   "@vitest/coverage-istanbul": "4.1.11"
   better-sqlite3: "13.0.3"
   cac: "7.0.0"
@@ -29,7 +29,7 @@ catalog:
   husky: "9.1.7"
   kysely: "0.29.5"
   kysely-d1: "0.4.0"
-  oxfmt: "0.63.0"
+  oxfmt: "0.64.0"
   oxlint: "1.78.0"
   oxlint-tsgolint: "7.0.2001"
   pg: "8.23.0"
@@ -39,12 +39,12 @@ catalog:
   turbo: "2.10.11"
   typescript: "7.0.2"
   valibot: "1.4.2"
-  vite: "8.2.1"
+  vite: "8.2.2"
   vite-plugin-pwa: "1.3.0"
   vitest: "4.1.11"
   workbox-window: "7.4.1"
   wouter: "3.10.0"
-  wrangler: "4.123.0"
+  wrangler: "4.125.0"
 
 allowBuilds:
   # downloads the sentry-cli binary, which @sentry/vite-plugin shells out to
