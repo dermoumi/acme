@@ -7,6 +7,10 @@
     "#assets": {
       "workerd": "./src/assets/assets.workerd.ts",
       "default": "./src/assets/assets.node.ts"
+    },
+    "#testing/runtime": {
+      "workerd": "./src/testing/runtime/runtime.workerd.ts",
+      "default": "./src/testing/runtime/runtime.node.ts"
     }
   },
   "exports": {

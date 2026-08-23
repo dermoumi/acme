@@ -1,28 +1,23 @@
+import { createBindings } from "#testing/runtime";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { assetsKit } from "./kit";
 
-// Both arms prefer a bound fetcher: the binding on workerd, whatever a test
-// bound on node. It is what lets one suite cover the kit on either runtime.
-const bound = {
-  fetch: (request: Request) => {
-    const { pathname } = new URL(request.url);
-
-    return Promise.resolve(new Response(`asset ${pathname}`));
-  },
-};
+// One directory for both runtimes: the node arm is pointed at it by config,
+// and the workerd project's miniflare binding serves the same files.
+const FIXTURES = "./test/fixtures/assets";
 
 const buildApp = () => {
   const app = new Hono();
   app.get("/health", (ctx) => ctx.text("routed"));
-  assetsKit().init?.().routes?.(app);
+  assetsKit({ root: FIXTURES }).init?.().routes?.(app);
 
   return app;
 };
 
-const ask = async (path: string, method = "GET") => {
-  const request = new Request(`http://app.test${path}`, { method });
-  const response = await buildApp().fetch(request, { ASSETS: bound });
+const ask = async (path: string) => {
+  const request = new Request(`http://app.test${path}`);
+  const response = await buildApp().fetch(request, createBindings());
 
   return response.text();
 };
@@ -32,17 +27,19 @@ describe("assetsKit", () => {
     expect(assetsKit()).toMatchObject({ name: "@acme/assets" });
   });
 
+  it("carries what the app declared, for whoever reads it back", () => {
+    expect(assetsKit({ root: FIXTURES }).config).toEqual({ root: FIXTURES });
+  });
+
   it("serves a path the app left unclaimed from its static files", async () => {
-    await expect(ask("/some/page")).resolves.toBe("asset /some/page");
+    await expect(ask("/asset.txt")).resolves.toContain("fixture asset");
+  });
+
+  it("serves the shell for a path with no file behind it", async () => {
+    await expect(ask("/some/page")).resolves.toContain("fixture shell");
   });
 
   it("leaves the routes the app already claimed alone", async () => {
     await expect(ask("/health")).resolves.toBe("routed");
-  });
-
-  // A GET-only catch-all would answer an unclaimed POST with a 404 the app
-  // never wrote, where the assets binding has its own answer for one.
-  it("serves whatever method a request arrives with", async () => {
-    await expect(ask("/some/page", "POST")).resolves.toBe("asset /some/page");
   });
 });

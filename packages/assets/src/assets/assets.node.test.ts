@@ -1,47 +1,59 @@
 import { Hono } from "hono";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { assets } from "./assets.node";
-import type { AssetsBindings } from "./contract";
+import type { AssetsBindings, AssetsConfig } from "./contract";
 
-// Read on the first request the filesystem answers, and held from there.
-process.env.ASSETS_DIR = "./test/fixtures/assets";
+const FIXTURES = "./test/fixtures/assets";
 
-const app = new Hono<{ Bindings: AssetsBindings }>();
-app.all("*", assets.handler);
+const get = async (path: string, config: AssetsConfig = {}) => {
+  const app = new Hono<{ Bindings: AssetsBindings }>();
+  app.all("*", assets.createHandler(config));
 
-const get = async (path: string, env: Record<string, unknown> = {}) => {
-  return app.fetch(new Request(`http://assets.test${path}`), env);
+  return app.fetch(new Request(`http://assets.test${path}`));
 };
 
 describe("the assets a node process serves", () => {
-  it("serves a file that exists", async () => {
+  afterEach(() => {
+    delete process.env.ASSETS_ROOT;
+  });
+
+  it("serves a file from the directory it was given", async () => {
+    const response = await get("/asset.txt", { root: FIXTURES });
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toContain("fixture asset");
+  });
+
+  // A page that does not exist is a 404, whatever the client router renders on
+  // it. Workers answer 200 there; this arm does not copy that.
+  it("answers 404 with the shell for a path with no file", async () => {
+    const response = await get("/deep/unknown/route", { root: FIXTURES });
+
+    expect(response.status).toBe(404);
+    await expect(response.text()).resolves.toContain("fixture shell");
+  });
+
+  it("answers 404 with the shell for a missing asset too", async () => {
+    const response = await get("/assets/gone.js", { root: FIXTURES });
+
+    expect(response.status).toBe(404);
+    await expect(response.text()).resolves.toContain("fixture shell");
+  });
+
+  it("takes the directory ASSETS_ROOT names when the app declared none", async () => {
+    process.env.ASSETS_ROOT = FIXTURES;
     const response = await get("/asset.txt");
 
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toContain("fixture asset");
   });
 
-  it("serves the shell for a path with no file", async () => {
-    const response = await get("/deep/unknown/route");
+  // The deployment sets the env var; an app naming a directory has said where
+  // its build lands, which is not a thing a host overrides.
+  it("prefers what the app declared over ASSETS_ROOT", async () => {
+    process.env.ASSETS_ROOT = "./test/fixtures/nowhere";
+    const response = await get("/asset.txt", { root: FIXTURES });
 
-    expect(response.status).toBe(200);
-    await expect(response.text()).resolves.toContain("fixture shell");
-  });
-
-  it("takes a fetcher something bound, so a test can serve fixtures", async () => {
-    const bound = { fetch: () => Promise.resolve(new Response("bound")) };
-    // A path the filesystem would answer too, so the body says which one did.
-    const response = await get("/asset.txt", { ASSETS: bound });
-
-    await expect(response.text()).resolves.toBe("bound");
-  });
-
-  // ctx.env is process.env here, so a stray ASSETS taken on truthiness 500s
-  // every asset and SPA route while /health stays 200, which no probe catches.
-  it("ignores an ASSETS that is not one, and serves files anyway", async () => {
-    const response = await get("/asset.txt", { ASSETS: "anything" });
-
-    expect(response.status).toBe(200);
     await expect(response.text()).resolves.toContain("fixture asset");
   });
 });

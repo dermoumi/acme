@@ -12,7 +12,7 @@ export default defineConfig({
     coverage: {
       provider: "istanbul",
       reporter: ["text", "lcovonly"],
-      exclude: ["*.config.ts"],
+      exclude: ["src/testing/**", "*.config.ts"],
     },
     projects: [
       {

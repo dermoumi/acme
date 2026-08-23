@@ -63,8 +63,7 @@ WORKDIR /app
 ENV NODE_ENV=production \
     APP_ENV=production \
     PORT=3000 \
-    DATABASE_URL=file:/var/lib/posy/posy.db \
-    ASSETS_DIR=./dist/client
+    DATABASE_URL=file:/var/lib/posy/posy.db
 
 # The app's own directory, so acme.config.ts and its migrations resolve.
 COPY --from=build /deploy ./

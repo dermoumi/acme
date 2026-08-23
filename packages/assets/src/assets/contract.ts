@@ -1,5 +1,9 @@
 import type { Context } from "hono";
 
+// Where a client build lands for every app here, so an app that has not moved
+// it declares nothing.
+export const DEFAULT_ROOT = "./dist/client";
+
 /**
  * Where an app's static files come from: the platform's binding, or the
  * filesystem a node process serves them off instead.
@@ -9,19 +13,30 @@ export interface AssetsFetcher {
 }
 
 /**
- * What this kit reads off the environment.
- *
- * Bound by the platform on workerd. A node process has no binding, so a
- * missing one there is the filesystem's cue rather than a fault.
+ * What the workerd arm reads off the environment. The platform binds it.
  */
 export interface AssetsBindings {
   ASSETS: AssetsFetcher;
 }
 
 /**
- * What every arm of the `#assets` seam provides: a request answered from the
+ * What an app declares the assets kit with, and what the seam is built from.
+ */
+export interface AssetsConfig {
+  /**
+   * Directory a node host serves from, relative to the process working
+   * directory. Falls back to `ASSETS_ROOT`, then to where vite puts a client
+   * build. Workers ignore it: the platform holds the files.
+   */
+  root?: string;
+}
+
+/**
+ * What every arm of the `#assets` seam provides: a handler answering from the
  * app's static files, shell included.
  */
 export interface Assets {
-  handler: (ctx: Context<{ Bindings: AssetsBindings }>) => Promise<Response>;
+  createHandler: (
+    config: AssetsConfig,
+  ) => (ctx: Context<{ Bindings: AssetsBindings }>) => Promise<Response>;
 }

@@ -5,7 +5,7 @@ import { assets } from "./assets.workerd";
 import type { AssetsBindings } from "./contract";
 
 const app = new Hono<{ Bindings: AssetsBindings }>();
-app.all("*", assets.handler);
+app.all("*", assets.createHandler({}));
 
 const get = async (path: string) => {
   return app.fetch(new Request(`http://assets.test${path}`), env);

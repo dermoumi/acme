@@ -1,42 +1,58 @@
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import type { Assets, AssetsBindings, AssetsFetcher } from "./contract";
+import {
+  type Assets,
+  type AssetsFetcher,
+  DEFAULT_ROOT,
+  type AssetsConfig,
+} from "./contract";
 
 /**
  * Builds an ASSETS-shaped binding backed by the filesystem, for node hosts.
  *
- * Unmatched paths serve `index.html`, matching the Workers assets binding
- * configured with `not_found_handling: "single-page-application"`.
+ * A path with no file behind it answers **404** carrying `index.html`, so a
+ * client router still boots on it while crawlers and caches are told the truth.
+ * Workers hand back a 200 there instead, which is theirs to decide and not
+ * something this arm copies.
  *
  * @param root Directory to serve from, relative to the process working directory.
  */
 function createStaticAssets(root: string): AssetsFetcher {
   const files = new Hono();
   files.use("*", serveStatic({ root }));
-  files.get("*", serveStatic({ path: "./index.html", root }));
 
-  return { fetch: async (request) => files.fetch(request) };
+  const shell = new Hono();
+  shell.get("*", serveStatic({ path: "./index.html", root }));
+
+  return {
+    fetch: async (request) => {
+      const found = await files.fetch(request);
+      if (found.status !== 404) {
+        return found;
+      }
+
+      // Composed rather than rewrapped in place: setting the status around
+      // serveStatic answers a 404 with an empty body.
+      const page = await shell.fetch(request);
+
+      return new Response(page.body, { status: 404, headers: page.headers });
+    },
+  };
 }
 
-// Built on first use, from the default the Dockerfile sets, and held: a node
-// process serves every request from the same directory.
-let disk: AssetsFetcher | undefined;
-
-// By shape, not by truthiness: ctx.env is process.env here, so ASSETS is as
-// likely to be a stray string as a fetcher something bound for a test.
-function isFetcher(value: unknown): value is AssetsFetcher {
-  return typeof value === "object" && value !== null && "fetch" in value;
+// What the app declared, then what the deployment set, then where vite puts a
+// client build. Read once: a node process serves every request from one place.
+function resolveRoot(config: AssetsConfig): string {
+  return config.root ?? process.env.ASSETS_ROOT ?? DEFAULT_ROOT;
 }
 
 export const assets: Assets = {
-  handler: (ctx) => {
-    const bound = (ctx.env as Partial<AssetsBindings>).ASSETS;
-    if (isFetcher(bound)) {
-      return bound.fetch(ctx.req.raw);
-    }
+  createHandler: (config) => {
+    const root = resolveRoot(config);
+    const files = createStaticAssets(root);
 
-    disk ??= createStaticAssets(process.env.ASSETS_DIR ?? "./dist/client");
-
-    return disk.fetch(ctx.req.raw);
+    return (ctx) => {
+      return files.fetch(ctx.req.raw);
+    };
   },
 };
