@@ -2,9 +2,10 @@ import type { MiddlewareHandler } from "hono";
 import { basicAuth } from "hono/basic-auth";
 import { HTTPException } from "hono/http-exception";
 
-/** What the gate reads off the environment to decide whether to challenge. */
+/**
+ * What the gate reads off the environment to decide whether to challenge.
+ */
 export interface GateBindings {
-  ASSETS: { fetch: (request: Request) => Promise<Response> };
   REQUIRE_AUTH?: string;
   BASIC_AUTH?: string;
 }
@@ -31,7 +32,9 @@ function parseUsers(raw: string | undefined): User[] {
   return users;
 }
 
-/** Per-app wiring for {@link gate}. Everything here is optional. */
+/**
+ * Per-app wiring for {@link gate}. Everything here is optional.
+ */
 export interface GateOptions {
   /**
    * Paths that skip the credentials check but still pass through the gate, so

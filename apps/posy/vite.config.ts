@@ -88,10 +88,6 @@ const test: UserConfig["test"] = {
         cloudflareTest({
           wrangler: { configPath: "./wrangler.jsonc" },
           miniflare: {
-            assets: {
-              binding: "ASSETS",
-              directory: "./test/fixtures/assets",
-            },
             d1Databases: ["DATABASE"],
           },
         }),

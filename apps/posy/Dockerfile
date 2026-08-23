@@ -13,6 +13,7 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/posy/package.json apps/posy/
 COPY packages/app/package.json packages/app/
+COPY packages/assets/package.json packages/assets/
 COPY packages/db/package.json packages/db/
 COPY packages/deploy/package.json packages/deploy/
 COPY packages/rate-limiter/package.json packages/rate-limiter/
@@ -62,8 +63,7 @@ WORKDIR /app
 ENV NODE_ENV=production \
     APP_ENV=production \
     PORT=3000 \
-    DATABASE_URL=file:/var/lib/posy/posy.db \
-    ASSETS_DIR=./dist/client
+    DATABASE_URL=file:/var/lib/posy/posy.db
 
 # The app's own directory, so acme.config.ts and its migrations resolve.
 COPY --from=build /deploy ./

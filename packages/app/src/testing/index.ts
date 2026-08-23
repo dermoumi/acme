@@ -1,1 +1,2 @@
-export { kitVars } from "../server/kit-vars";
+export { setupKitRoutes } from "../server/kit-routes";
+export { setupKitVars } from "../server/kit-vars";

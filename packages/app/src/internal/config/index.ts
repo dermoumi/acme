@@ -1,2 +1,3 @@
 export { type AcmeConfig, defineConfig } from "./define-config";
-export type { Kit, KitState, KitVars } from "./kit";
+export type { Kit, KitRoutes, KitState, KitVars } from "./kit";
+export { getKitState } from "./state";

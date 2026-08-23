@@ -1,5 +1,5 @@
 import type { AcmeConfig } from "@acme/app";
-import { kitVars } from "@acme/app/testing";
+import { setupKitVars } from "@acme/app/testing";
 import { Hono } from "hono";
 import type { GetDb } from "../internal/db";
 
@@ -10,7 +10,7 @@ export async function getDbOnRequest(
   env: unknown,
 ): Promise<GetDb> {
   const app = new Hono();
-  app.use(kitVars(config));
+  setupKitVars(app, config);
 
   let handed: GetDb | undefined;
   app.get("/db", (ctx) => {
