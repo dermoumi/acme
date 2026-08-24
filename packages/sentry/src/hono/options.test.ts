@@ -10,6 +10,42 @@ describe("sentryOptions", () => {
     expect(sentryOptions({ APP_ENV: "staging" })).toBeUndefined();
   });
 
+  it("reads the dsn from the var the config names, not from the default", () => {
+    const env = { REPORTING_DSN: DSN };
+
+    expect(sentryOptions(env)).toBeUndefined();
+    expect(sentryOptions(env, { dsnVar: "REPORTING_DSN" })?.dsn).toBe(DSN);
+  });
+
+  it("reads the release and tier from the vars the config names", () => {
+    const env = {
+      SENTRY_DSN: DSN,
+      SERVICE: "shop",
+      TIER: "staging",
+      BUILD_VERSION: "1.2.3",
+      BUILD_SHA: "abc1234",
+    };
+    const options = sentryOptions(env, {
+      appNameVar: "SERVICE",
+      appEnvVar: "TIER",
+      appVersionVar: "BUILD_VERSION",
+      appRevisionVar: "BUILD_SHA",
+    });
+
+    expect(options?.environment).toBe("staging");
+    expect(options?.release).toBe("shop@1.2.3+abc1234");
+    expect(options?.dist).toBe("abc1234");
+  });
+
+  // The defaults must not be consulted once a name is given, or a stale value
+  // under the old name would quietly win.
+  it("ignores the default vars once the config renames them", () => {
+    const env = { SENTRY_DSN: DSN, APP_ENV: "production", TIER: "staging" };
+    const options = sentryOptions(env, { appEnvVar: "TIER" });
+
+    expect(options?.environment).toBe("staging");
+  });
+
   it("carries the dsn, environment and release through", () => {
     const options = sentryOptions({
       SENTRY_DSN: DSN,

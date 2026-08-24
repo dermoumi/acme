@@ -1,16 +1,13 @@
 import { Hono } from "hono";
 import { sentryKit } from "../../kit";
-import type { SentryBindings } from "../bindings";
 import type { SentryConfig } from "../config";
 import { setUser } from "../user";
 
 export const BOOM = "route exploded";
 export const IDENTIFIED = { id: "u_1", username: "tester" };
 
-export function throwingApp(
-  config: SentryConfig = {},
-): Hono<{ Bindings: SentryBindings }> {
-  const app = new Hono<{ Bindings: SentryBindings }>();
+export function throwingApp(config: SentryConfig = {}): Hono {
+  const app = new Hono();
   app.post("/session", () => {
     throw new Error(BOOM);
   });

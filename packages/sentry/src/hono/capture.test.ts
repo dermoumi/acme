@@ -1,9 +1,9 @@
 import { bench } from "#testing/bench";
 import { describe, expect, it } from "vitest";
-import type { SentryBindings } from "./bindings";
 import type { SentryConfig } from "./config";
 import {
   BEARER,
+  type BenchEnv,
   COOKIE,
   DSN,
   loginRequest,
@@ -14,7 +14,7 @@ import {
 import { BOOM } from "./testing/throwing-app";
 
 async function capture(
-  env: SentryBindings,
+  env: BenchEnv,
   config: SentryConfig = {},
 ): Promise<{ res: Response; body: string }> {
   const { invoke, sent } = bench.build(env, config);

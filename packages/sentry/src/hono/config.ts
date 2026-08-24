@@ -14,6 +14,30 @@ export type MaskingLevel = "none" | "light" | "full";
 
 /** Pass the same object to `withSentry` and `sentryTunnel` so both apply one policy. */
 export interface SentryConfig {
+  /**
+   * Name of the value holding the DSN. Defaults to `SENTRY_DSN`.
+   *
+   * This and the four below name a binding on workers and an environment
+   * variable on node, and rename it for this package alone: whatever else an
+   * app reads them by is the app's own business.
+   */
+  dsnVar?: string;
+  /**
+   * Name of the value holding the app's name. Defaults to `APP_NAME`.
+   */
+  appNameVar?: string;
+  /**
+   * Name of the value holding the deploy tier. Defaults to `APP_ENV`.
+   */
+  appEnvVar?: string;
+  /**
+   * Name of the value holding the app's version. Defaults to `APP_VERSION`.
+   */
+  appVersionVar?: string;
+  /**
+   * Name of the value holding the build identifier. Defaults to `APP_REVISION`.
+   */
+  appRevisionVar?: string;
   /** Defaults to `"full"`. */
   masking?: MaskingLevel;
   /**

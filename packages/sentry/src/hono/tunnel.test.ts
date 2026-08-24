@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SentryBindings } from "./bindings";
+import type { SentryConfig } from "./config";
 import { DSN } from "./testing/contract";
 import { sentryTunnel } from "./tunnel";
 
@@ -23,7 +23,8 @@ function post(body: string, headers: Record<string, string> = {}): Request {
 
 async function send(
   request: Request,
-  env?: SentryBindings,
+  env?: Record<string, string>,
+  config: SentryConfig = {},
 ): Promise<{ status: number; forwarded: Request | undefined }> {
   let forwarded: Request | undefined;
   vi.stubGlobal(
@@ -34,7 +35,10 @@ async function send(
     }),
   );
   try {
-    const res = await sentryTunnel().fetch(request, env ?? { SENTRY_DSN: DSN });
+    const res = await sentryTunnel(config).fetch(
+      request,
+      env ?? { SENTRY_DSN: DSN },
+    );
     return { status: res.status, forwarded };
   } finally {
     vi.unstubAllGlobals();
@@ -65,6 +69,18 @@ describe("sentryTunnel", () => {
     const { status, forwarded } = await send(post(envelope()), {});
     expect(status).toBe(404);
     expect(forwarded).toBeUndefined();
+  });
+
+  it("reads the dsn from the var the config names", async () => {
+    const env = { REPORTING_DSN: DSN };
+    const config: SentryConfig = { dsnVar: "REPORTING_DSN" };
+
+    const { status, forwarded } = await send(post(envelope()), env, config);
+
+    expect(status).toBe(200);
+    expect(forwarded?.url).toBe(
+      "https://dummy.ingest.sentry.io/api/1/envelope/",
+    );
   });
 
   it("rejects a cross origin post", async () => {

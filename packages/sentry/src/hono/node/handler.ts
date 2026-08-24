@@ -4,8 +4,7 @@ import {
   winterCGRequestToRequestData,
 } from "@sentry/core";
 import { init, withIsolationScope } from "@sentry/node";
-import type { Hono } from "hono";
-import type { SentryBindings } from "../bindings";
+import type { Env, Hono } from "hono";
 import type { SentryConfig, SentryHandler } from "../config";
 import { sentryOptions } from "../options";
 
@@ -40,14 +39,13 @@ async function describe(
  * Establishes the client the kit's error handler captures onto, as the Workers
  * entry does.
  *
- * Passes requests through unwrapped when `SENTRY_DSN` is unset.
+ * Passes requests through unwrapped when no DSN is configured.
  */
-export function withSentry<Env extends { Bindings: SentryBindings }>(
-  app: Hono<Env>,
+export function withSentry<AppEnv extends Env>(
+  app: Hono<AppEnv>,
   config: SentryConfig = {},
-): SentryHandler<Env["Bindings"]> {
-  const settings: SentryBindings = process.env;
-  const options = sentryOptions(settings, config);
+): SentryHandler<AppEnv["Bindings"]> {
+  const options = sentryOptions(process.env, config);
   if (!options) return { fetch: (request, env) => app.fetch(request, env) };
 
   init({ ...options, ...config.options });

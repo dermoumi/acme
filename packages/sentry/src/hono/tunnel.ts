@@ -7,8 +7,8 @@ import {
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { MaskingLevel, SentryConfig } from "./config";
+import { readEnv } from "./env";
 import { DEFAULT_REDACT_KEYS, scrubEvent, stripCredentials } from "./scrub";
-import type { SentryBindings } from "./bindings";
 
 const MAX_ENVELOPE_BYTES = 1024 * 1024;
 
@@ -105,18 +105,16 @@ async function readEnvelope(request: Request): Promise<Uint8Array> {
  * Mount inside the app's middleware and before any catch-all route: Hono matches
  * in registration order, and mounting on a wrapping app bypasses the app's auth.
  *
- * Answers 404 when `SENTRY_DSN` is unset. The client transport stops sending
+ * Answers 404 when no DSN is configured. The client transport stops sending
  * after receiving one.
  */
-export function sentryTunnel(
-  config: SentryConfig = {},
-): Hono<{ Bindings: SentryBindings }> {
-  const tunnel = new Hono<{ Bindings: SentryBindings }>();
+export function sentryTunnel(config: SentryConfig = {}): Hono {
+  const tunnel = new Hono();
   const masking = config.masking ?? "full";
   const keys = [...DEFAULT_REDACT_KEYS, ...(config.redactKeys ?? [])];
 
   return tunnel.post("/", async (ctx) => {
-    const dsn = ctx.env.SENTRY_DSN;
+    const dsn = readEnv(ctx.env, config, "dsnVar");
     if (!dsn) throw new HTTPException(404);
     if (!sameOrigin(ctx.req.raw)) throw new HTTPException(403);
 

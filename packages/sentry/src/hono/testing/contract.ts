@@ -1,4 +1,3 @@
-import type { SentryBindings } from "../bindings";
 import type { SentryConfig } from "../config";
 
 export const DSN = "https://dummy@dummy.ingest.sentry.io/1";
@@ -8,6 +7,11 @@ export const PASSWORD = "DUMMY-PLAINTEXT-PASSWORD";
 export const BEARER = "DUMMY-BEARER-CREDENTIAL";
 export const NOTE = "DUMMY-HARMLESS-NOTE";
 
+// All a bench binds: the DSN, under the name an app that renames nothing gets.
+export interface BenchEnv {
+  SENTRY_DSN?: string;
+}
+
 export interface Capture {
   invoke: (request: Request) => Promise<Response>;
   sent: unknown[];
@@ -15,7 +19,7 @@ export interface Capture {
 
 // Both runtimes bind this: the test imports it and never learns which one it runs on.
 export interface Bench {
-  build: (env: SentryBindings, config: SentryConfig) => Capture;
+  build: (env: BenchEnv, config: SentryConfig) => Capture;
   settle: () => Promise<void>;
 }
 
