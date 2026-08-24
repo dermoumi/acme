@@ -4,26 +4,14 @@ import { createErrorHandler } from "../hono/error-handler";
 import { createTunnel } from "../hono/tunnel";
 import { wrapHandler } from "./runtime";
 
-// Where the browser posts unless the client was told otherwise, which is what
-// initSentry defaults its own tunnel option to.
+// Must match initSentry's own default, which is where the browser posts.
 const TUNNEL_PATH = "/sentry";
 
 /**
- * The Sentry kit: what an app reports its failures through.
+ * The Sentry kit: error reporting for the server and the browser both.
  *
- * ```ts
- * kits: [sentryKit({ masking: "light" }), assetsKit()],
- * ```
- *
- * Contributes the tunnel the browser posts its events to, the error handler
- * that captures whatever a route throws, and the wrapper that establishes the
- * client they capture onto. Declare it before any kit mounting a catch-all,
- * which the tunnel would otherwise fall through to.
- *
- * The handler covers every route, a mounted sub-app's included, unless that
- * sub-app sets one of its own.
- *
- * @param config The masking policy this app applies, if not the defaults.
+ * Declare it before any kit mounting a catch-all, or the tunnel falls through
+ * to that instead. A sub-app setting its own `onError` is not covered.
  */
 export function sentryKit(config: SentryConfig = {}): Kit {
   return {

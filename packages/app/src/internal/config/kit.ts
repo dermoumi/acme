@@ -33,17 +33,9 @@ export type KitVars = (env: unknown) => Record<string, unknown>;
 export type KitRoutes = (app: Hono<any>) => void;
 
 /**
- * What a kit puts around the handler the app is served through.
+ * What a kit wraps the app's handler in, for what cannot be middleware.
  *
- * ```ts
- * handler: (served) => {
- *   return { fetch: (...args) => inScope(() => served.fetch(...args)) };
- * }
- * ```
- *
- * For what cannot be middleware: a wrapper needing the fetch handler's own
- * arguments, or one that has to sit outside the app rather than inside it.
- * Applied in the order the config lists the kits, so the first is outermost.
+ * Applied in config order, so the first kit listed ends up the outermost.
  */
 export type KitHandlerWrapper = (handler: Handler) => Handler;
 

@@ -13,15 +13,11 @@ import type { Options } from "@sentry/core";
 export type MaskingLevel = "none" | "light" | "full";
 
 /**
- * One policy, applied by everything the kit builds out of it.
+ * What an app declares the Sentry kit with.
  */
 export interface SentryConfig {
   /**
    * Name of the value holding the DSN. Defaults to `SENTRY_DSN`.
-   *
-   * This and the four below name a binding on workers and an environment
-   * variable on node, and rename it for this package alone: whatever else an
-   * app reads them by is the app's own business.
    */
   dsnVar?: string;
   /**

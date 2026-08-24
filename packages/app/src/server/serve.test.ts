@@ -23,8 +23,7 @@ const ask = async (handler: Handler, path = "/who") => {
   return response.text();
 };
 
-// The shape the ordering has to hold for: mounted before the setup ran, this
-// would answer every route the app was about to register.
+// A catch-all, the shape the ordering has to hold for.
 const catchAll: Kit = {
   name: "@fixture/catch-all",
   init: () => ({
@@ -34,8 +33,6 @@ const catchAll: Kit = {
   }),
 };
 
-// The other thing a kit contributes that the routes slot cannot: a wrapper
-// around the whole app, outside every route it answers.
 const wrappingKit: Kit = {
   name: "@fixture/wrapping",
   init: () => ({
@@ -51,50 +48,51 @@ const wrappingKit: Kit = {
   }),
 };
 
-const addRoutes = (app: Hono) => {
-  app.get("/who", (ctx) => ctx.text("routed"));
+const buildApp = () => {
+  return new Hono().get("/who", (ctx) => ctx.text("routed"));
 };
 
 describe("serve", () => {
-  it("serves the routes the setup added", async () => {
+  it("serves the routes the app added", async () => {
+    const app = buildApp();
     const config = defineConfig({});
-    await expect(ask(serve(addRoutes, config))).resolves.toBe("routed");
+
+    await expect(ask(serve(app, config))).resolves.toBe("routed");
   });
 
   it("serves the app inside whatever a kit wraps it in", async () => {
+    const app = buildApp();
     const config = defineConfig({ kits: [wrappingKit] });
 
-    await expect(ask(serve(addRoutes, config))).resolves.toBe(
-      "wrapped(routed)",
-    );
+    await expect(ask(serve(app, config))).resolves.toBe("wrapped(routed)");
   });
 
   it("takes the app's own config when none is passed", async () => {
-    await expect(ask(serve(addRoutes))).resolves.toBe("routed");
+    const app = buildApp();
+
+    await expect(ask(serve(app))).resolves.toBe("routed");
   });
 
-  it("serves a path the setup left unclaimed from a kit's routes", async () => {
+  it("serves a path the app left unclaimed from a kit's routes", async () => {
+    const app = buildApp();
     const config = defineConfig({ kits: [catchAll] });
 
-    await expect(ask(serve(addRoutes, config), "/nothing")).resolves.toBe(
-      "kit",
-    );
+    await expect(ask(serve(app, config), "/nothing")).resolves.toBe("kit");
   });
 
-  // A catch-all is what the first kit to want this slot mounts, and one in
-  // front of the setup swallows the app whole.
-  it("adds a kit's routes behind the ones the setup added", async () => {
+  it("adds a kit's routes behind the ones the app added", async () => {
+    const app = buildApp();
     const config = defineConfig({ kits: [catchAll] });
 
-    await expect(ask(serve(addRoutes, config))).resolves.toBe("routed");
+    await expect(ask(serve(app, config))).resolves.toBe("routed");
   });
 
-  // Both slots read the same state, so a kit that opens something to fill one
-  // of them must not open a second.
+  // Both slots read one state, so filling both must not build the kit twice.
   it("builds each declared kit once, however many slots read it", () => {
     const once: Kit = { name: "@fixture/once", init: vi.fn(() => ({})) };
+    const config = defineConfig({ kits: [once] });
 
-    serve(addRoutes, defineConfig({ kits: [once] }));
+    serve(buildApp(), config);
 
     expect(once.init).toHaveBeenCalledOnce();
   });

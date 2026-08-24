@@ -7,34 +7,21 @@ import { setupKitVars } from "./kit-vars";
 import { wrapWithKits } from "./kit-handler";
 
 /**
- * Builds an app, hands it to the caller to route, and serves it.
+ * Serves an app with the config's kits wired in.
  *
- * ```ts
- * export default serve((app) => {
- *   app.get("/health", (ctx) => ctx.json({ status: "ok" }));
- * });
- * ```
- *
- * Every kit the config declares puts its variables on each request before the
- * app sees it, so a route reads `ctx.var` rather than knowing what a kit is,
- * adds whatever routes it contributes behind the app's own, and puts whatever
- * it wraps the app in around the lot.
- *
- * @param setup Adds the app's routes.
- * @param config The app's own, taken from `virtual:acme-config` unless one is
- *   passed. Pass one to serve a config a test built rather than the app's.
+ * @param config Defaults to `virtual:acme-config`.
  */
 export function serve<AppEnv extends Env>(
-  setup: (app: Hono<AppEnv>) => void,
+  app: Hono<AppEnv>,
   config?: AcmeConfig,
 ): Handler {
-  const app = new Hono<AppEnv>();
-  setupKitVars(app, config);
+  const outer = new Hono<AppEnv>();
+  setupKitVars(outer, config);
 
-  setup(app);
-  // After the setup, unlike the variables: a kit contributing a catch-all
-  // would swallow every route the app was about to register.
-  setupKitRoutes(app, config);
+  outer.route("/", app);
 
-  return host.serve(wrapWithKits(app, config));
+  // After the app's routes: a kit's catch-all would otherwise swallow them.
+  setupKitRoutes(outer, config);
+
+  return host.serve(wrapWithKits(outer, config));
 }
