@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SentryConfig } from "./config";
 import { DSN } from "./testing/contract";
-import { sentryTunnel } from "./tunnel";
+import { createTunnel } from "./tunnel";
 
 const ORIGIN = "https://posy.test";
 
@@ -35,7 +35,7 @@ async function send(
     }),
   );
   try {
-    const res = await sentryTunnel(config).fetch(
+    const res = await createTunnel(config).fetch(
       request,
       env ?? { SENTRY_DSN: DSN },
     );
@@ -45,7 +45,7 @@ async function send(
   }
 }
 
-describe("sentryTunnel", () => {
+describe("createTunnel", () => {
   it("swaps the fake dsn for the real one before forwarding", async () => {
     const { status, forwarded } = await send(post(envelope()));
     expect(status).toBe(200);
@@ -117,7 +117,7 @@ describe("sentryTunnel", () => {
       Promise.resolve(new Response(null, { status: 500 })),
     );
     try {
-      const res = await sentryTunnel().fetch(post(envelope()), {
+      const res = await createTunnel().fetch(post(envelope()), {
         SENTRY_DSN: DSN,
       });
       expect(res.status).toBe(502);
@@ -141,7 +141,7 @@ describe("sentryTunnel", () => {
   }
 
   async function forwardedBody(
-    tunnel: ReturnType<typeof sentryTunnel>,
+    tunnel: ReturnType<typeof createTunnel>,
     body: string,
   ): Promise<string> {
     let sent = "";
@@ -166,7 +166,7 @@ describe("sentryTunnel", () => {
 
   it("masks client event bodies on their way through", async () => {
     const sent = await forwardedBody(
-      sentryTunnel({ masking: "light" }),
+      createTunnel({ masking: "light" }),
       eventEnvelope(),
     );
     expect(sent).toContain("her");
@@ -176,7 +176,7 @@ describe("sentryTunnel", () => {
 
   it("masking none keeps values but still drops credentials", async () => {
     const sent = await forwardedBody(
-      sentryTunnel({ masking: "none" }),
+      createTunnel({ masking: "none" }),
       eventEnvelope(),
     );
     expect(sent).toContain("PLAINPASS");
@@ -184,7 +184,7 @@ describe("sentryTunnel", () => {
   });
 
   it("redactKeys reaches client events too", async () => {
-    const tunnel = sentryTunnel({ masking: "light", redactKeys: ["username"] });
+    const tunnel = createTunnel({ masking: "light", redactKeys: ["username"] });
     const sent = await forwardedBody(tunnel, eventEnvelope());
     expect(sent).not.toContain("her");
   });
@@ -203,14 +203,14 @@ describe("sentryTunnel", () => {
         },
       }),
     ].join("\n");
-    const sent = await forwardedBody(sentryTunnel({ masking: "full" }), body);
+    const sent = await forwardedBody(createTunnel({ masking: "full" }), body);
     expect(sent).toContain("PLAINPASS");
     expect(sent).toContain("LEAK");
     expect(sent).toContain('"sid":"abc"');
   });
 
   it("still swaps the dsn while scrubbing", async () => {
-    const sent = await forwardedBody(sentryTunnel(), eventEnvelope());
+    const sent = await forwardedBody(createTunnel(), eventEnvelope());
     expect(JSON.parse(sent.split("\n")[0] ?? "{}")).toMatchObject({ dsn: DSN });
   });
 });

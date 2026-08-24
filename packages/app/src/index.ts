@@ -5,6 +5,8 @@ export {
   type KitRoutes,
   type KitState,
   type KitVars,
+  type KitHandlerWrapper,
 } from "./internal/config";
+export type { Handler } from "./server/contract";
 export type { KitShared } from "./internal/shared";
 export { type Runtime, type RuntimeName, runtime } from "./internal/runtime";

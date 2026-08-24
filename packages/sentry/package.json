@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "imports": {
+    "#sentry": {
+      "workerd": "./src/kit/runtime/runtime.workerd.ts",
+      "default": "./src/kit/runtime/runtime.node.ts"
+    },
     "#testing/bench": {
       "workerd": "./src/hono/testing/bench.workerd.ts",
       "default": "./src/hono/testing/bench.node.ts"
@@ -11,10 +15,6 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./hono": {
-      "workerd": "./src/hono/workerd/index.ts",
-      "default": "./src/hono/node/index.ts"
-    },
     "./react": "./src/react/index.ts",
     "./vite": "./src/vite/index.ts"
   },

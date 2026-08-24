@@ -1,6 +1,6 @@
 import { getClient, getCurrentScope } from "@sentry/core";
 import { afterEach, describe, expect, it } from "vitest";
-import { sentryOptions } from "../hono/options";
+import { buildSentryOptions } from "../hono/options";
 import { initSentryClient } from "./init";
 
 const APP = "posy";
@@ -20,7 +20,7 @@ describe("initSentryClient", () => {
   // Maps upload against the server's release, so a mismatch loses every browser trace.
   it("reports the same release the server does", () => {
     initSentryClient({ app: APP, release: VERSION, dist: REVISION });
-    const server = sentryOptions({
+    const server = buildSentryOptions({
       SENTRY_DSN: "https://public@o0.ingest.sentry.io/0",
       APP_NAME: APP,
       APP_VERSION: VERSION,

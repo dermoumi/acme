@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 import type { MaskingLevel } from "./config";
-import { sentryOptions } from "./options";
+import { buildSentryOptions } from "./options";
 
 const DSN = "https://dummy@dummy.ingest.sentry.io/1";
 
-describe("sentryOptions", () => {
+describe("buildSentryOptions", () => {
   it("no DSN yields no options, so monitoring stays a silent no-op", () => {
-    expect(sentryOptions({})).toBeUndefined();
-    expect(sentryOptions({ APP_ENV: "staging" })).toBeUndefined();
+    expect(buildSentryOptions({})).toBeUndefined();
+    expect(buildSentryOptions({ APP_ENV: "staging" })).toBeUndefined();
   });
 
   it("reads the dsn from the var the config names, not from the default", () => {
     const env = { REPORTING_DSN: DSN };
 
-    expect(sentryOptions(env)).toBeUndefined();
-    expect(sentryOptions(env, { dsnVar: "REPORTING_DSN" })?.dsn).toBe(DSN);
+    expect(buildSentryOptions(env)).toBeUndefined();
+    expect(buildSentryOptions(env, { dsnVar: "REPORTING_DSN" })?.dsn).toBe(DSN);
   });
 
   it("reads the release and tier from the vars the config names", () => {
@@ -25,7 +25,7 @@ describe("sentryOptions", () => {
       BUILD_VERSION: "1.2.3",
       BUILD_SHA: "abc1234",
     };
-    const options = sentryOptions(env, {
+    const options = buildSentryOptions(env, {
       appNameVar: "SERVICE",
       appEnvVar: "TIER",
       appVersionVar: "BUILD_VERSION",
@@ -41,13 +41,13 @@ describe("sentryOptions", () => {
   // under the old name would quietly win.
   it("ignores the default vars once the config renames them", () => {
     const env = { SENTRY_DSN: DSN, APP_ENV: "production", TIER: "staging" };
-    const options = sentryOptions(env, { appEnvVar: "TIER" });
+    const options = buildSentryOptions(env, { appEnvVar: "TIER" });
 
     expect(options?.environment).toBe("staging");
   });
 
   it("carries the dsn, environment and release through", () => {
-    const options = sentryOptions({
+    const options = buildSentryOptions({
       SENTRY_DSN: DSN,
       APP_NAME: "posy",
       APP_ENV: "production",
@@ -61,14 +61,27 @@ describe("sentryOptions", () => {
   });
 
   it("falls back to a development environment and a dev build", () => {
-    const options = sentryOptions({ SENTRY_DSN: DSN });
+    const options = buildSentryOptions({ SENTRY_DSN: DSN });
     expect(options?.environment).toBe("development");
     expect(options?.release).toBe("dev+dev");
     expect(options?.dist).toBe("dev");
   });
 
+  // Last, so a caller can override anything the env and the masking produced,
+  // and so everything reading these options agrees on what they say.
+  it("merges the config's own options over the rest", () => {
+    const env = { SENTRY_DSN: DSN, APP_ENV: "production" };
+    const config = { options: { environment: "canary", sampleRate: 0.5 } };
+
+    const options = buildSentryOptions(env, config);
+
+    expect(options?.environment).toBe("canary");
+    expect(options?.sampleRate).toBe(0.5);
+    expect(options?.dsn).toBe(DSN);
+  });
+
   it("scrubs every event before sending", () => {
-    const beforeSend = sentryOptions({ SENTRY_DSN: DSN })?.beforeSend;
+    const beforeSend = buildSentryOptions({ SENTRY_DSN: DSN })?.beforeSend;
     const event = {
       type: undefined,
       request: { data: JSON.stringify({ password: "PLAINPASS" }) },
@@ -78,7 +91,7 @@ describe("sentryOptions", () => {
 
   // Guards the trap: any category left unlisted silently reverts to permissive.
   it("every data collection category is named, defaulting to full masking", () => {
-    expect(sentryOptions({ SENTRY_DSN: DSN })?.dataCollection).toEqual({
+    expect(buildSentryOptions({ SENTRY_DSN: DSN })?.dataCollection).toEqual({
       userInfo: false,
       cookies: false,
       httpHeaders: {
@@ -102,7 +115,7 @@ describe("sentryOptions", () => {
 
   it("only full withholds database query data", () => {
     const dbData = (masking: MaskingLevel) =>
-      sentryOptions({ SENTRY_DSN: DSN }, { masking })?.dataCollection
+      buildSentryOptions({ SENTRY_DSN: DSN }, { masking })?.dataCollection
         ?.databaseQueryData;
     expect(dbData("none")).toBe(true);
     expect(dbData("light")).toBe(true);
@@ -110,7 +123,7 @@ describe("sentryOptions", () => {
   });
 
   it("none keeps values but still strips credentials", () => {
-    const beforeSend = sentryOptions(
+    const beforeSend = buildSentryOptions(
       { SENTRY_DSN: DSN },
       { masking: "none" },
     )?.beforeSend;

@@ -12,7 +12,9 @@ import type { Options } from "@sentry/core";
  */
 export type MaskingLevel = "none" | "light" | "full";
 
-/** Pass the same object to `withSentry` and `sentryTunnel` so both apply one policy. */
+/**
+ * One policy, applied by everything the kit builds out of it.
+ */
 export interface SentryConfig {
   /**
    * Name of the value holding the DSN. Defaults to `SENTRY_DSN`.
@@ -38,7 +40,9 @@ export interface SentryConfig {
    * Name of the value holding the build identifier. Defaults to `APP_REVISION`.
    */
   appRevisionVar?: string;
-  /** Defaults to `"full"`. */
+  /**
+   * Defaults to `"full"`.
+   */
   masking?: MaskingLevel;
   /**
    * Extra keys to mask, across body, query string, url and cookies.
@@ -52,15 +56,8 @@ export interface SentryConfig {
    * whose failures are expected and already handled, such as a CI health probe.
    */
   ignoreUserAgent?: string;
-  /** Merged into the Sentry client options last, overriding the rest. */
+  /**
+   * Merged into the Sentry client options last, overriding the rest.
+   */
   options?: Partial<Options>;
-}
-
-// Both runtimes expose this shape, so an app's entry reads the same either way.
-export interface SentryHandler<Bindings> {
-  fetch: (
-    request: Request,
-    env: Bindings,
-    ctx?: unknown,
-  ) => Response | Promise<Response>;
 }

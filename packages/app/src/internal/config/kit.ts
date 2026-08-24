@@ -1,4 +1,5 @@
 import type { Hono } from "hono";
+import type { Handler } from "../../server/contract";
 
 /**
  * What a kit puts on every request's context.
@@ -32,6 +33,21 @@ export type KitVars = (env: unknown) => Record<string, unknown>;
 export type KitRoutes = (app: Hono<any>) => void;
 
 /**
+ * What a kit puts around the handler the app is served through.
+ *
+ * ```ts
+ * handler: (served) => {
+ *   return { fetch: (...args) => inScope(() => served.fetch(...args)) };
+ * }
+ * ```
+ *
+ * For what cannot be middleware: a wrapper needing the fetch handler's own
+ * arguments, or one that has to sit outside the app rather than inside it.
+ * Applied in the order the config lists the kits, so the first is outermost.
+ */
+export type KitHandlerWrapper = (handler: Handler) => Handler;
+
+/**
  * What a kit's {@link Kit.init} answers.
  */
 export interface KitState {
@@ -43,6 +59,10 @@ export interface KitState {
    * What this kit adds to the built app. See {@link KitRoutes}.
    */
   routes?: KitRoutes;
+  /**
+   * What this kit wraps the app's handler in. See {@link KitHandlerWrapper}.
+   */
+  handler?: KitHandlerWrapper;
 }
 
 /**

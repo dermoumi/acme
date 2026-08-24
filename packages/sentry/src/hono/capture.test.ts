@@ -11,7 +11,7 @@ import {
   PASSWORD,
   SESSION,
 } from "./testing/contract";
-import { BOOM } from "./testing/throwing-app";
+import { BOOM } from "./testing/wired-app";
 
 async function capture(
   env: BenchEnv,
@@ -23,7 +23,7 @@ async function capture(
   return { res, body: JSON.stringify(sent) };
 }
 
-describe("sentryErrorHandler", () => {
+describe("createErrorHandler", () => {
   it("captures an error thrown inside a route handler", async () => {
     const { res, body } = await capture({ SENTRY_DSN: DSN });
     expect(res.status).toBe(500);

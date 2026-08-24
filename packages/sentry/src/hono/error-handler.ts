@@ -6,8 +6,9 @@ import type { SentryConfig } from "./config";
 // A ceiling, not a wait: low so a slow Sentry cannot delay error responses.
 const FLUSH_MS = 500;
 
-// Hono answers route errors itself, so withSentry never sees them: this is their only capture path.
-export function sentryErrorHandler(config: SentryConfig = {}): ErrorHandler {
+// Hono answers route errors itself, so the wrapper never sees them: this is
+// their only capture path.
+export function createErrorHandler(config: SentryConfig = {}): ErrorHandler {
   return async (error, ctx) => {
     const expected = error instanceof HTTPException && error.status < 500;
     const ignored =

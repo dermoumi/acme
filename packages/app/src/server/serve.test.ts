@@ -34,6 +34,23 @@ const catchAll: Kit = {
   }),
 };
 
+// The other thing a kit contributes that the routes slot cannot: a wrapper
+// around the whole app, outside every route it answers.
+const wrappingKit: Kit = {
+  name: "@fixture/wrapping",
+  init: () => ({
+    handler: (served) => {
+      return {
+        fetch: async (request, env, ctx) => {
+          const answer = await served.fetch(request, env, ctx);
+
+          return new Response(`wrapped(${await answer.text()})`);
+        },
+      };
+    },
+  }),
+};
+
 const addRoutes = (app: Hono) => {
   app.get("/who", (ctx) => ctx.text("routed"));
 };
@@ -44,16 +61,12 @@ describe("serve", () => {
     await expect(ask(serve(addRoutes, config))).resolves.toBe("routed");
   });
 
-  it("serves what the setup returned instead of the app it was given", async () => {
-    const wrapped = new Hono().get("/who", (ctx) => ctx.text("wrapped"));
-    const config = defineConfig({});
-    const handler = serve((app) => {
-      addRoutes(app);
+  it("serves the app inside whatever a kit wraps it in", async () => {
+    const config = defineConfig({ kits: [wrappingKit] });
 
-      return wrapped;
-    }, config);
-
-    await expect(ask(handler)).resolves.toBe("wrapped");
+    await expect(ask(serve(addRoutes, config))).resolves.toBe(
+      "wrapped(routed)",
+    );
   });
 
   it("takes the app's own config when none is passed", async () => {

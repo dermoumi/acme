@@ -1,0 +1,1 @@
+export { wrapHandler } from "#sentry";
