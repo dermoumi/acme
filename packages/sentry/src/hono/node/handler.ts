@@ -7,7 +7,6 @@ import { init, withIsolationScope } from "@sentry/node";
 import type { Hono } from "hono";
 import type { SentryBindings } from "../bindings";
 import type { SentryConfig, SentryHandler } from "../config";
-import { sentryErrorHandler } from "../error-handler";
 import { sentryOptions } from "../options";
 
 function wantsBody(options: Options): boolean {
@@ -38,7 +37,8 @@ async function describe(
  *
  * Reads settings from `process.env` at startup: node has one client per process,
  * and initialising inside a request would bind it to that request's scope.
- * Installs `app.onError` as a side effect, as the Workers entry does.
+ * Establishes the client the kit's error handler captures onto, as the Workers
+ * entry does.
  *
  * Passes requests through unwrapped when `SENTRY_DSN` is unset.
  */
@@ -46,8 +46,6 @@ export function withSentry<Env extends { Bindings: SentryBindings }>(
   app: Hono<Env>,
   config: SentryConfig = {},
 ): SentryHandler<Env["Bindings"]> {
-  app.onError(sentryErrorHandler(config));
-
   const settings: SentryBindings = process.env;
   const options = sentryOptions(settings, config);
   if (!options) return { fetch: (request, env) => app.fetch(request, env) };

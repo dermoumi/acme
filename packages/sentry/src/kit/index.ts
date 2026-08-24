@@ -1,0 +1,1 @@
+export { sentryKit } from "./kit";

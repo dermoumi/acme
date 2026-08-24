@@ -10,6 +10,7 @@
     }
   },
   "exports": {
+    ".": "./src/index.ts",
     "./hono": {
       "workerd": "./src/hono/workerd/index.ts",
       "default": "./src/hono/node/index.ts"
@@ -24,6 +25,7 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@acme/app": "workspace:*",
     "@sentry/core": "catalog:"
   },
   "devDependencies": {

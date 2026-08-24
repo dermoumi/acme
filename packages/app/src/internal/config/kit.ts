@@ -14,7 +14,7 @@ import type { Hono } from "hono";
 export type KitVars = (env: unknown) => Record<string, unknown>;
 
 /**
- * What a kit adds to an app's routes.
+ * What a kit adds to a built app.
  *
  * ```ts
  * routes: (app) => {
@@ -22,8 +22,9 @@ export type KitVars = (env: unknown) => Record<string, unknown>;
  * }
  * ```
  *
- * Run behind the routes the app added itself, and in the order the config
- * lists the kits, so a kit contributing a catch-all belongs last.
+ * Handed the app itself, so a kit adds routes, an error handler, or whatever
+ * else Hono takes. Run behind the routes the app added itself, and in the order
+ * the config lists the kits, so a kit contributing a catch-all belongs last.
  */
 // A kit's routes read the bindings its own package declares, and an app's are
 // whatever it has, so neither end of this boundary can name the other's.
@@ -39,7 +40,7 @@ export interface KitState {
    */
   vars?: KitVars;
   /**
-   * What this kit adds to the app's routes. See {@link KitRoutes}.
+   * What this kit adds to the built app. See {@link KitRoutes}.
    */
   routes?: KitRoutes;
 }

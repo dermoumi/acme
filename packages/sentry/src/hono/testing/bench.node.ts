@@ -15,7 +15,8 @@ export const bench: Bench = {
     // init() sets a process-wide client, so a previous test would otherwise leave
     // one behind and this bench would not represent a process without a DSN.
     if (!env.SENTRY_DSN) getCurrentScope().setClient(undefined);
-    const handler = withSentry(throwingApp(), recordingConfig(config, sent));
+    const recorded = recordingConfig(config, sent);
+    const handler = withSentry(throwingApp(recorded), recorded);
     // Assigning undefined would store the string "undefined", which is truthy.
     if (previous === undefined) delete process.env.SENTRY_DSN;
     else process.env.SENTRY_DSN = previous;

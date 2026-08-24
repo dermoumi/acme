@@ -15,7 +15,8 @@ export const bench: Bench = {
     const sent: unknown[] = [];
     // Requests share the current scope, so a prior test's client would linger here.
     if (!env.SENTRY_DSN) getCurrentScope().setClient(undefined);
-    const handler = withSentry(throwingApp(), recordingConfig(config, sent));
+    const recorded = recordingConfig(config, sent);
+    const handler = withSentry(throwingApp(recorded), recorded);
 
     return {
       invoke: async (request) => {

@@ -455,6 +455,9 @@ importers:
 
   packages/sentry:
     dependencies:
+      '@acme/app':
+        specifier: workspace:*
+        version: link:../app
       '@sentry/core':
         specifier: 'catalog:'
         version: 10.70.0

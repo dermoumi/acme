@@ -5,7 +5,6 @@ import type {
 import type { Hono } from "hono";
 import type { SentryBindings } from "../bindings";
 import type { SentryConfig } from "../config";
-import { sentryErrorHandler } from "../error-handler";
 import { withRequestClient } from "./with-request-client";
 
 /**
@@ -15,9 +14,10 @@ import { withRequestClient } from "./with-request-client";
  * export default withSentry(app, { masking: "light" });
  * ```
  *
- * Installs `app.onError` as a side effect. Both parts are required: Hono handles
- * route errors itself, so the request wrapper alone captures nothing thrown in a
- * route, and `onError` alone has no client to capture onto.
+ * Establishes the client `sentryErrorHandler` captures onto, which the kit
+ * installs. Both parts are required: Hono answers route errors itself, so this
+ * wrapper alone sees nothing thrown in a route, and the handler alone has no
+ * client to capture onto.
  *
  * Passes requests through unwrapped when `env.SENTRY_DSN` is unset.
  */
@@ -25,8 +25,6 @@ export function withSentry<Env extends { Bindings: SentryBindings }>(
   app: Hono<Env>,
   config: SentryConfig = {},
 ): ExportedHandler<Env["Bindings"]> {
-  app.onError(sentryErrorHandler(config));
-
   return {
     fetch: (request, env, ctx: ExecutionContext) =>
       withRequestClient(

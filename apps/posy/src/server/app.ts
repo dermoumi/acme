@@ -1,19 +1,10 @@
 import { createRateLimiter } from "@acme/rate-limiter";
-import { sentryTunnel, type SentryConfig } from "@acme/sentry/hono";
 import { type Context, Hono } from "hono";
 import { sql } from "kysely";
 import { authRoutes } from "./auth";
 import type { AppBindings, AppEnv } from "./bindings";
 import { debugRoutes, isDebugEnabled } from "./debug";
 import { gate } from "./gate";
-
-// One policy for both halves: the tunnel scrubs client events, withSentry the
-// server's. Auth is the only sensitive thing posy handles.
-export const sentryConfig: SentryConfig = {
-  masking: "light",
-  // The deploy health check probes every deploy; CI already reports its failures.
-  ignoreUserAgent: "acme-ci-health-probe",
-};
 
 // Mirror wrangler.jsonc, which no runtime reads back. Exported so a test reads
 // the budget off the source instead of copying it.
@@ -44,6 +35,7 @@ export function createApp(): Hono<AppEnv> {
   app.use(gate({ open: ["/health"], realm: "Posy Staging" }));
 
   // POST only keeps the per-load GET uncapped; /sentry exact, /* double-charges.
+  // The tunnel itself is the sentry kit's, mounted behind this and the gate.
   app.on(
     "POST",
     "/session",
@@ -55,8 +47,6 @@ export function createApp(): Hono<AppEnv> {
     limiter.create("RATE_LIMIT_SENTRY", RATE_TUNNEL_LIMIT, RATE_TUNNEL_PERIOD),
   );
   app.route("/session", authRoutes());
-  // Inside the gate: staging's basic auth covers this like every other route.
-  app.route("/sentry", sentryTunnel(sentryConfig));
   // Mounted everywhere but answered only off production, so the tier decides at
   // request time rather than at build time.
   app.use("/debug/*", async (ctx, next) =>
