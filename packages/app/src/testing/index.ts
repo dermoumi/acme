@@ -1,2 +1,2 @@
-export { setupKitRoutes } from "../server/kit-routes";
+export { composeApp } from "../server/serve";
 export { setupKitVars } from "../server/kit-vars";

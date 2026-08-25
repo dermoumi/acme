@@ -2,7 +2,7 @@ import { defineConfig, type Kit, type KitShutdown } from "@acme/app";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import type { Handler } from "./contract";
-import { serve } from "./serve";
+import { composeApp, serve } from "./serve";
 
 const given = vi.hoisted(() => {
   return { shutdown: undefined as KitShutdown | undefined };
@@ -27,6 +27,18 @@ const ask = async (handler: Handler, path = "/who") => {
   const response = await handler.fetch(request, {});
 
   return response.text();
+};
+
+// What the kit's own package would declare, so a route can read ctx.var.
+declare module "hono" {
+  interface ContextVariableMap {
+    greeting: string;
+  }
+}
+
+const greeter: Kit = {
+  name: "@fixture/greeter",
+  init: () => ({ vars: () => ({ greeting: "hei" }) }),
 };
 
 // A catch-all, the shape the ordering has to hold for.
@@ -79,20 +91,6 @@ describe("serve", () => {
     await expect(ask(serve(app))).resolves.toBe("routed");
   });
 
-  it("serves a path the app left unclaimed from a kit's routes", async () => {
-    const app = buildApp();
-    const config = defineConfig({ kits: [catchAll] });
-
-    await expect(ask(serve(app, config), "/nothing")).resolves.toBe("kit");
-  });
-
-  it("adds a kit's routes behind the ones the app added", async () => {
-    const app = buildApp();
-    const config = defineConfig({ kits: [catchAll] });
-
-    await expect(ask(serve(app, config))).resolves.toBe("routed");
-  });
-
   it("hands the host what shuts the declared kits down", async () => {
     const closed: string[] = [];
     const closingKit: Kit = {
@@ -119,5 +117,28 @@ describe("serve", () => {
     serve(buildApp(), config);
 
     expect(once.init).toHaveBeenCalledOnce();
+  });
+});
+
+describe("composeApp", () => {
+  it("puts a kit's variables where the app's own routes read them", async () => {
+    const app = new Hono().get("/who", (ctx) => ctx.text(ctx.var.greeting));
+    const config = defineConfig({ kits: [greeter] });
+
+    await expect(ask(composeApp(app, config))).resolves.toBe("hei");
+  });
+
+  it("adds a kit's routes behind the app's own", async () => {
+    const app = buildApp();
+    const config = defineConfig({ kits: [catchAll] });
+
+    await expect(ask(composeApp(app, config))).resolves.toBe("routed");
+  });
+
+  it("answers a path the app left unclaimed from a kit's routes", async () => {
+    const app = buildApp();
+    const config = defineConfig({ kits: [catchAll] });
+
+    await expect(ask(composeApp(app, config), "/nothing")).resolves.toBe("kit");
   });
 });
