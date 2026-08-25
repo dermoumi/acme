@@ -15,7 +15,7 @@ export default defineConfig({
     coverage: {
       provider: "istanbul",
       reporter: ["text", "lcovonly"],
-      exclude: ["src/hono/testing/**", "*.config.ts"],
+      exclude: ["src/server/testing/**", "*.config.ts"],
     },
     projects: [
       { test: { name: "node", include, env } },
@@ -34,7 +34,7 @@ export default defineConfig({
           include,
           env,
           // Build-time and node-only surfaces have nothing to prove in workerd.
-          exclude: ["src/hono/node/**", "src/vite/**"],
+          exclude: ["src/server/node/**", "src/vite/**"],
         },
       },
     ],

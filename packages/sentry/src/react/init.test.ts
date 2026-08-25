@@ -1,6 +1,6 @@
 import { getClient, getCurrentScope } from "@sentry/core";
 import { afterEach, describe, expect, it } from "vitest";
-import { buildSentryOptions } from "../hono/options";
+import { buildSentryOptions } from "../server/options";
 import { initSentryClient } from "./init";
 
 const APP = "posy";

@@ -9,8 +9,8 @@
       "default": "./src/runtime/runtime.node.ts"
     },
     "#testing/bench": {
-      "workerd": "./src/hono/testing/bench.workerd.ts",
-      "default": "./src/hono/testing/bench.node.ts"
+      "workerd": "./src/server/testing/bench.workerd.ts",
+      "default": "./src/server/testing/bench.node.ts"
     }
   },
   "exports": {

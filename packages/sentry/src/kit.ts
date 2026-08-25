@@ -1,7 +1,7 @@
 import type { Kit } from "@acme/app";
-import type { SentryConfig } from "./hono/config";
-import { createErrorHandler } from "./hono/error-handler";
-import { createTunnel } from "./hono/tunnel";
+import type { SentryConfig } from "./server/config";
+import { createErrorHandler } from "./server/error-handler";
+import { createTunnel } from "./server/tunnel";
 import { closeClient, wrapHandler } from "#sentry";
 
 // Must match initSentry's own default, which is where the browser posts.

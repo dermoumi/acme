@@ -4,8 +4,8 @@ import {
   winterCGRequestToRequestData,
 } from "@sentry/core";
 import { init, withIsolationScope } from "@sentry/node";
-import { buildSentryOptions } from "../hono/options";
-import { closeSentry } from "../hono/node/close";
+import { buildSentryOptions } from "../server/options";
+import { closeSentry } from "../server/node/close";
 import type { ClientCloser, HandlerWrapper } from "./contract";
 
 function wantsBody(options: Options): boolean {

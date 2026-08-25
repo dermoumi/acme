@@ -3,7 +3,7 @@ import {
   setAsyncLocalStorageAsyncContextStrategy,
   wrapRequestHandler,
 } from "@sentry/cloudflare";
-import { buildSentryOptions } from "../hono/options";
+import { buildSentryOptions } from "../server/options";
 import type { ClientCloser, HandlerWrapper } from "./contract";
 
 // Only Sentry's own handler installs this; without it every request shares one isolation scope.
