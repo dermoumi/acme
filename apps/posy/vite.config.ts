@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { acmeVite } from "@acme/app/vite";
 import { sentryVite } from "@acme/sentry/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
@@ -8,26 +7,9 @@ import type { PluginOption, UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
 import { VitePWA, type VitePWAOptions } from "vite-plugin-pwa";
 
-const packageJson = JSON.parse(
-  readFileSync(new URL("package.json", import.meta.url), "utf8"),
-) as { name: string; version: string };
-
-const packageName = packageJson.name.replace(/^@[^/]+\//u, "");
-
 // The Cloudflare plugin does not run in vitest.
 // Vitest sets this env var before reading this file.
 const isTest = process.env.VITEST === "true";
-
-// An empty var has to fall back too, which `??` would not do.
-function envOr(name: string, fallback: string): string {
-  const value = process.env[name];
-  return value === undefined || value === "" ? fallback : value;
-}
-
-process.env.VITE_APP_NAME = envOr("APP_NAME", packageName);
-process.env.VITE_APP_VERSION = envOr("APP_VERSION", packageJson.version);
-process.env.VITE_APP_ENV = envOr("APP_ENV", "development");
-process.env.VITE_APP_REVISION = envOr("APP_REVISION", "dev");
 
 const pwa: Partial<VitePWAOptions> = {
   registerType: "prompt",

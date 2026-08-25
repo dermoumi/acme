@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Plugin } from "vite";
@@ -38,6 +38,39 @@ const modules: Record<string, VirtualModule> = {
   },
 };
 
+// An empty var has to fall back too, which `??` would not do.
+function readEnv(name: string, fallback: string): string {
+  const value = process.env[name];
+
+  return value === undefined || value === "" ? fallback : value;
+}
+
+// Climbs, so a build run from a subdirectory still finds the app it belongs to.
+function readPackage(from: string): { name?: string; version?: string } {
+  let dir = from;
+  while (!existsSync(path.join(dir, "package.json"))) {
+    const parent = path.dirname(dir);
+    if (parent === dir) return {};
+
+    dir = parent;
+  }
+
+  const file = readFileSync(path.join(dir, "package.json"), "utf8");
+
+  return JSON.parse(file) as { name?: string; version?: string };
+}
+
+// VITE_ prefixed because that is the only way a value reaches the browser.
+function stampIdentity(root: string): void {
+  const own = readPackage(root);
+  const name = (own.name ?? path.basename(root)).replace(/^@[^/]+\//u, "");
+
+  process.env.VITE_APP_NAME = readEnv("APP_NAME", name);
+  process.env.VITE_APP_VERSION = readEnv("APP_VERSION", own.version ?? "0.0.0");
+  process.env.VITE_APP_ENV = readEnv("APP_ENV", "development");
+  process.env.VITE_APP_REVISION = readEnv("APP_REVISION", "dev");
+}
+
 /**
  * What {@link acmeVite} takes.
  */
@@ -48,6 +81,11 @@ export interface AcmeViteOptions {
    * Defaults to `acme.config.ts`, which is where the CLI looks too.
    */
   config?: string;
+  /**
+   * Where the app's `package.json` is looked for, climbing to the nearest one.
+   * Defaults to the working directory.
+   */
+  root?: string;
 }
 
 /**
@@ -69,9 +107,12 @@ export interface AcmeViteOptions {
  * A module importing one of these ids reaches its types with
  * `/// <reference types="@acme/app/types" />`, the way `setupKitVars` and
  * `@acme/db/testing` do on an app's behalf. An app itself needs nothing.
+ *
+ * Stamps `VITE_APP_*` when called, so declare it before anything reading them.
  */
 export function acmeVite(options: AcmeViteOptions = {}): Plugin {
   let acmeConfigPath = "";
+  stampIdentity(options.root ?? process.cwd());
 
   return {
     name: "@acme/app/virtual",

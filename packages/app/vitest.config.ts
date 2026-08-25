@@ -8,8 +8,8 @@ const include = ["src/**/*.test.ts"];
 // serve imports virtual:acme-config, so both projects need the plugin. This
 // package has no config of its own: the fixture one stands in.
 const acme = () => acmeVite({ config: "src/cli/fixtures/app/acme.config.ts" });
-// A CLI is a process with argv and a filesystem, which workerd is not.
-const NODE_ONLY = ["src/cli/**"];
+// A CLI and a vite plugin both want a filesystem, which workerd is not.
+const NODE_ONLY = ["src/cli/**", "**/*.node.test.ts"];
 
 export default defineConfig({
   test: {
