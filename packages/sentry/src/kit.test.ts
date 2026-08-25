@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { DSN } from "../hono/testing/contract";
+import { DSN } from "./hono/testing/contract";
 import { sentryKit } from "./kit";
 
 // The shape an app has: its own routes, a sub-app mounted under them, and the

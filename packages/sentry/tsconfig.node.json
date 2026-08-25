@@ -1,5 +1,5 @@
 {
   "extends": "@acme/tsconfig/tsconfig.node.json",
-  "include": ["src/hono", "src/index.ts", "src/kit", "vitest.config.ts"],
-  "exclude": ["**/*.workerd.ts", "src/hono/workerd"]
+  "include": ["src/*.ts", "src/hono", "src/runtime", "vitest.config.ts"],
+  "exclude": ["**/*.workerd.ts"]
 }
