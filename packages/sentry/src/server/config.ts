@@ -13,29 +13,27 @@ import type { Options } from "@sentry/core";
 export type MaskingLevel = "none" | "light" | "full";
 
 /**
+ * What the package reads out of the environment.
+ */
+export interface SentrySettings {
+  dsn?: string;
+  appName?: string;
+  appEnv?: string;
+  appVersion?: string;
+  appRevision?: string;
+}
+
+/**
  * What an app declares the Sentry kit with.
  */
 export interface SentryConfig {
   /**
-   * Name of the value holding the DSN. Defaults to `SENTRY_DSN`.
+   * Where each setting comes from. Defaults to `SENTRY_DSN`, `APP_NAME`,
+   * `APP_ENV`, `APP_VERSION` and `APP_REVISION`.
+   *
+   * A setting it leaves out keeps its default name.
    */
-  dsnVar?: string;
-  /**
-   * Name of the value holding the app's name. Defaults to `APP_NAME`.
-   */
-  appNameVar?: string;
-  /**
-   * Name of the value holding the deploy tier. Defaults to `APP_ENV`.
-   */
-  appEnvVar?: string;
-  /**
-   * Name of the value holding the app's version. Defaults to `APP_VERSION`.
-   */
-  appVersionVar?: string;
-  /**
-   * Name of the value holding the build identifier. Defaults to `APP_REVISION`.
-   */
-  appRevisionVar?: string;
+  settings?: (env: Record<string, string | undefined>) => SentrySettings;
   /**
    * Defaults to `"full"`.
    */

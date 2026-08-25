@@ -1,5 +1,5 @@
 import type { ErrorEvent, Options } from "@sentry/core";
-import { readEnv } from "./env";
+import { readSettings } from "./env";
 import { buildReleaseName } from "../release";
 import type { MaskingLevel, SentryConfig } from "./config";
 import {
@@ -51,23 +51,22 @@ export function buildSentryOptions(
   env: unknown,
   config: SentryConfig = {},
 ): Options | undefined {
-  const dsn = readEnv(env, config, "dsnVar");
-  if (!dsn) return undefined;
+  const settings = readSettings(env, config);
+  if (!settings.dsn) return undefined;
 
   const masking = config.masking ?? "full";
   const keys = [...DEFAULT_REDACT_KEYS, ...(config.redactKeys ?? [])];
-  const revision = readEnv(env, config, "appRevisionVar");
   const release = buildReleaseName(
-    readEnv(env, config, "appNameVar"),
-    readEnv(env, config, "appVersionVar"),
-    revision,
+    settings.appName,
+    settings.appVersion,
+    settings.appRevision,
   );
 
   return {
-    dsn,
-    environment: readEnv(env, config, "appEnvVar") ?? "development",
+    dsn: settings.dsn,
+    environment: settings.appEnv ?? "development",
     release,
-    dist: revision ?? "dev",
+    dist: settings.appRevision ?? "dev",
     dataCollection: dataCollection(masking),
     beforeSend: beforeSend(masking, keys),
     ...config.options,

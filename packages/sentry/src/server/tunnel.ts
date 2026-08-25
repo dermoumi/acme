@@ -7,7 +7,7 @@ import {
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { MaskingLevel, SentryConfig } from "./config";
-import { readEnv } from "./env";
+import { readSettings } from "./env";
 import { DEFAULT_REDACT_KEYS, scrubEvent, stripCredentials } from "./scrub";
 
 const MAX_ENVELOPE_BYTES = 1024 * 1024;
@@ -98,7 +98,7 @@ export function createTunnel(config: SentryConfig = {}): Hono {
   const keys = [...DEFAULT_REDACT_KEYS, ...(config.redactKeys ?? [])];
 
   return tunnel.post("/", async (ctx) => {
-    const dsn = readEnv(ctx.env, config, "dsnVar");
+    const { dsn } = readSettings(ctx.env, config);
     if (!dsn) throw new HTTPException(404);
     if (!sameOrigin(ctx.req.raw)) throw new HTTPException(403);
 

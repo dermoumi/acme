@@ -1,24 +1,21 @@
-import type { SentryConfig } from "./config";
+import type { SentryConfig, SentrySettings } from "./config";
 
-// The name each setting has when an app names none, keyed by the config field
-// that renames it.
-const DEFAULTS = {
-  dsnVar: "SENTRY_DSN",
-  appNameVar: "APP_NAME",
-  appEnvVar: "APP_ENV",
-  appVersionVar: "APP_VERSION",
-  appRevisionVar: "APP_REVISION",
-} as const;
+function dropEmpty(value: string | undefined): string | undefined {
+  return value === "" ? undefined : value;
+}
 
-// Named at runtime, so the lookup is by string rather than by property. An
-// empty value counts as absent: a deployment clears one by blanking it.
-export function readEnv(
+export function readSettings(
   env: unknown,
   config: SentryConfig,
-  setting: keyof typeof DEFAULTS,
-): string | undefined {
-  const name = config[setting] ?? DEFAULTS[setting];
-  const held = (env as Record<string, unknown> | undefined)?.[name];
+): SentrySettings {
+  const values = (env ?? {}) as Record<string, string | undefined>;
+  const named = config.settings?.(values) ?? {};
 
-  return typeof held === "string" && held ? held : undefined;
+  return {
+    dsn: dropEmpty(named.dsn ?? values.SENTRY_DSN),
+    appName: dropEmpty(named.appName ?? values.APP_NAME),
+    appEnv: dropEmpty(named.appEnv ?? values.APP_ENV),
+    appVersion: dropEmpty(named.appVersion ?? values.APP_VERSION),
+    appRevision: dropEmpty(named.appRevision ?? values.APP_REVISION),
+  };
 }

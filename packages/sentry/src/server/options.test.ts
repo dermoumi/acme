@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { MaskingLevel } from "./config";
+import type { MaskingLevel, SentryConfig } from "./config";
 import { buildSentryOptions } from "./options";
 
 const DSN = "https://dummy@dummy.ingest.sentry.io/1";
@@ -10,38 +10,65 @@ describe("buildSentryOptions", () => {
     expect(buildSentryOptions({ APP_ENV: "staging" })).toBeUndefined();
   });
 
-  it("reads the dsn from the var the config names, not from the default", () => {
-    const env = { REPORTING_DSN: DSN };
+  it("takes the dsn the config reads, not the default value", () => {
+    const bound = { REPORTING_DSN: DSN };
+    const config: SentryConfig = {
+      settings: (env) => {
+        return { dsn: env.REPORTING_DSN };
+      },
+    };
 
-    expect(buildSentryOptions(env)).toBeUndefined();
-    expect(buildSentryOptions(env, { dsnVar: "REPORTING_DSN" })?.dsn).toBe(DSN);
+    expect(buildSentryOptions(bound)).toBeUndefined();
+    expect(buildSentryOptions(bound, config)?.dsn).toBe(DSN);
   });
 
-  it("reads the release and tier from the vars the config names", () => {
-    const env = {
+  it("takes the release and tier the config reads", () => {
+    const bound = {
       SENTRY_DSN: DSN,
       SERVICE: "shop",
       TIER: "staging",
       BUILD_VERSION: "1.2.3",
       BUILD_SHA: "abc1234",
     };
-    const options = buildSentryOptions(env, {
-      appNameVar: "SERVICE",
-      appEnvVar: "TIER",
-      appVersionVar: "BUILD_VERSION",
-      appRevisionVar: "BUILD_SHA",
-    });
+    const config: SentryConfig = {
+      settings: (env) => {
+        return {
+          appName: env.SERVICE,
+          appEnv: env.TIER,
+          appVersion: env.BUILD_VERSION,
+          appRevision: env.BUILD_SHA,
+        };
+      },
+    };
+    const options = buildSentryOptions(bound, config);
 
     expect(options?.environment).toBe("staging");
     expect(options?.release).toBe("shop@1.2.3+abc1234");
     expect(options?.dist).toBe("abc1234");
   });
 
-  // The defaults must not be consulted once a name is given, or a stale value
-  // under the old name would quietly win.
-  it("ignores the default vars once the config renames them", () => {
-    const env = { SENTRY_DSN: DSN, APP_ENV: "production", TIER: "staging" };
-    const options = buildSentryOptions(env, { appEnvVar: "TIER" });
+  // A stale value under the default name would otherwise quietly win.
+  it("ignores the default name for a setting the config reads", () => {
+    const bound = { SENTRY_DSN: DSN, APP_ENV: "production", TIER: "staging" };
+    const config: SentryConfig = {
+      settings: (env) => {
+        return { appEnv: env.TIER };
+      },
+    };
+    const options = buildSentryOptions(bound, config);
+
+    expect(options?.environment).toBe("staging");
+  });
+
+  // Reading one setting must not cost an app the four it did not name.
+  it("keeps the default name for a setting the config leaves out", () => {
+    const bound = { REPORTING_DSN: DSN, APP_ENV: "staging" };
+    const config: SentryConfig = {
+      settings: (env) => {
+        return { dsn: env.REPORTING_DSN };
+      },
+    };
+    const options = buildSentryOptions(bound, config);
 
     expect(options?.environment).toBe("staging");
   });

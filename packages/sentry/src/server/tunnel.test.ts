@@ -71,11 +71,15 @@ describe("createTunnel", () => {
     expect(forwarded).toBeUndefined();
   });
 
-  it("reads the dsn from the var the config names", async () => {
-    const env = { REPORTING_DSN: DSN };
-    const config: SentryConfig = { dsnVar: "REPORTING_DSN" };
+  it("takes the dsn the config reads", async () => {
+    const bound = { REPORTING_DSN: DSN };
+    const config: SentryConfig = {
+      settings: (env) => {
+        return { dsn: env.REPORTING_DSN };
+      },
+    };
 
-    const { status, forwarded } = await send(post(envelope()), env, config);
+    const { status, forwarded } = await send(post(envelope()), bound, config);
 
     expect(status).toBe(200);
     expect(forwarded?.url).toBe(
