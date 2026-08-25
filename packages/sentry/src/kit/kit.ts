@@ -2,7 +2,7 @@ import type { Kit } from "@acme/app";
 import type { SentryConfig } from "../hono/config";
 import { createErrorHandler } from "../hono/error-handler";
 import { createTunnel } from "../hono/tunnel";
-import { wrapHandler } from "./runtime";
+import { closeClient, wrapHandler } from "./runtime";
 
 // Must match initSentry's own default, which is where the browser posts.
 const TUNNEL_PATH = "/sentry";
@@ -25,6 +25,7 @@ export function sentryKit(config: SentryConfig = {}): Kit {
       handler: (served) => {
         return wrapHandler(served, config);
       },
+      shutdown: closeClient,
     }),
   };
 }

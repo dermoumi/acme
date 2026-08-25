@@ -5,7 +5,8 @@ import {
 } from "@sentry/core";
 import { init, withIsolationScope } from "@sentry/node";
 import { buildSentryOptions } from "../../hono/options";
-import type { HandlerWrapper } from "./contract";
+import { closeSentry } from "../../hono/node/close";
+import type { ClientCloser, HandlerWrapper } from "./contract";
 
 function wantsBody(options: Options): boolean {
   return (options.dataCollection?.httpBodies ?? []).includes("incomingRequest");
@@ -45,4 +46,8 @@ export const wrapHandler: HandlerWrapper = (handler, config) => {
         return handler.fetch(request, env, ctx);
       }),
   };
+};
+
+export const closeClient: ClientCloser = () => {
+  return closeSentry();
 };

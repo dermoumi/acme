@@ -40,6 +40,13 @@ export type KitRoutes = (app: Hono<any>) => void;
 export type KitHandlerWrapper = (handler: Handler) => Handler;
 
 /**
+ * What a kit runs as the host leaves.
+ *
+ * Never called on workerd, which has no process to leave.
+ */
+export type KitShutdown = () => Promise<void> | void;
+
+/**
  * What a kit's {@link Kit.init} answers.
  */
 export interface KitState {
@@ -55,6 +62,10 @@ export interface KitState {
    * What this kit wraps the app's handler in. See {@link KitHandlerWrapper}.
    */
   handler?: KitHandlerWrapper;
+  /**
+   * What this kit runs on the way out. See {@link KitShutdown}.
+   */
+  shutdown?: KitShutdown;
 }
 
 /**

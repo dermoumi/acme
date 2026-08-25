@@ -4,7 +4,7 @@ import {
   wrapRequestHandler,
 } from "@sentry/cloudflare";
 import { buildSentryOptions } from "../../hono/options";
-import type { HandlerWrapper } from "./contract";
+import type { ClientCloser, HandlerWrapper } from "./contract";
 
 // Only Sentry's own handler installs this; without it every request shares one isolation scope.
 setAsyncLocalStorageAsyncContextStrategy();
@@ -25,4 +25,9 @@ export const wrapHandler: HandlerWrapper = (handler, config) => {
       );
     },
   };
+};
+
+// A worker has no process to leave, and nothing outside a request to flush.
+export const closeClient: ClientCloser = () => {
+  return Promise.resolve();
 };

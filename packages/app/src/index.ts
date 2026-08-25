@@ -3,9 +3,10 @@ export {
   defineConfig,
   type Kit,
   type KitRoutes,
+  type KitHandlerWrapper,
+  type KitShutdown,
   type KitState,
   type KitVars,
-  type KitHandlerWrapper,
 } from "./internal/config";
 export type { Handler } from "./server/contract";
 export type { KitShared } from "./internal/shared";

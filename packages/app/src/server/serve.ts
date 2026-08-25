@@ -3,6 +3,7 @@ import { type Env, Hono } from "hono";
 import type { AcmeConfig } from "../internal/config";
 import type { Handler } from "./contract";
 import { setupKitRoutes } from "./kit-routes";
+import { shutdownKits } from "./kit-shutdown";
 import { setupKitVars } from "./kit-vars";
 import { wrapWithKits } from "./kit-handler";
 
@@ -23,5 +24,5 @@ export function serve<AppEnv extends Env>(
   // After the app's routes: a kit's catch-all would otherwise swallow them.
   setupKitRoutes(outer, config);
 
-  return host.serve(wrapWithKits(outer, config));
+  return host.serve(wrapWithKits(outer, config), () => shutdownKits(config));
 }

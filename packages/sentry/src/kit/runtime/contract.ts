@@ -7,3 +7,5 @@ export type HandlerWrapper = (
   handler: Handler,
   config: SentryConfig,
 ) => Handler;
+
+export type ClientCloser = () => Promise<void>;

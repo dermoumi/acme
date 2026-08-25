@@ -1,15 +1,21 @@
-import { defineConfig, type Kit } from "@acme/app";
+import { defineConfig, type Kit, type KitShutdown } from "@acme/app";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import type { Handler } from "./contract";
 import { serve } from "./serve";
+
+const given = vi.hoisted(() => {
+  return { shutdown: undefined as KitShutdown | undefined };
+});
 
 // Serving is the only thing a host does differently, and on node it binds a
 // port; standing in for it is what lets one suite cover both runtimes.
 vi.mock("#host", () => {
   return {
     host: {
-      serve: (handler: Handler) => {
+      serve: (handler: Handler, shutdown: KitShutdown) => {
+        given.shutdown = shutdown;
+
         return handler;
       },
     },
@@ -85,6 +91,24 @@ describe("serve", () => {
     const config = defineConfig({ kits: [catchAll] });
 
     await expect(ask(serve(app, config))).resolves.toBe("routed");
+  });
+
+  it("hands the host what shuts the declared kits down", async () => {
+    const closed: string[] = [];
+    const closingKit: Kit = {
+      name: "@fixture/closing",
+      init: () => ({
+        shutdown: () => {
+          closed.push("closed");
+        },
+      }),
+    };
+    const config = defineConfig({ kits: [closingKit] });
+
+    serve(buildApp(), config);
+    await given.shutdown?.();
+
+    expect(closed).toEqual(["closed"]);
   });
 
   // Both slots read one state, so filling both must not build the kit twice.

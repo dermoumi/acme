@@ -1,3 +1,5 @@
+import type { KitShutdown } from "../internal/config";
+
 /**
  * What an app exports for its runtime to serve.
  */
@@ -26,5 +28,5 @@ export interface Host {
    * Workers export a handler and the platform calls it; node has to listen,
    * and answers the same handler so one entry typechecks on both.
    */
-  serve: (handler: Handler) => Handler;
+  serve: (handler: Handler, shutdown: KitShutdown) => Handler;
 }

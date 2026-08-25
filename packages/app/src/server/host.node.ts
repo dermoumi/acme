@@ -1,4 +1,5 @@
 import { serve } from "@hono/node-server";
+import type { KitShutdown } from "../internal/config";
 import type { Handler, Host } from "./contract";
 
 // Under docker's ten second default, and every orchestrator has one. Docker
@@ -8,7 +9,7 @@ const DRAIN_MS = 8000;
 type Server = ReturnType<typeof serve>;
 
 // Once, whichever of the two paths below gets there first.
-function leaving(): () => void {
+function leaving(shutdown: KitShutdown): () => void {
   let left = false;
 
   return () => {
@@ -17,12 +18,12 @@ function leaving(): () => void {
     // A pg pool holds the loop open, so exiting is not something to leave to
     // whether anything else happens to be pending.
     // oxlint-disable-next-line unicorn/no-process-exit
-    process.exit(0);
+    void Promise.resolve(shutdown()).finally(() => process.exit(0));
   };
 }
 
-function drain(server: Server): void {
-  const leave = leaving();
+function drain(server: Server, shutdown: KitShutdown): void {
+  const leave = leaving(shutdown);
 
   // PID 1 is exempt from the default signal dispositions, so without these the
   // container ignores `docker stop` until it is killed.
@@ -51,14 +52,16 @@ function drain(server: Server): void {
           server.closeAllConnections();
         }
 
-        leave();
+        // Not leave(): a shutdown that never settles must not hold the process.
+        // oxlint-disable-next-line unicorn/no-process-exit
+        process.exit(0);
       }, DRAIN_MS).unref();
     });
   }
 }
 
 export const host: Host = {
-  serve: (handler: Handler) => {
+  serve: (handler: Handler, shutdown: KitShutdown) => {
     const server = serve(
       {
         // The same place workerd puts a deployment's values: bindings are what
@@ -73,7 +76,7 @@ export const host: Host = {
         console.log(`Listening on ${port}`);
       },
     );
-    drain(server);
+    drain(server, shutdown);
 
     return handler;
   },

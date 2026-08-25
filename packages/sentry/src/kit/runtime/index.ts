@@ -1,1 +1,1 @@
-export { wrapHandler } from "#sentry";
+export { closeClient, wrapHandler } from "#sentry";
