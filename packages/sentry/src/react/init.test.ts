@@ -17,7 +17,7 @@ describe("initSentryClient", () => {
     expect(getClient()?.getOptions().release).toBe("posy@1.2.3+abc1234");
   });
 
-  // Maps upload against the server's release, so a mismatch loses every browser trace.
+  // Maps upload against the server's release; a mismatch loses browser traces.
   it("reports the same release the server does", () => {
     initSentryClient({ app: APP, release: VERSION, dist: REVISION });
     const server = buildSentryOptions({

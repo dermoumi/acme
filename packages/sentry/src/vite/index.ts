@@ -70,7 +70,7 @@ export function sentryVite(options: SentryViteOptions = {}): PluginOption {
           options.dist ?? process.env.APP_REVISION,
         ),
         dist: options.dist ?? process.env.APP_REVISION ?? "dev",
-        // Never fail a build over monitoring: shallow clones have no range to diff.
+        // Never fail a build over monitoring: a shallow clone has no range.
         setCommits: { auto: true, ignoreMissing: true, ignoreEmpty: true },
       },
       sourcemaps: { filesToDeleteAfterUpload: ["./dist/**/*.map"] },

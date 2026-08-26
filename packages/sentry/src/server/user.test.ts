@@ -27,7 +27,7 @@ describe("sentry hono user context", () => {
     );
   });
 
-  // dataCollection.userInfo only gates the inferred ip, so beforeSend has to do this.
+  // userInfo only gates the inferred ip, so beforeSend has to do this.
   it("drops a user set by the app when masking is full", async () => {
     expect(await identify("full")).not.toContainEqual(
       expect.objectContaining(IDENTIFIED),

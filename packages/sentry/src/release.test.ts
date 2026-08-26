@@ -15,7 +15,7 @@ describe("buildReleaseName", () => {
     );
   });
 
-  // Releases are org-scoped, so two apps at one version would otherwise collide.
+  // Releases are org-scoped, so two apps at one version would collide.
   it("distinguishes apps at the same version and build", () => {
     expect(buildReleaseName("posy", "0.1.0", "a1b2c3d")).not.toBe(
       buildReleaseName("other", "0.1.0", "a1b2c3d"),

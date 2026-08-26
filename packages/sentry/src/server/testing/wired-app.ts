@@ -25,7 +25,7 @@ export function wireApp(config: SentryConfig = {}): Handler {
   return state.handler?.(app) ?? app;
 }
 
-// Records envelopes instead of sending them, so captures are observable offline.
+// Records envelopes instead of sending, so captures are observable offline.
 export function recordingConfig(
   config: SentryConfig,
   sent: unknown[],

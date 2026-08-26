@@ -12,7 +12,7 @@ let latest: ExecutionContext | undefined;
 export const bench: Bench = {
   build: (env, config) => {
     const sent: unknown[] = [];
-    // Requests share the current scope, so a prior test's client would linger here.
+    // Requests share the current scope, so a prior test's client would linger.
     if (!env.SENTRY_DSN) getCurrentScope().setClient(undefined);
     const recorded = recordingConfig(config, sent);
     const handler = wireApp(recorded);

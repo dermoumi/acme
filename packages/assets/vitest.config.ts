@@ -26,7 +26,7 @@ export default defineConfig({
               assets: {
                 binding: "ASSETS",
                 directory: "./test/fixtures/assets",
-                // Nested and snake_case: the camelCase top-level key is ignored.
+                // Nested snake_case: the camelCase top-level key is ignored.
                 assetConfig: { not_found_handling: "single-page-application" },
               },
             },

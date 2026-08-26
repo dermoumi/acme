@@ -31,7 +31,7 @@ export const clientAddress: ClientAddress = (ctx, trustedProxies) => {
 export const SELF_PROVISIONED: boolean = true;
 
 // Nothing needs binding here: the budget itself is enforced, in memory and per
-// process. A bound limiter still wins, so an entrypoint can supply a shared one.
+// process. A bound limiter still wins, so an entrypoint can supply one.
 export const getBinding: GetBinding = (binding, limit, periodSeconds) => {
   const store: Store = new MemoryStore();
   store.init?.({ windowMs: periodSeconds * 1000, limit } as StoreConfig);

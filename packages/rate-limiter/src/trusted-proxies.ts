@@ -44,7 +44,7 @@ function compile(cidr: string): TrustedRange | undefined {
 
   const width = target.v4 ? 32 : 128;
   // Guard the digits before Number(), which reads "" and " " as 0, and a zero
-  // prefix matches every address: a trailing slash would trust the whole family.
+  // prefix matches every address: a trailing slash would trust the family.
   if (prefixText !== undefined && !/^\d+$/u.test(prefixText)) return undefined;
 
   const prefix = prefixText === undefined ? width : Number(prefixText);

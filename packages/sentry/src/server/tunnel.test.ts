@@ -64,7 +64,7 @@ describe("createTunnel", () => {
     );
   });
 
-  // Without a dsn the route must not exist: the client falls back to dropping events.
+  // Without a dsn the route must not exist: the client then drops events.
   it("404s when no dsn is configured, so nothing leaks upstream", async () => {
     const { status, forwarded } = await send(post(envelope()), {});
     expect(status).toBe(404);

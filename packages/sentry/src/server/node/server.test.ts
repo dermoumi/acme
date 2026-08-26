@@ -6,7 +6,7 @@ import { DSN, loginRequest, PASSWORD } from "../testing/contract";
 import { BOOM } from "../testing/wired-app";
 
 describe("sentry middleware on @hono/node-server", () => {
-  // The shared contract calls fetch directly; this covers the real serving path.
+  // The shared contract calls fetch directly; this covers real serving.
   it("captures through a real @hono/node-server", async () => {
     const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, {});
 

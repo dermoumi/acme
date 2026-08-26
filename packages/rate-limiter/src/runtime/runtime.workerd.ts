@@ -11,6 +11,6 @@ const PERMIT_ALL: Limiter = {
 };
 
 // Only the platform can count here, from wrangler.jsonc, so a missing binding
-// leaves the route uncapped rather than failing it. status() is what shows that.
+// leaves the route uncapped rather than failing it, which status() shows.
 export const getBinding: GetBinding = (binding) => (ctx) =>
   bound(ctx.env, binding) ?? PERMIT_ALL;

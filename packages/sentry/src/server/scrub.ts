@@ -20,7 +20,7 @@ export const DEFAULT_REDACT_KEYS = [
   "token",
 ];
 
-// Deliberately not Sentry's "[Filtered]": distinct markers show who scrubbed what.
+// Deliberately not Sentry's "[Filtered]", so markers show who scrubbed what.
 const REDACTED = "[redacted]";
 const DENIED_HEADERS = new Set(SENSITIVE_HEADERS);
 
@@ -60,7 +60,7 @@ function contentType(headers: Record<string, string> | undefined): string {
   return found?.[1].toLowerCase() ?? "";
 }
 
-// A body neither parse understands cannot be masked, only kept whole or dropped.
+// A body neither parse understands cannot be masked: kept whole or dropped.
 function redactBody(
   data: unknown,
   keys: string[],
@@ -110,7 +110,7 @@ export function stripCredentials(event: ErrorEvent): ErrorEvent {
   };
 }
 
-// Bodies and query strings are kept for debugging; only sensitive keys are masked.
+// Bodies and query strings are kept for debugging; sensitive keys are masked.
 export function scrubEvent(
   event: ErrorEvent,
   redactKeys: string[],
