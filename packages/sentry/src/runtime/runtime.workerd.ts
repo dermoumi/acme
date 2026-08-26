@@ -6,7 +6,8 @@ import {
 import { buildSentryOptions } from "../server/options";
 import type { ClientCloser, HandlerWrapper } from "./contract";
 
-// Only Sentry's own handler installs this; without it every request shares one isolation scope.
+// Only Sentry's own handler installs this; without it every request shares
+// one isolation scope.
 setAsyncLocalStorageAsyncContextStrategy();
 
 // Per request, not per process: the DSN is a binding, and bindings do not exist

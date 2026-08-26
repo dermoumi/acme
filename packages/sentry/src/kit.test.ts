@@ -3,8 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DSN } from "./server/testing/contract";
 import { sentryKit } from "./kit";
 
-// The shape an app has: its own routes, a sub-app mounted under them, and the
-// kit's behind both.
+// The shape an app has: its own routes, a sub-app under them, the kit's behind.
 function buildApp(): Hono {
   const app = new Hono();
   const mounted = new Hono();

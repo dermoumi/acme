@@ -60,7 +60,6 @@ function contentType(headers: Record<string, string> | undefined): string {
   return found?.[1].toLowerCase() ?? "";
 }
 
-// Bodies arrive as the raw string, so reach the keys by parsing and reserialising.
 // A body neither parse understands cannot be masked, only kept whole or dropped.
 function redactBody(
   data: unknown,
@@ -82,11 +81,11 @@ function redactBody(
 function redactUrl(url: string, keys: string[]): string {
   const mark = url.indexOf("?");
   if (mark === -1) return url;
+
   return `${url.slice(0, mark)}?${redactQuery(url.slice(mark + 1), keys)}`;
 }
 
-// Dropped, not masked: redactKeys covers header names too, so adding
-// "x-internal-token" behaves the way it does for bodies and query strings.
+// Dropped, not masked: redactKeys covers header names as it does body keys.
 function redactHeaders(
   headers: Record<string, string>,
   keys: string[] = [],
