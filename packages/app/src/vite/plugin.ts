@@ -59,7 +59,8 @@ function readPackage(from: string): { name?: string; version?: string } {
   return JSON.parse(file) as { name?: string; version?: string };
 }
 
-// VITE_ prefixed because that is the only way a value reaches the browser.
+// Not `define`: on Vite 8 with the Cloudflare plugin a root define misses
+// client code in dev, and the token survives verbatim to throw.
 function stampIdentity(root: string): AppIdentity {
   const own = readPackage(root);
   const fallbackName = (own.name ?? path.basename(root)).replace(
