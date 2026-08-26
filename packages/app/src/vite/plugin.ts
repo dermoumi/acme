@@ -10,9 +10,6 @@ import type { AppIdentity, KitVite, KitViteContext } from "./contract.ts";
 const VIRTUAL_PREFIX = "\0";
 
 interface VirtualContext {
-  /**
-   * Absolute path to the app's `acme.config.ts`.
-   */
   acmeConfigPath: string;
 }
 

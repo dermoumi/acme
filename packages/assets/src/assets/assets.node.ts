@@ -7,15 +7,8 @@ import {
   type AssetsConfig,
 } from "./contract";
 
-/**
- * Builds an ASSETS-shaped binding backed by the filesystem, for node hosts.
- *
- * A path with no file behind it answers 404 carrying `index.html`, so a client
- * router still boots on it while crawlers and caches are told the truth.
- * Workers hand back a 200 there instead.
- *
- * @param root Directory to serve from, relative to the working directory.
- */
+// A path with no file answers 404 carrying index.html, so a client router still
+// boots while crawlers are told the truth. Workers answer 200 there instead.
 function createStaticAssets(root: string): AssetsFetcher {
   const files = new Hono();
   files.use("*", serveStatic({ root }));

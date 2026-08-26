@@ -115,13 +115,8 @@ async function open<DB>(
   return localD1<DB>(binding);
 }
 
-/**
- * Opens a declared database, and closes it afterwards.
- *
- * A wrangler environment takes the D1 id from wrangler.jsonc. Without one it
- * is local: the url env var first, which is how a node deployment migrates,
- * then the D1 wrangler serves.
- */
+// A wrangler environment takes the D1 id from wrangler.jsonc. Without one it is
+// local: the url env var first, then the D1 wrangler serves.
 export async function withDb<DB>(
   config: DatabaseConfig,
   options: BindingOptions,

@@ -3,10 +3,8 @@ export interface SessionUser {
   name: string;
 }
 
-/**
- * Too many login attempts. A rejected password resolves `null` and a server
- * fault throws plain, so only this one is worth waiting on.
- */
+// A rejected password resolves `null` and a server fault throws plain, so only
+// this one is worth waiting on.
 export class LoginRateLimitedError extends Error {
   public readonly retryAfter: number;
 
