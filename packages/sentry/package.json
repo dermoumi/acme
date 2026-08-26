@@ -4,16 +4,17 @@
   "private": true,
   "type": "module",
   "imports": {
+    "#sentry": {
+      "workerd": "./src/runtime/runtime.workerd.ts",
+      "default": "./src/runtime/runtime.node.ts"
+    },
     "#testing/bench": {
-      "workerd": "./src/hono/testing/bench.workerd.ts",
-      "default": "./src/hono/testing/bench.node.ts"
+      "workerd": "./src/server/testing/bench.workerd.ts",
+      "default": "./src/server/testing/bench.node.ts"
     }
   },
   "exports": {
-    "./hono": {
-      "workerd": "./src/hono/workerd/index.ts",
-      "default": "./src/hono/node/index.ts"
-    },
+    ".": "./src/index.ts",
     "./react": "./src/react/index.ts",
     "./vite": "./src/vite/index.ts"
   },
@@ -24,6 +25,7 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@acme/app": "workspace:*",
     "@sentry/core": "catalog:"
   },
   "devDependencies": {

@@ -7,8 +7,8 @@ import {
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { MaskingLevel, SentryConfig } from "./config";
+import { readSettings } from "./env";
 import { DEFAULT_REDACT_KEYS, scrubEvent, stripCredentials } from "./scrub";
-import type { SentryBindings } from "./bindings";
 
 const MAX_ENVELOPE_BYTES = 1024 * 1024;
 
@@ -90,33 +90,15 @@ async function readEnvelope(request: Request): Promise<Uint8Array> {
   return body;
 }
 
-/**
- * Hono route that proxies browser Sentry envelopes, mounted wherever the
- * client's `tunnel` option points.
- *
- * ```ts
- * app.route("/sentry", sentryTunnel(sentryConfig));
- * ```
- *
- * Replaces the client's placeholder DSN with the real one, so the DSN is absent
- * from the bundle. The request is same-origin, so ad blockers do not drop it.
- * Client events are scrubbed here rather than in the browser.
- *
- * Mount inside the app's middleware and before any catch-all route: Hono matches
- * in registration order, and mounting on a wrapping app bypasses the app's auth.
- *
- * Answers 404 when `SENTRY_DSN` is unset. The client transport stops sending
- * after receiving one.
- */
-export function sentryTunnel(
-  config: SentryConfig = {},
-): Hono<{ Bindings: SentryBindings }> {
-  const tunnel = new Hono<{ Bindings: SentryBindings }>();
+// Proxies the browser's envelopes, swapping its placeholder dsn for the real
+// one, so the dsn stays out of the bundle and the post stays same-origin.
+export function createTunnel(config: SentryConfig = {}): Hono {
+  const tunnel = new Hono();
   const masking = config.masking ?? "full";
   const keys = [...DEFAULT_REDACT_KEYS, ...(config.redactKeys ?? [])];
 
   return tunnel.post("/", async (ctx) => {
-    const dsn = ctx.env.SENTRY_DSN;
+    const { dsn } = readSettings(ctx.env, config);
     if (!dsn) throw new HTTPException(404);
     if (!sameOrigin(ctx.req.raw)) throw new HTTPException(403);
 

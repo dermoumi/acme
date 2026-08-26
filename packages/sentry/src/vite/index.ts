@@ -1,20 +1,33 @@
+import type { KitVite } from "@acme/app/vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import type { Plugin, PluginOption } from "vite";
 // Extension included: node loads this file directly when vite reads its config.
-import { releaseName } from "../release.ts";
+import { buildReleaseName } from "../release.ts";
 
 export interface SentryViteOptions {
-  /** App name, e.g. `posy`. Prefixes the release. Defaults to `APP_NAME`. */
+  /**
+   * App name, e.g. `posy`. Prefixes the release. Defaults to `APP_NAME`.
+   */
   app?: string;
-  /** Sentry org slug. Defaults to `SENTRY_ORG`. */
+  /**
+   * Sentry org slug. Defaults to `SENTRY_ORG`.
+   */
   org?: string;
-  /** Sentry project slug. Defaults to `SENTRY_PROJECT`. */
+  /**
+   * Sentry project slug. Defaults to `SENTRY_PROJECT`.
+   */
   project?: string;
-  /** Upload token. Defaults to `SENTRY_AUTH_TOKEN`; absent disables upload. */
+  /**
+   * Upload token. Defaults to `SENTRY_AUTH_TOKEN`; absent disables upload.
+   */
   authToken?: string;
-  /** Release the maps belong to. Defaults to `APP_VERSION`. */
+  /**
+   * Release the maps belong to. Defaults to `APP_VERSION`.
+   */
   release?: string;
-  /** Build the maps belong to. Defaults to `APP_REVISION`. */
+  /**
+   * Build the maps belong to. Defaults to `APP_REVISION`.
+   */
   dist?: string;
 }
 
@@ -56,7 +69,7 @@ export function sentryVite(options: SentryViteOptions = {}): PluginOption {
       project: options.project ?? process.env.SENTRY_PROJECT,
       authToken,
       release: {
-        name: releaseName(
+        name: buildReleaseName(
           options.app ?? process.env.APP_NAME,
           options.release ?? process.env.APP_VERSION,
           options.dist ?? process.env.APP_REVISION,
@@ -70,3 +83,14 @@ export function sentryVite(options: SentryViteOptions = {}): PluginOption {
     }),
   ];
 }
+
+// What the kit declares as its `vite`, so an app lists no plugin of its own.
+const kitVite: KitVite = ({ app }) => {
+  return sentryVite({
+    app: app.name,
+    release: app.version,
+    dist: app.revision,
+  });
+};
+
+export default kitVite;

@@ -1,8 +1,7 @@
 import { getCurrentScope } from "@sentry/core";
 import { flush } from "@sentry/node";
-import { withSentry } from "../node/handler";
 import type { Bench } from "./contract";
-import { recordingConfig, throwingApp } from "./throwing-app";
+import { recordingConfig, wireApp } from "./wired-app";
 
 export const bench: Bench = {
   // Node reads its settings from process.env at startup, so drive that here.
@@ -15,7 +14,8 @@ export const bench: Bench = {
     // init() sets a process-wide client, so a previous test would otherwise leave
     // one behind and this bench would not represent a process without a DSN.
     if (!env.SENTRY_DSN) getCurrentScope().setClient(undefined);
-    const handler = withSentry(throwingApp(), recordingConfig(config, sent));
+    const recorded = recordingConfig(config, sent);
+    const handler = wireApp(recorded);
     // Assigning undefined would store the string "undefined", which is truthy.
     if (previous === undefined) delete process.env.SENTRY_DSN;
     else process.env.SENTRY_DSN = previous;

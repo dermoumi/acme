@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 import { describe, expect, it } from "vitest";
 import { bench } from "../testing/bench.node.ts";
 import { DSN, loginRequest, PASSWORD } from "../testing/contract";
-import { BOOM } from "../testing/throwing-app";
+import { BOOM } from "../testing/wired-app";
 
 describe("sentry middleware on @hono/node-server", () => {
   // The shared contract calls fetch directly; this covers the real serving path.

@@ -1,6 +1,6 @@
 import type { ErrorEvent, Options } from "@sentry/core";
-import type { SentryBindings } from "./bindings";
-import { releaseName } from "../release";
+import { readSettings } from "./env";
+import { buildReleaseName } from "../release";
 import type { MaskingLevel, SentryConfig } from "./config";
 import {
   DEFAULT_REDACT_KEYS,
@@ -47,21 +47,28 @@ function beforeSend(
 }
 
 // No DSN means no client: monitoring must never fail closed.
-export function sentryOptions(
-  env: SentryBindings,
+export function buildSentryOptions(
+  env: unknown,
   config: SentryConfig = {},
 ): Options | undefined {
-  if (!env.SENTRY_DSN) return undefined;
+  const settings = readSettings(env, config);
+  if (!settings.dsn) return undefined;
 
   const masking = config.masking ?? "full";
   const keys = [...DEFAULT_REDACT_KEYS, ...(config.redactKeys ?? [])];
+  const release = buildReleaseName(
+    settings.appName,
+    settings.appVersion,
+    settings.appRevision,
+  );
 
   return {
-    dsn: env.SENTRY_DSN,
-    environment: env.APP_ENV ?? "development",
-    release: releaseName(env.APP_NAME, env.APP_VERSION, env.APP_REVISION),
-    dist: env.APP_REVISION ?? "dev",
+    dsn: settings.dsn,
+    environment: settings.appEnv ?? "development",
+    release,
+    dist: settings.appRevision ?? "dev",
     dataCollection: dataCollection(masking),
     beforeSend: beforeSend(masking, keys),
+    ...config.options,
   };
 }

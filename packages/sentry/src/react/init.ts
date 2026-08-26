@@ -8,28 +8,40 @@ import {
   makeFetchTransport,
 } from "@sentry/react";
 import type { Options } from "@sentry/core";
-import { releaseName } from "../release";
+import { buildReleaseName } from "../release";
 import { stopWhenUnconfigured } from "./transport";
 
 // The browser never holds the real dsn; the tunnel swaps it in server-side.
 const PLACEHOLDER_DSN = "https://reporter@errors.internal/0";
 
-/** Options for `initSentryClient`. */
+/**
+ * Options for `initSentryClient`.
+ */
 export interface ClientSentryConfig {
-  /** Path of the tunnel route mounted from `@acme/sentry/hono`. Defaults to `/sentry`. */
+  /**
+   * Path of the tunnel route the kit mounts. Defaults to `/sentry`.
+   */
   tunnel?: string;
-  /** App name, e.g. `posy`. Prefixes the release; must match the server's. */
+  /**
+   * App name, e.g. `posy`. Prefixes the release; must match the server's.
+   */
   app?: string;
-  /** Deploy tier to tag events with. Defaults to `development`. */
+  /**
+   * Deploy tier to tag events with. Defaults to `development`.
+   */
   environment?: string;
-  /** Version the events belong to. Typically the app's package version. */
+  /**
+   * Version the events belong to. Typically the app's package version.
+   */
   release?: string;
   /**
    * Build identifier, typically a short commit sha. Defaults to `dev`.
    * Matches the server's so both halves tag events the same way.
    */
   dist?: string;
-  /** Merged into `Sentry.init` last, overriding the rest. */
+  /**
+   * Merged into `Sentry.init` last, overriding the rest.
+   */
   options?: Partial<Options>;
 }
 
@@ -56,7 +68,7 @@ export function initSentryClient(config: ClientSentryConfig = {}): void {
     dsn: PLACEHOLDER_DSN,
     tunnel: config.tunnel ?? "/sentry",
     environment: config.environment ?? "development",
-    release: releaseName(config.app, config.release, config.dist),
+    release: buildReleaseName(config.app, config.release, config.dist),
     dist: config.dist ?? "dev",
     transport: stopWhenUnconfigured(makeFetchTransport),
     integrations: [

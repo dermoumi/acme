@@ -2,7 +2,7 @@ import { bench } from "#testing/bench";
 import { describe, expect, it } from "vitest";
 import type { MaskingLevel } from "./config";
 import { DSN, loginRequest } from "./testing/contract";
-import { IDENTIFIED } from "./testing/throwing-app";
+import { IDENTIFIED } from "./testing/wired-app";
 
 const IP = "203.0.113.7";
 

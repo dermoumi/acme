@@ -3,40 +3,42 @@ import { type Env, Hono } from "hono";
 import type { AcmeConfig } from "../internal/config";
 import type { Handler } from "./contract";
 import { setupKitRoutes } from "./kit-routes";
+import { shutdownKits } from "./kit-shutdown";
 import { setupKitVars } from "./kit-vars";
+import { wrapWithKits } from "./kit-handler";
 
 /**
- * Builds an app, hands it to the caller to route, and serves it.
+ * Wires the config's kits into an app, without serving it.
  *
- * ```ts
- * export default serve((app) => {
- *   app.get("/health", (ctx) => ctx.json({ status: "ok" }));
- * });
- * ```
+ * Excludes what needs a host: the kit wrappers and the shutdown hook.
  *
- * Every kit the config declares puts its variables on each request before the
- * app sees it, so a route reads `ctx.var` rather than knowing what a kit is,
- * and adds whatever routes it contributes behind the app's own.
+ * @param config Defaults to `virtual:acme-config`.
+ */
+export function composeApp<AppEnv extends Env>(
+  app: Hono<AppEnv>,
+  config?: AcmeConfig,
+): Hono<AppEnv> {
+  const outer = new Hono<AppEnv>();
+  setupKitVars(outer, config);
+
+  outer.route("/", app);
+
+  // After the app's routes: a kit's catch-all would otherwise swallow them.
+  setupKitRoutes(outer, config);
+
+  return outer;
+}
+
+/**
+ * Serves an app with the config's kits wired in.
  *
- * @param setup Adds the app's routes. Returning nothing serves the app it was
- *   given; returning a handler serves that instead.
- * @param config The app's own, taken from `virtual:acme-config` unless one is
- *   passed. Pass one to serve a config a test built rather than the app's.
+ * @param config Defaults to `virtual:acme-config`.
  */
 export function serve<AppEnv extends Env>(
-  // Returning one is for a wrapper that cannot be middleware: withSentry needs
-  // the outer fetch's ExecutionContext. Goes once @acme/sentry is a kit.
-  // oxlint-disable-next-line no-invalid-void-type
-  setup: (app: Hono<AppEnv>) => Handler | void,
+  app: Hono<AppEnv>,
   config?: AcmeConfig,
 ): Handler {
-  const app = new Hono<AppEnv>();
-  setupKitVars(app, config);
+  const composed = composeApp(app, config);
 
-  const handler = setup(app) ?? app;
-  // After the setup, unlike the variables: a kit contributing a catch-all
-  // would swallow every route the app was about to register.
-  setupKitRoutes(app, config);
-
-  return host.serve(handler);
+  return host.serve(wrapWithKits(composed, config), () => shutdownKits(config));
 }

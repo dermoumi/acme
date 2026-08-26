@@ -1,15 +1,21 @@
-import { defineConfig, type Kit } from "@acme/app";
+import { defineConfig, type Kit, type KitShutdown } from "@acme/app";
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import type { Handler } from "./contract";
-import { serve } from "./serve";
+import { composeApp, serve } from "./serve";
+
+const given = vi.hoisted(() => {
+  return { shutdown: undefined as KitShutdown | undefined };
+});
 
 // Serving is the only thing a host does differently, and on node it binds a
 // port; standing in for it is what lets one suite cover both runtimes.
 vi.mock("#host", () => {
   return {
     host: {
-      serve: (handler: Handler) => {
+      serve: (handler: Handler, shutdown: KitShutdown) => {
+        given.shutdown = shutdown;
+
         return handler;
       },
     },
@@ -23,8 +29,19 @@ const ask = async (handler: Handler, path = "/who") => {
   return response.text();
 };
 
-// The shape the ordering has to hold for: mounted before the setup ran, this
-// would answer every route the app was about to register.
+// What the kit's own package would declare, so a route can read ctx.var.
+declare module "hono" {
+  interface ContextVariableMap {
+    greeting: string;
+  }
+}
+
+const greeter: Kit = {
+  name: "@fixture/greeter",
+  init: () => ({ vars: () => ({ greeting: "hei" }) }),
+};
+
+// A catch-all, the shape the ordering has to hold for.
 const catchAll: Kit = {
   name: "@fixture/catch-all",
   init: () => ({
@@ -34,55 +51,94 @@ const catchAll: Kit = {
   }),
 };
 
-const addRoutes = (app: Hono) => {
-  app.get("/who", (ctx) => ctx.text("routed"));
+const wrappingKit: Kit = {
+  name: "@fixture/wrapping",
+  init: () => ({
+    handler: (served) => {
+      return {
+        fetch: async (request, env, ctx) => {
+          const answer = await served.fetch(request, env, ctx);
+
+          return new Response(`wrapped(${await answer.text()})`);
+        },
+      };
+    },
+  }),
+};
+
+const buildApp = () => {
+  return new Hono().get("/who", (ctx) => ctx.text("routed"));
 };
 
 describe("serve", () => {
-  it("serves the routes the setup added", async () => {
+  it("serves the routes the app added", async () => {
+    const app = buildApp();
     const config = defineConfig({});
-    await expect(ask(serve(addRoutes, config))).resolves.toBe("routed");
+
+    await expect(ask(serve(app, config))).resolves.toBe("routed");
   });
 
-  it("serves what the setup returned instead of the app it was given", async () => {
-    const wrapped = new Hono().get("/who", (ctx) => ctx.text("wrapped"));
-    const config = defineConfig({});
-    const handler = serve((app) => {
-      addRoutes(app);
+  it("serves the app inside whatever a kit wraps it in", async () => {
+    const app = buildApp();
+    const config = defineConfig({ kits: [wrappingKit] });
 
-      return wrapped;
-    }, config);
-
-    await expect(ask(handler)).resolves.toBe("wrapped");
+    await expect(ask(serve(app, config))).resolves.toBe("wrapped(routed)");
   });
 
   it("takes the app's own config when none is passed", async () => {
-    await expect(ask(serve(addRoutes))).resolves.toBe("routed");
+    const app = buildApp();
+
+    await expect(ask(serve(app))).resolves.toBe("routed");
   });
 
-  it("serves a path the setup left unclaimed from a kit's routes", async () => {
-    const config = defineConfig({ kits: [catchAll] });
+  it("hands the host what shuts the declared kits down", async () => {
+    const closed: string[] = [];
+    const closingKit: Kit = {
+      name: "@fixture/closing",
+      init: () => ({
+        shutdown: () => {
+          closed.push("closed");
+        },
+      }),
+    };
+    const config = defineConfig({ kits: [closingKit] });
 
-    await expect(ask(serve(addRoutes, config), "/nothing")).resolves.toBe(
-      "kit",
-    );
+    serve(buildApp(), config);
+    await given.shutdown?.();
+
+    expect(closed).toEqual(["closed"]);
   });
 
-  // A catch-all is what the first kit to want this slot mounts, and one in
-  // front of the setup swallows the app whole.
-  it("adds a kit's routes behind the ones the setup added", async () => {
-    const config = defineConfig({ kits: [catchAll] });
-
-    await expect(ask(serve(addRoutes, config))).resolves.toBe("routed");
-  });
-
-  // Both slots read the same state, so a kit that opens something to fill one
-  // of them must not open a second.
+  // Both slots read one state, so filling both must not build the kit twice.
   it("builds each declared kit once, however many slots read it", () => {
     const once: Kit = { name: "@fixture/once", init: vi.fn(() => ({})) };
+    const config = defineConfig({ kits: [once] });
 
-    serve(addRoutes, defineConfig({ kits: [once] }));
+    serve(buildApp(), config);
 
     expect(once.init).toHaveBeenCalledOnce();
+  });
+});
+
+describe("composeApp", () => {
+  it("puts a kit's variables where the app's own routes read them", async () => {
+    const app = new Hono().get("/who", (ctx) => ctx.text(ctx.var.greeting));
+    const config = defineConfig({ kits: [greeter] });
+
+    await expect(ask(composeApp(app, config))).resolves.toBe("hei");
+  });
+
+  it("adds a kit's routes behind the app's own", async () => {
+    const app = buildApp();
+    const config = defineConfig({ kits: [catchAll] });
+
+    await expect(ask(composeApp(app, config))).resolves.toBe("routed");
+  });
+
+  it("answers a path the app left unclaimed from a kit's routes", async () => {
+    const app = buildApp();
+    const config = defineConfig({ kits: [catchAll] });
+
+    await expect(ask(composeApp(app, config), "/nothing")).resolves.toBe("kit");
   });
 });

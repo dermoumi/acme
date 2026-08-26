@@ -1,4 +1,5 @@
 import type { Hono } from "hono";
+import type { Handler } from "../../server/contract";
 
 /**
  * What a kit puts on every request's context.
@@ -14,7 +15,7 @@ import type { Hono } from "hono";
 export type KitVars = (env: unknown) => Record<string, unknown>;
 
 /**
- * What a kit adds to an app's routes.
+ * What a kit adds to a built app.
  *
  * ```ts
  * routes: (app) => {
@@ -22,13 +23,28 @@ export type KitVars = (env: unknown) => Record<string, unknown>;
  * }
  * ```
  *
- * Run behind the routes the app added itself, and in the order the config
- * lists the kits, so a kit contributing a catch-all belongs last.
+ * Handed the app itself, so a kit adds routes, an error handler, or whatever
+ * else Hono takes. Run behind the routes the app added itself, and in the order
+ * the config lists the kits, so a kit contributing a catch-all belongs last.
  */
 // A kit's routes read the bindings its own package declares, and an app's are
 // whatever it has, so neither end of this boundary can name the other's.
 // oxlint-disable-next-line no-explicit-any
 export type KitRoutes = (app: Hono<any>) => void;
+
+/**
+ * What a kit wraps the app's handler in, for what cannot be middleware.
+ *
+ * Applied in config order, so the first kit listed ends up the outermost.
+ */
+export type KitHandlerWrapper = (handler: Handler) => Handler;
+
+/**
+ * What a kit runs as the host leaves.
+ *
+ * Never called on workerd, which has no process to leave.
+ */
+export type KitShutdown = () => Promise<void> | void;
 
 /**
  * What a kit's {@link Kit.init} answers.
@@ -39,9 +55,17 @@ export interface KitState {
    */
   vars?: KitVars;
   /**
-   * What this kit adds to the app's routes. See {@link KitRoutes}.
+   * What this kit adds to the built app. See {@link KitRoutes}.
    */
   routes?: KitRoutes;
+  /**
+   * What this kit wraps the app's handler in. See {@link KitHandlerWrapper}.
+   */
+  handler?: KitHandlerWrapper;
+  /**
+   * What this kit runs on the way out. See {@link KitShutdown}.
+   */
+  shutdown?: KitShutdown;
 }
 
 /**

@@ -8,11 +8,17 @@ import type { Context } from "hono";
  * reaches the rest of the request. The url and method are added for you.
  */
 export interface HandledErrorContext {
-  /** Overrides the user set for the request, if any. */
+  /**
+   * Overrides the user set for the request, if any.
+   */
   user?: User;
-  /** Arbitrary detail shown on the event. Not searchable; use tags for that. */
+  /**
+   * Arbitrary detail shown on the event. Not searchable; use tags for that.
+   */
   extras?: Record<string, unknown>;
-  /** Indexed by Sentry, so events can be searched and grouped by these. */
+  /**
+   * Indexed by Sentry, so events can be searched and grouped by these.
+   */
   tags?: Record<string, string | number | boolean>;
 }
 

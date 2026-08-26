@@ -1,6 +1,5 @@
-import { createRequire } from "node:module";
-import { pathToFileURL } from "node:url";
 import type { CAC } from "cac";
+import { type Resolve, resolverFor } from "./config.ts";
 import type { Kit } from "../internal/config";
 import type { KitShared } from "../internal/shared";
 
@@ -98,8 +97,6 @@ function kitRegistry(): (kit: string) => KitRegistry {
   };
 }
 
-type Resolve = (specifier: string) => string;
-
 async function loadMount(
   kit: Kit,
   resolve: Resolve,
@@ -127,28 +124,6 @@ async function loadMount(
   }
 
   return cliMount;
-}
-
-function resolverFor(configUrl: string | undefined): Resolve {
-  return (specifier) => {
-    if (URL.canParse(specifier)) {
-      return specifier;
-    }
-
-    if (configUrl === undefined) {
-      const message = `cannot resolve "${specifier}": no config file was read`;
-      throw new Error(message);
-    }
-
-    if (specifier.startsWith(".")) {
-      return new URL(specifier, configUrl).href;
-    }
-
-    // Node's resolver, run from the app: @acme/app declares no kit, so looking
-    // for one beside itself finds nothing under pnpm.
-    const specifierPath = createRequire(configUrl).resolve(specifier);
-    return pathToFileURL(specifierPath).href;
-  };
 }
 
 function checkRequires(kits: Kit[]): void {

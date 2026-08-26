@@ -1,9 +1,9 @@
 import { bench } from "#testing/bench";
 import { describe, expect, it } from "vitest";
-import type { SentryBindings } from "./bindings";
 import type { SentryConfig } from "./config";
 import {
   BEARER,
+  type BenchEnv,
   COOKIE,
   DSN,
   loginRequest,
@@ -11,10 +11,10 @@ import {
   PASSWORD,
   SESSION,
 } from "./testing/contract";
-import { BOOM } from "./testing/throwing-app";
+import { BOOM } from "./testing/wired-app";
 
 async function capture(
-  env: SentryBindings,
+  env: BenchEnv,
   config: SentryConfig = {},
 ): Promise<{ res: Response; body: string }> {
   const { invoke, sent } = bench.build(env, config);
@@ -23,7 +23,7 @@ async function capture(
   return { res, body: JSON.stringify(sent) };
 }
 
-describe("sentryErrorHandler", () => {
+describe("createErrorHandler", () => {
   it("captures an error thrown inside a route handler", async () => {
     const { res, body } = await capture({ SENTRY_DSN: DSN });
     expect(res.status).toBe(500);
