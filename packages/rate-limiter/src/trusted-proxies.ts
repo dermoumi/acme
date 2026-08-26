@@ -46,6 +46,7 @@ function compile(cidr: string): TrustedRange | undefined {
   // Guard the digits before Number(), which reads "" and " " as 0, and a zero
   // prefix matches every address: a trailing slash would trust the whole family.
   if (prefixText !== undefined && !/^\d+$/u.test(prefixText)) return undefined;
+
   const prefix = prefixText === undefined ? width : Number(prefixText);
   if (prefix > width) return undefined;
 
@@ -72,6 +73,7 @@ export function isTrusted(address: string, trusted: TrustedProxies): boolean {
   if (trusted.length === 0) return false;
   const parsed = parse(address);
   if (!parsed) return false;
+
   return trusted.some(
     (range) =>
       range.v4 === parsed.v4 && parsed.bits / range.host === range.network,

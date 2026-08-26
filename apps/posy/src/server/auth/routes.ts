@@ -70,10 +70,12 @@ export function authRoutes(): Hono<AppEnv> {
   routes.get("/", async (ctx) => {
     const token = getCookie(ctx, SESSION_COOKIE);
     if (!token) return ctx.json({ user: null });
+
     const db = await ctx.var.getDb("DATABASE");
     const store = new DbSessionStore(db);
     const userId = await resolveSession(store, token, Date.now());
     if (!userId) return ctx.json({ user: null });
+
     const user = await db
       .selectFrom("users")
       .select(["id", "name"])

@@ -87,6 +87,7 @@ function reachable(root: string, store: string): Set<string> {
   while (queue.length > 0) {
     const entry = queue.pop();
     if (entry === undefined || seen.has(entry)) continue;
+
     seen.add(entry);
     for (const link of linksIn(path.join(store, entry, "node_modules"))) {
       const next = entryOf(store, link);
@@ -130,6 +131,7 @@ export function pruneDeployTree(drop: string[], root = "."): PruneResult {
     if (matched.length === 0) {
       throw new Error(`nothing in the store matches "${spec}"`);
     }
+
     remove(store, matched);
   }
 

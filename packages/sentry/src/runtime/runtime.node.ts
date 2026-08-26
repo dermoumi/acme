@@ -19,6 +19,7 @@ async function describe(
 ): Promise<RequestEventData> {
   const data = winterCGRequestToRequestData(request);
   if (!withBody) return data;
+
   try {
     const body = await request.clone().text();
     return body ? { ...data, data: body } : data;

@@ -46,6 +46,7 @@ export async function hashPassword(password: string): Promise<string> {
 async function verifyHash(password: string, stored: string): Promise<boolean> {
   const [algo, iterStr, saltB64, hashB64] = stored.split("$");
   if (algo !== "pbkdf2" || !iterStr || !saltB64 || !hashB64) return false;
+
   const iterations = Number(iterStr);
   if (!Number.isInteger(iterations) || iterations < 1 || iterations > 200_000)
     return false;
@@ -53,6 +54,7 @@ async function verifyHash(password: string, stored: string): Promise<boolean> {
   const expected = fromBase64(hashB64);
   const actual = new Uint8Array(await deriveKey(password, salt, iterations));
   if (expected.length !== actual.length) return false;
+
   const [digestA, digestB] = await Promise.all([
     crypto.subtle.digest("SHA-256", expected),
     crypto.subtle.digest("SHA-256", actual),
