@@ -94,7 +94,6 @@ async function open<DB>(
   options: BindingOptions,
 ): Promise<DbHandle<DB>> {
   const { binding } = config;
-  // If there's a wrangler environment, then we're targeting a remote D1
   const { wranglerEnv } = options;
   if (wranglerEnv !== undefined) {
     const [accountId, apiToken] = requireEnvVars(
@@ -107,14 +106,12 @@ async function open<DB>(
     return { db: createDb<DB>(dialect) };
   }
 
-  // If not and there's a url env var, then we're targeting that database
   const url = process.env[urlVarFor(binding, config.urlVar)];
   if (url) {
     const dialect = await dialectFromUrl(url);
     return { db: createDb<DB>(dialect) };
   }
 
-  // Otherwise we're targeting a local D1, served by miniflare
   return localD1<DB>(binding);
 }
 

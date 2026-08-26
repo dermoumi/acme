@@ -17,8 +17,8 @@ export function tagDialect<Source extends Dialect>(
   dialect: Source,
   kind: DialectKind,
 ): Source {
-  // On the adapter: it is the one object Kysely shares with the transaction it
-  // wraps a migration in, so a tag on the `Kysely` is gone by the time `up()` runs.
+  // On the adapter: Kysely shares it with the transaction it wraps a migration
+  // in, so a tag on the `Kysely` is gone by the time `up()` runs.
   const createAdapter = dialect.createAdapter.bind(dialect);
   dialect.createAdapter = () => {
     const adapter: DialectAdapter & Tagged = createAdapter();
