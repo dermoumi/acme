@@ -55,10 +55,6 @@ export interface TestDbOptions {
 /**
  * Opens a database the app declared, with no request in hand.
  *
- * ```ts
- * const db = await getTestDb("DATABASE");
- * ```
- *
  * The same connection `ctx.var.getDb` hands a route, so a case and a handler
  * share one database rather than two empty ones.
  *

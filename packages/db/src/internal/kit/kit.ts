@@ -15,11 +15,6 @@ declare module "hono" {
 /**
  * What a seed module default-exports.
  *
- * ```ts
- * const seedUsers: Seed<Database> = async (db) => { ... };
- * export default seedUsers;
- * ```
- *
  * Annotate the app's seed with it: the config names the module by path, so
  * nothing else checks that what it exports is shaped like a seed.
  */
@@ -70,12 +65,10 @@ function checkDuplicates(databases: DatabaseConfig[]): DatabaseConfig[] {
 /**
  * The database kit, taking every database the app has at once.
  *
- * An app declares it once, however many databases it holds, because a command
- * such as `migrate` acts on all of them unless `--db` names one.
+ * An app declares it once, however many databases it holds: a command such as
+ * `migrate` acts on all of them unless `--db` names one.
  *
- * Every request it reaches gets a `getDb`, over connections opened once.
- *
- * @param databases - The app's databases, in the order they migrate.
+ * @param databases In the order they migrate.
  * @throws If two of them claim the same binding.
  */
 export function databaseKit(databases: DatabaseConfig[]): Kit {

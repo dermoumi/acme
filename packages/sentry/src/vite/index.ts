@@ -44,10 +44,6 @@ function sourcemapPlugin(enabled: boolean): Plugin {
  * Uploads source maps so stack traces point at your code rather than the
  * bundle. Add it after the other plugins in `vite.config.ts`.
  *
- * ```ts
- * plugins: [react(), cloudflare(), sentryVite()],
- * ```
- *
  * Inert without `SENTRY_AUTH_TOKEN`, which is the normal state locally: no maps
  * are emitted and no upload is attempted. `release` and `dist` must match what
  * the running app reports, or Sentry will not find the maps for an event.
@@ -55,9 +51,8 @@ function sourcemapPlugin(enabled: boolean): Plugin {
  * Uploaded maps are deleted from the build output afterwards, so `hidden` maps
  * never reach the browser.
  *
- * Also associates the release with its commits, which is what drives suspect
- * commits and "resolved in this release". That needs full git history, so CI
- * must not use a shallow clone.
+ * Also associates the release with its commits, which needs full git history:
+ * CI must not use a shallow clone.
  */
 export function sentryVite(options: SentryViteOptions = {}): PluginOption {
   const authToken = options.authToken ?? process.env.SENTRY_AUTH_TOKEN;

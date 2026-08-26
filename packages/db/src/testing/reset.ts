@@ -7,16 +7,11 @@ import { kitOf } from "./get-test-db";
 /**
  * Closes every database the config declares and forgets them.
  *
- * ```ts
- * beforeEach(() => resetDb());
- * ```
- *
  * An accessor holds its connection for the life of the process, so a suite
  * wanting a private database per case resets between them. Import it only from
  * tests: production code has no reason to drop a live connection.
  *
- * @param config The app's own, taken from `virtual:acme-config` unless one is
- *   passed. Pass one to reset a config a test declared rather than the app's.
+ * @param config Defaults to `virtual:acme-config`.
  * @throws If the config declares no database kit.
  */
 export async function resetDb(

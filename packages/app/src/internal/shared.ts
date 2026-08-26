@@ -1,8 +1,7 @@
 /**
  * What kits hand each other, keyed by name.
  *
- * Empty here: a kit that shares something extends this by declaration merging,
- * so the key and its type arrive with the package that owns them.
+ * Empty here: a kit that shares something extends it by declaration merging.
  *
  * ```ts
  * declare module "@acme/app" {

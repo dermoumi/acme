@@ -107,8 +107,8 @@ function remove(store: string, entries: string[]): void {
  * Drops the named packages from a deployed tree, then everything nothing
  * reaches any more.
  *
- * @param drop - Package names, or `prefix*` to cover every build of one.
- * @param root - The directory holding `node_modules/.pnpm`. Defaults to the
+ * @param drop Package names, or `prefix*` to cover every build of one.
+ * @param root The directory holding `node_modules/.pnpm`. Defaults to the
  *   working directory.
  * @throws If there is no store, nothing is named, or a name matches nothing.
  */

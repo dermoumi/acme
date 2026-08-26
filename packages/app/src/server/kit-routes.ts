@@ -6,18 +6,10 @@ import { type AcmeConfig, getKitState } from "../internal/config";
 /**
  * Adds every declared kit's routes to the app.
  *
- * ```ts
- * setupKitRoutes(app);
- * ```
+ * `serve` calls this itself, after the app has added its own routes. Call it
+ * directly only where an app is built without being served, meaning a test.
  *
- * `serve` calls this itself, once the app has added its own routes: a kit
- * contributing a catch-all would otherwise swallow every route the app was
- * about to register. Reach for it where an app is built without being served,
- * which in practice means a test driving routes directly.
- *
- * @param app The app to add them to.
- * @param config The app's own, taken from `virtual:acme-config` unless one is
- *   passed. Pass one to mount a config a test built rather than the app's.
+ * @param config Defaults to `virtual:acme-config`.
  */
 export function setupKitRoutes<AppEnv extends Env>(
   app: Hono<AppEnv>,

@@ -6,18 +6,10 @@ import { type AcmeConfig, getKitState } from "../internal/config";
 /**
  * Puts every declared kit's variables on each request the app answers.
  *
- * ```ts
- * setupKitVars(app);
- * ```
+ * `serve` calls this itself, before the app adds its routes. Call it directly
+ * only where an app is built without being served, meaning a test.
  *
- * `serve` calls this itself, before the app adds its routes, so a route reads
- * `ctx.var` rather than knowing what a kit is. Reach for it where an app is
- * built without being served, which in practice means a test driving routes
- * directly.
- *
- * @param app The app to put them on.
- * @param config The app's own, taken from `virtual:acme-config` unless one is
- *   passed. Pass one to mount a config a test built rather than the app's.
+ * @param config Defaults to `virtual:acme-config`.
  */
 export function setupKitVars<AppEnv extends Env>(
   app: Hono<AppEnv>,

@@ -143,13 +143,11 @@ function checkRequires(kits: Kit[]): void {
 /**
  * Mounts every kit's commands onto the CLI, in the order the app declared.
  *
- * @param cli - The CLI being built, with its own commands already on it.
- * @param kits - The app's kits. Those declaring no `commands` add nothing.
- * @param configUrl - Where the app's config was read from, which specifiers
- *   inside it resolve against. Absent when the caller passed a config in hand.
+ * @param kits Those declaring no `commands` add nothing.
+ * @param configUrl What specifiers inside the config resolve against. Absent
+ *   when the caller passed a config in hand.
  * @throws If a kit requires one the app does not declare, if a kit's module
- *   cannot be loaded, or if two kits register the same command or shared key,
- *   either of which would otherwise resolve silently to whichever came first.
+ *   cannot be loaded, or if two kits register the same command or shared key.
  */
 export async function mountCommands(
   cli: CAC,

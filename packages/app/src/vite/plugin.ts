@@ -138,17 +138,11 @@ export interface AcmeViteOptions {
  * Serves the app's `acme.config.ts` as `virtual:acme-config`, so the modules
  * that need it import a flat id instead of counting `../` to the app root.
  *
- * ```ts
- * plugins: [acmeVite(), cloudflare()],
- * ```
- *
  * The virtual module default-exports the config, and exports a `resolve` that
- * turns a specifier the app wrote in that config into one that can be imported,
- * matching what the CLI hands a kit. Which config fields hold paths is each
- * kit's own business, so nothing is resolved for anyone up front.
+ * turns a specifier the app wrote in that config into one that can be imported.
  *
- * Inert until something imports one of its ids: an app that adds the plugin and
- * never uses it is not asked to have a config.
+ * Inert until something imports one of its ids, so an app that adds the plugin
+ * and never uses it is not asked to have a config.
  *
  * A module importing one of these ids reaches its types with
  * `/// <reference types="@acme/app/types" />`, the way `setupKitVars` and

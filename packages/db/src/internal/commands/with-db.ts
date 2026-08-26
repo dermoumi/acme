@@ -124,8 +124,6 @@ async function open<DB>(
  * A wrangler environment takes the D1 id from wrangler.jsonc. Without one it
  * is local: the url env var first, which is how a node deployment migrates,
  * then the D1 wrangler serves.
- *
- * @param config - The database as the app declared it.
  */
 export async function withDb<DB>(
   config: DatabaseConfig,

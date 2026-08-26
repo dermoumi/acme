@@ -26,12 +26,6 @@ export interface HandledErrorContext {
  * Reports an error the route is deliberately swallowing, such as a cache read
  * that falls back to the database. The request still succeeds.
  *
- * ```ts
- * captureHandledError(ctx, error, {
- *   tags: { route: "pull", failure: "cache_miss" },
- * });
- * ```
- *
  * Unlike a thrown error this never reaches `onError`, so nothing else will
  * report it. Returns the event id, or undefined when no client is configured.
  */

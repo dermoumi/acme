@@ -5,8 +5,8 @@ import { dialectKind } from "./kind";
  * Adds a database-generated integer primary key, spelled for its dialect.
  *
  * Kysely's `autoIncrement()` covers sqlite and MySQL only, and postgres rejects
- * the `auto_increment` it emits; postgres wants `serial` instead. Passing this
- * to `$call` keeps one migration running on every engine the kit opens.
+ * the `auto_increment` it emits. Passing this to `$call` keeps one migration
+ * running on every engine the kit opens.
  *
  * ```ts
  * await db.schema
@@ -18,7 +18,6 @@ import { dialectKind } from "./kind";
  *
  * The column is `Generated<number>` in the app's schema either way.
  *
- * @param db The handle the migration was given, which carries the dialect.
  * @param column Column name. Defaults to `id`.
  */
 export function generatedId<DB>(db: Kysely<DB>, column = "id") {

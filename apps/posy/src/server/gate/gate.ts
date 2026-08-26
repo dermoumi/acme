@@ -64,8 +64,6 @@ export interface GateOptions {
  *
  * Mount it first. It wraps whatever comes after, and the assets catch-all has
  * to be inside it.
- *
- * @param options Open paths and the realm, both app-specific.
  */
 export function gate(
   options: GateOptions = {},

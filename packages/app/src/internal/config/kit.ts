@@ -4,28 +4,16 @@ import type { Handler } from "../../server/contract";
 /**
  * What a kit puts on every request's context.
  *
- * ```ts
- * vars: (env) => ({ getDb: (name) => open(name, env) })
- * ```
- *
- * Called once per environment — the bindings on workerd, the environment
- * variables on node — and what it answers is set on every request from then
- * on, so build values here rather than doing per-request work.
+ * Called once per environment (the bindings on workerd, the env vars on node),
+ * so build values here rather than doing per-request work.
  */
 export type KitVars = (env: unknown) => Record<string, unknown>;
 
 /**
  * What a kit adds to a built app.
  *
- * ```ts
- * routes: (app) => {
- *   app.all("*", serveAssets);
- * }
- * ```
- *
- * Handed the app itself, so a kit adds routes, an error handler, or whatever
- * else Hono takes. Run behind the routes the app added itself, and in the order
- * the config lists the kits, so a kit contributing a catch-all belongs last.
+ * Runs behind the app's own routes, in the order the config lists the kits, so
+ * a kit contributing a catch-all belongs last.
  */
 // A kit's routes read the bindings its own package declares, and an app's are
 // whatever it has, so neither end of this boundary can name the other's.
@@ -93,12 +81,8 @@ export interface Kit {
    * Where this kit's commands live, as a specifier the CLI imports. The
    * module's default export is its `KitCommandsMount`.
    *
-   * ```ts
-   * commands: "@acme/db/commands",
-   * ```
-   *
-   * Absent means this kit has none and nothing is attempted; present means it
-   * must resolve, or the CLI fails saying whose did not.
+   * Absent means this kit has none; present means it must resolve, or the CLI
+   * fails saying whose did not.
    */
   commands?: string;
   /**
