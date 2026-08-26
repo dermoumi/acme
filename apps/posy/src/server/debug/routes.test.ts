@@ -46,7 +46,7 @@ describe("debug routes", () => {
     expect(res.status).toBe(500);
   });
 
-  // The whole point of the tier gate: production must not be able to throw on demand.
+  // The point of the tier gate: production cannot be made to throw on demand.
   it("production has no debug routes at all", async () => {
     const responses = await Promise.all(
       ["/debug/boom", "/debug/client-error", "/debug/form"].map(async (path) =>

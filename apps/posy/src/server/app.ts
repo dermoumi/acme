@@ -34,7 +34,7 @@ export function createApp(): Hono<AppEnv> {
 
   app.use(gate({ open: ["/health"], realm: "Posy Staging" }));
 
-  // POST only keeps the per-load GET uncapped; /sentry exact, /* double-charges.
+  // POST only keeps the per-load GET uncapped; /sentry exact, /* would double.
   // The tunnel itself is the sentry kit's, mounted behind this and the gate.
   app.on(
     "POST",
@@ -53,7 +53,7 @@ export function createApp(): Hono<AppEnv> {
     isDebugEnabled(ctx.env) ? next() : ctx.notFound(),
   );
   app.route("/debug", debugRoutes());
-  // Whether a DSN is set, not whether Sentry is reachable; capture is fail-soft.
+  // Whether a DSN is set, not whether Sentry is reachable: capture fails soft.
   app.get("/health", async (ctx) =>
     ctx.json({
       status: "ok",

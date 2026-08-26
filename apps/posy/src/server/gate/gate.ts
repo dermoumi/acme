@@ -15,15 +15,17 @@ interface User {
   password: string;
 }
 
-// One "user:pass" per line; split on the first colon (passwords may contain colons).
-// Any malformed line invalidates the whole secret so a typo fails closed, not open.
+// One "user:pass" per line, split on the first colon: passwords may contain
+// colons. A malformed line invalidates the secret, so a typo fails closed.
 function parseUsers(raw: string | undefined): User[] {
   const users: User[] = [];
   for (const line of (raw ?? "").split("\n")) {
     const trimmed = line.trim();
     if (!trimmed) continue;
+
     const colon = trimmed.indexOf(":");
     if (colon < 1) return [];
+
     users.push({
       username: trimmed.slice(0, colon),
       password: trimmed.slice(colon + 1),
