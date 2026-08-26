@@ -25,7 +25,9 @@ export interface RateLimiterOptions {
   trustedProxies?: readonly string[];
 }
 
-/** Mounts budgets and reports on them. Build with {@link createRateLimiter}. */
+/**
+ * Mounts budgets and reports on them. Build with {@link createRateLimiter}.
+ */
 export interface RateLimiter<Bindings extends object> {
   /**
    * Middleware capping one budget, ready to mount.

@@ -44,7 +44,9 @@ async function readBody(
   }
 }
 
-/** Which remote database to reach, and the credentials to reach it with. */
+/**
+ * Which remote database to reach, and the credentials for it.
+ */
 export interface RemoteD1Config {
   accountId: string;
   apiToken: string;

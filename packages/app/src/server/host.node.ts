@@ -37,9 +37,8 @@ function drain(server: Server, shutdown: KitShutdown): void {
 
       server.close(leave);
 
-      // close() waits on every open socket, and a kept-alive one is idle for
-      // five seconds before node reaps it. Without this, one browser sitting
-      // there is enough to reach SIGKILL. http2 servers expose neither method.
+      // close() waits on every open socket, so one idle keep-alive browser is
+      // enough to reach SIGKILL. http2 servers expose neither method.
       if ("closeIdleConnections" in server) {
         server.closeIdleConnections();
       }

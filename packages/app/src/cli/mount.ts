@@ -42,7 +42,9 @@ export interface KitRegistry {
  */
 export interface KitCli extends KitRegistry {
   cli: KitCommands;
-  /** The kit's own config, as the app declared it. */
+  /**
+   * The config the app declared for this kit.
+   */
   config: unknown;
   /**
    * Turns a specifier the app wrote in its config into one that can be

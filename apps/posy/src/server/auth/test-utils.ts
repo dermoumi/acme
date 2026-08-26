@@ -40,7 +40,9 @@ export async function seedUser(
     .execute();
 }
 
-/** A migrated database holding one user, with a store over it. */
+/**
+ * A migrated database holding one user, with a session store on it.
+ */
 export async function seeded(): Promise<{
   db: Kysely<Database>;
   env: AppBindings;

@@ -77,9 +77,8 @@ export function isTrusted(address: string, trusted: TrustedProxies): boolean {
   );
 }
 
-// An untrusted peer vouches for nothing, so its header is ignored and the peer
-// is used: it is the only address that cannot have been forged. Otherwise walk
-// from the right, since proxies append and a client can only prepend.
+// An untrusted peer's header is ignored: the peer is the only address that
+// cannot be forged. Walk from the right, since a client can only prepend.
 export function resolveClientAddress(
   peer: string,
   forwardedFor: string | undefined,

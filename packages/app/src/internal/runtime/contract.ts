@@ -1,4 +1,6 @@
-/** The engine an app's server code is running on. */
+/**
+ * The engine an app's server code runs on.
+ */
 export type RuntimeName = "node" | "workerd";
 
 /**

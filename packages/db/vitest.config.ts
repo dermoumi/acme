@@ -5,13 +5,11 @@ import { defineConfig, type ViteUserConfig } from "vitest/config";
 // Two vocabularies that never overlap, so a suffix names its own axis. A plain
 // *.test.ts is the engine contract and runs in every engine project below.
 const include = ["src/**/*.test.ts"];
-// Several suites open and migrate real files, which takes seconds rather than
-// milliseconds once the whole repo's suites run at once. Per project: a root
-// testTimeout does not reach them.
+// A root testTimeout does not reach a project, and migrating real files takes
+// seconds once the whole repo's suites run at once.
 const testTimeout = 30_000;
-// One project, not a suffix on every file, and deliberately no engine matrix:
-// the CLI is wiring, and everything it reaches for is proven per engine by the
-// projects below. Keep it that way by keeping engine code out of internal/commands.
+// No engine matrix: the CLI is wiring, proven per engine by the projects
+// below. Keep engine code out of internal/commands so it stays that way.
 const CLI = "src/internal/commands/**";
 const NODE = "src/**/*.node.test.ts";
 const WORKERD = "src/**/*.workerd.test.ts";

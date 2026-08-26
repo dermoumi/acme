@@ -1,8 +1,12 @@
 import type { Kysely } from "kysely";
 
-/** Which deployment of a binding to act on. */
+/**
+ * Which deployment of a binding to act on.
+ */
 export interface BindingOptions {
-  /** Wrangler environment to reach. Its absence means act locally. */
+  /**
+   * Wrangler environment to reach. Omit to act locally.
+   */
   wranglerEnv?: string;
 }
 

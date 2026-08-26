@@ -1,9 +1,13 @@
 import type { Dialect } from "kysely";
 
-/** A dialect with no tables, so a contract test starts from a known schema. */
+/**
+ * An empty dialect, so a contract test starts from a known schema.
+ */
 export type CreateEmptyDialect = () => Promise<Dialect>;
 
-/** The same, as an env an accessor built by `defineDb` can resolve from. */
+/**
+ * An env a `defineDb` accessor resolves that empty dialect from.
+ */
 export type CreateEmptyEnv = (
   binding: string,
   urlVar?: string,

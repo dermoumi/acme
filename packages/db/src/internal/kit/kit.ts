@@ -25,11 +25,17 @@ declare module "hono" {
  */
 export type Seed<DB = unknown> = (db: Kysely<DB>) => Promise<void>;
 
-/** One database an app declares. */
+/**
+ * One database an app declares.
+ */
 export interface DatabaseConfig {
-  /** The D1 binding, matching what the app passed `defineDb`. */
+  /**
+   * The D1 binding, as passed to `defineDb`.
+   */
   binding: string;
-  /** Env var holding the url. Defaults to `${binding}_URL`. */
+  /**
+   * Env var holding the url. Defaults to `${binding}_URL`.
+   */
   urlVar?: string;
   /**
    * Where this database's migrations live, as a specifier the CLI imports.

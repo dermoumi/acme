@@ -1,7 +1,9 @@
 import type { Kysely } from "kysely";
 import { type Migration, Migrator } from "kysely/migration";
 
-/** Migrations keyed by name, in the order the keys sort. */
+/**
+ * Migrations keyed by name, in the order the keys sort.
+ */
 export type Migrations = Record<string, Migration>;
 
 /**

@@ -2,7 +2,9 @@ import type { KitCli } from "@acme/app/cli";
 import type { DatabaseConfig, Seed } from "../kit";
 import type { Migrations } from "../migrator";
 
-/** Turns what the app wrote in its config into something importable. */
+/**
+ * Turns a specifier the app wrote into one that can be imported.
+ */
 export type Resolve = KitCli["resolve"];
 
 async function importDefault<Value>(

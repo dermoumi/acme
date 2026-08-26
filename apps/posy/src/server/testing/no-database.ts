@@ -11,7 +11,9 @@ export const noDatabase: Partial<AppBindings> = {
   DATABASE_URL: undefined,
 };
 
-/** Bindings for a route that must never reach for a database. */
+/**
+ * Bindings for a route that must never use a database.
+ */
 export function noDatabaseEnv(): AppBindings {
   return createBindings(noDatabase);
 }

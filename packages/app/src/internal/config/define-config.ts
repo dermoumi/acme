@@ -1,6 +1,8 @@
 import type { Kit } from "./kit";
 
-/** One config per app, naming the kits it takes on. */
+/**
+ * One config per app.
+ */
 export interface AcmeConfig {
   /**
    * The kits this app uses, in the order they apply.

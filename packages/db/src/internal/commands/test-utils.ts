@@ -11,7 +11,9 @@ export interface CliContext {
   analytics: string;
 }
 
-/** The tables a database holds, less the migrator's own bookkeeping. */
+/**
+ * Table names, minus the migrator's own bookkeeping.
+ */
 export async function tables(url: string): Promise<string[]> {
   const db = createDb<never>(await dialectFromUrl(url));
   const found = await db.introspection.getTables();
@@ -23,7 +25,9 @@ export async function tables(url: string): Promise<string[]> {
     .toSorted();
 }
 
-/** Every row of a table, for checking what a seed put there. */
+/**
+ * Every row of a table.
+ */
 export async function rows(url: string, table: string): Promise<unknown[]> {
   const db = createDb<never>(await dialectFromUrl(url));
   const found = await db.selectFrom(table).selectAll().execute();
@@ -32,7 +36,9 @@ export async function rows(url: string, table: string): Promise<unknown[]> {
   return found;
 }
 
-/** A hook reaches only its own describe, so every block installs this. */
+/**
+ * A hook reaches only its own describe, so every block installs this.
+ */
 export const sandbox = () => {
   // Files, not :memory:, which is private to the connection that opened it.
   beforeEach<CliContext>(async (ctx) => {
