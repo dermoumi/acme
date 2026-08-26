@@ -28,7 +28,7 @@ describe("the assets a worker serves", () => {
   });
 
   // What middleware wrapping this kit has to know: posy's gate rewraps the
-  // response before stamping a header, and this is why.
+  // response before stamping a header.
   it("answers with headers a caller cannot set", async () => {
     const response = await get("/asset.txt");
 

@@ -5,7 +5,8 @@ import { bound } from "../bindings";
 import type { ClientAddress, GetBinding, Limiter } from "./contract";
 import { resolveClientAddress } from "../trusted-proxies";
 
-// No real config to pass: the middleware never runs here, and stores read windowMs.
+// No real config to pass: the middleware never runs here, and stores read
+// windowMs.
 type StoreConfig = Parameters<NonNullable<Store["init"]>>[0];
 
 function peerAddress(ctx: Context): string | undefined {

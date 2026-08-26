@@ -1,7 +1,6 @@
 import type { Context } from "hono";
 
-// Where a client build lands for every app here, so an app that has not moved
-// it declares nothing.
+// Where a client build lands, so an app that has not moved it declares nothing.
 export const DEFAULT_ROOT = "./dist/client";
 
 /**

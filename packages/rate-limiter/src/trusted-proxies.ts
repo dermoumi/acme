@@ -11,13 +11,14 @@ interface Address {
   bits: bigint;
 }
 
-// Node reports IPv4 peers as ::ffff:10.0.0.1, so fold those back to IPv4 or they
-// would never match an IPv4 CIDR.
+// Node reports IPv4 peers as ::ffff:10.0.0.1, so fold those back or they would
+// never match an IPv4 CIDR.
 function parse(text: string): Address | undefined {
   try {
     const type = distinctRemoteAddr(text);
     if (type === "IPv4") return { v4: true, bits: convertIPv4ToBinary(text) };
     if (type !== "IPv6") return undefined;
+
     const bits = convertIPv6ToBinary(text);
     return isIPv4MappedIPv6(bits)
       ? { v4: true, bits: convertIPv4MappedIPv6ToIPv4(bits) }

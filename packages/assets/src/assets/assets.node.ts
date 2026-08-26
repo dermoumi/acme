@@ -39,8 +39,7 @@ function createStaticAssets(root: string): AssetsFetcher {
   };
 }
 
-// What the app declared, then what the deployment set, then where vite puts a
-// client build. Read once: a node process serves every request from one place.
+// Read once: a node process serves every request from one place.
 function resolveRoot(config: AssetsConfig): string {
   return config.root ?? process.env.ASSETS_ROOT ?? DEFAULT_ROOT;
 }

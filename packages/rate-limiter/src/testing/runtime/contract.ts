@@ -5,7 +5,7 @@ export interface TestBindings {
   RATE_LIMIT_OTHER?: Limiter;
 }
 
-// Both runtimes bind this: tests import it and never learn which one they run on.
+// Both runtimes bind this, so tests never learn which one they run on.
 export type CreateBindings = (
   overrides?: Partial<TestBindings>,
 ) => TestBindings;
