@@ -3,8 +3,7 @@ import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { setupKitVars } from "./kit-vars";
 
-// What the kit's own package would declare, so a route reads ctx.var.greeting
-// with nothing to import.
+// What the kit's own package would declare, so a route needs no import.
 declare module "hono" {
   interface ContextVariableMap {
     greeting: string;

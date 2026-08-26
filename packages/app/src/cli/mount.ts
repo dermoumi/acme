@@ -158,8 +158,7 @@ export async function mountCommands(
   const registryFor = kitRegistry();
   const resolve = resolverFor(configUrl);
   checkRequires(kits);
-  // Loaded up front so one slow import does not hold up the rest, then
-  // mounted in order, because that order is what the app declared.
+  // Loaded at once, mounted in order: that order is what the app declared.
   const mounts = await Promise.all(
     kits.map(async (kit) => loadMount(kit, resolve)),
   );

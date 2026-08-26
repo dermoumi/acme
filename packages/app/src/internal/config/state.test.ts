@@ -25,8 +25,7 @@ describe("getKitState", () => {
     expect(getKitState(kit)).toBe(getKitState(kit));
   });
 
-  // Two calls to a kit's factory are two declarations, and an app that declares
-  // one package twice means both.
+  // Two calls to a kit's factory are two declarations, and an app means both.
   it("builds each declared kit on its own", () => {
     const one = countingKit();
     const other = countingKit();

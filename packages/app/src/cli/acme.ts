@@ -9,8 +9,7 @@ const { version } = JSON.parse(
   readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
 ) as { version: string };
 
-// Which commands exist depends on the config, and cac matches against the
-// commands it already has, so a throwaway CLI reads the flag first.
+// cac matches only commands it has, so reading -c needs a throwaway CLI.
 export function getConfigFile(argv: string[]): string | undefined {
   const probe = cac().option("-c, --config <file>", "the config to read");
   const parsed = probe.parse(["node", "acme", ...argv], { run: false });
@@ -31,8 +30,7 @@ async function buildCli(kits: Kit[], configUrl?: string): Promise<CAC> {
   return cli;
 }
 
-// Errors are wrapped to say which step failed, so the message alone hides the
-// syntax error or missing module that actually explains it.
+// Wrapping says which step failed, so the message alone hides the real cause.
 function messageWithCauses(error: unknown): string {
   const chain: string[] = [];
   for (let at = error; at instanceof Error; at = at.cause) {

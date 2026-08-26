@@ -3,8 +3,7 @@ import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { wrapWithKits } from "./kit-handler";
 
-// Each wrapper stamps what it saw, so the answer spells out the order they were
-// applied in rather than only that they were.
+// Each wrapper stamps what it saw, so the answer spells out the order.
 const stampingKit = (mark: string): Kit => {
   return {
     name: `@fixture/${mark}`,
@@ -40,8 +39,7 @@ describe("wrapWithKits", () => {
     await expect(ask(wrapWithKits(app, config))).resolves.toBe("kit(routed)");
   });
 
-  // Outermost first, so a kit establishing something has it in place for every
-  // kit the config lists after it.
+  // Outermost first: a kit establishing something has it in place for the rest.
   it("wraps in config order, leaving the first kit outermost", async () => {
     const app = buildApp();
     const config = defineConfig({

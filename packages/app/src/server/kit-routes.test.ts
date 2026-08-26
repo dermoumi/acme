@@ -3,8 +3,7 @@ import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { setupKitRoutes } from "./kit-routes";
 
-// A catch-all, since that is the shape the ordering has to hold for: mounted
-// first it would answer everything the app was about to register.
+// A catch-all: mounted first it would answer everything the app registers.
 const answeringKit = (body: string): Kit => {
   return {
     name: `@fixture/${body}`,

@@ -6,8 +6,7 @@ import type { Plugin, PluginOption } from "vite";
 import { CONFIG_FILE, loadAcmeConfig, resolverFor } from "../cli/config.ts";
 import type { AppIdentity, KitVite, KitViteContext } from "./contract.ts";
 
-// Vite's convention for an id backed by no file, and what keeps other plugins
-// from claiming one.
+// Vite's convention for an id backed by no file, so no other plugin claims it.
 const VIRTUAL_PREFIX = "\0";
 
 interface VirtualContext {
@@ -27,8 +26,7 @@ const modules: Record<string, VirtualModule> = {
 
     const url = pathToFileURL(acmeConfigPath).href;
 
-    // A bare specifier is answered unchanged: nothing here can resolve one, and
-    // whatever the caller imports it with is what can.
+    // A bare specifier is answered unchanged: nothing here can resolve one.
     return [
       `export { default } from ${JSON.stringify(acmeConfigPath)};`,
       `export function resolve(specifier) {`,

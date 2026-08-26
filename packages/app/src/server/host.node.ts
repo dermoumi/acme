@@ -15,8 +15,7 @@ function leaving(shutdown: KitShutdown): () => void {
   return () => {
     if (left) return;
     left = true;
-    // A pg pool holds the loop open, so exiting is not something to leave to
-    // whether anything else happens to be pending.
+    // A pg pool holds the loop open, so exiting cannot be left to chance.
     // oxlint-disable-next-line unicorn/no-process-exit
     void Promise.resolve(shutdown()).finally(() => process.exit(0));
   };
@@ -43,8 +42,7 @@ function drain(server: Server, shutdown: KitShutdown): void {
         server.closeIdleConnections();
       }
 
-      // Whatever is still mid-request when the deadline passes gets cut, which
-      // is what SIGKILL would do anyway, except this way the drain still runs.
+      // Mid-request work is cut, as SIGKILL would anyway, but the drain runs.
       setTimeout(() => {
         console.log("Closing: cutting connections still open.");
         if ("closeAllConnections" in server) {
@@ -63,8 +61,7 @@ export const host: Host = {
   serve: (handler: Handler, shutdown: KitShutdown) => {
     const server = serve(
       {
-        // The same place workerd puts a deployment's values: bindings are what
-        // node lacks, and kits are what answer for those.
+        // The same place workerd puts a deployment's values, which kits read.
         fetch: (request: Request) => {
           return handler.fetch(request, process.env);
         },

@@ -9,8 +9,7 @@ export function wrapWithKits(
 ): Handler {
   let wrapped = handler;
 
-  // Right to left, so the first kit the config lists ends up the outermost of
-  // them, matching the order its routes and its variables apply in.
+  // Right to left, so the first kit the config lists ends up outermost.
   for (const kit of (config.kits ?? []).toReversed()) {
     wrapped = getKitState(kit).handler?.(wrapped) ?? wrapped;
   }
