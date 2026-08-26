@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import type { AcmeConfig } from "../internal/config";
@@ -37,14 +38,44 @@ export function acmeConfigUrl(file?: string): string | undefined {
   return resolved === undefined ? undefined : pathToFileURL(resolved).href;
 }
 
-export async function loadAcmeConfig(file?: string): Promise<AcmeConfig> {
+/**
+ * Turns a specifier an app wrote in its config into one that can be imported.
+ */
+export type Resolve = (specifier: string) => string;
+
+export function resolverFor(configUrl: string | undefined): Resolve {
+  return (specifier) => {
+    if (URL.canParse(specifier)) {
+      return specifier;
+    }
+
+    if (configUrl === undefined) {
+      const message = `cannot resolve "${specifier}": no config file was read`;
+      throw new Error(message);
+    }
+
+    if (specifier.startsWith(".")) {
+      return new URL(specifier, configUrl).href;
+    }
+
+    // Node's resolver, run from the app: @acme/app declares no kit, so looking
+    // for one beside itself finds nothing under pnpm.
+    const specifierPath = createRequire(configUrl).resolve(specifier);
+    return pathToFileURL(specifierPath).href;
+  };
+}
+
+export async function loadAcmeConfig(
+  file?: string,
+  load: (url: string) => Promise<unknown> = (url) => import(url),
+): Promise<AcmeConfig> {
   const resolved = configFile(file);
   if (resolved === undefined) {
     return DEFAULT_CONFIG;
   }
 
   const configFilePath = pathToFileURL(resolved).href;
-  const loaded = (await import(configFilePath).catch((cause: unknown) => {
+  const loaded = (await load(configFilePath).catch((cause: unknown) => {
     throw new Error(`could not read ${resolved}`, { cause });
   })) as { default?: AcmeConfig };
 

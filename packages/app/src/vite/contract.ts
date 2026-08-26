@@ -1,6 +1,16 @@
 import type { PluginOption } from "vite";
 
 /**
+ * What an app calls itself and which build it is.
+ */
+export interface AppIdentity {
+  name: string;
+  version: string;
+  env: string;
+  revision: string;
+}
+
+/**
  * What a kit's `vite` module default-exports: the plugins it contributes.
  */
 export type KitVite = (context: KitViteContext) => PluginOption;
@@ -18,4 +28,8 @@ export interface KitViteContext {
    * imported, as `KitCli.resolve` does.
    */
   resolve: (specifier: string) => string;
+  /**
+   * The same identity the app reports at runtime.
+   */
+  app: AppIdentity;
 }

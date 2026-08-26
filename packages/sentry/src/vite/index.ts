@@ -1,3 +1,4 @@
+import type { KitVite } from "@acme/app/vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import type { Plugin, PluginOption } from "vite";
 // Extension included: node loads this file directly when vite reads its config.
@@ -82,3 +83,14 @@ export function sentryVite(options: SentryViteOptions = {}): PluginOption {
     }),
   ];
 }
+
+// What the kit declares as its `vite`, so an app lists no plugin of its own.
+const kitVite: KitVite = ({ app }) => {
+  return sentryVite({
+    app: app.name,
+    release: app.version,
+    dist: app.revision,
+  });
+};
+
+export default kitVite;

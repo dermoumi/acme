@@ -1,5 +1,4 @@
 import { acmeVite } from "@acme/app/vite";
-import { sentryVite } from "@acme/sentry/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
 import react from "@vitejs/plugin-react";
@@ -105,11 +104,6 @@ function buildPlugins(mode: string, isSsrBuild: boolean): PluginOption[] {
     react(),
     ...(mode === "node" ? [] : [cloudflare()]),
     ...(isSsrBuild ? [] : [VitePWA(pwa)]),
-    sentryVite({
-      app: process.env.VITE_APP_NAME,
-      release: process.env.VITE_APP_VERSION,
-      dist: process.env.VITE_APP_REVISION,
-    }),
   ];
 }
 

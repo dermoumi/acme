@@ -17,6 +17,7 @@ export function sentryKit(config: SentryConfig = {}): Kit {
   return {
     name: "@acme/sentry",
     config,
+    vite: "@acme/sentry/vite",
     init: () => ({
       routes: (app) => {
         app.route(TUNNEL_PATH, createTunnel(config));
