@@ -94,8 +94,7 @@ describe("buildSentryOptions", () => {
     expect(options?.dist).toBe("dev");
   });
 
-  // Last, so a caller can override anything the env and the masking produced,
-  // and so everything reading these options agrees on what they say.
+  // Last, so a caller can override anything the env and the masking produced.
   it("merges the config's own options over the rest", () => {
     const env = { SENTRY_DSN: DSN, APP_ENV: "production" };
     const config = { options: { environment: "canary", sampleRate: 0.5 } };

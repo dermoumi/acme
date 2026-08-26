@@ -19,7 +19,7 @@ export function createErrorHandler(config: SentryConfig = {}): ErrorHandler {
     if (!expected && !ignored) {
       console.error(error);
       const id = captureException(error);
-      // Without a client nothing was sent, and an unlookupable id is worse than none.
+      // Without a client nothing was sent, and a dead id is worse than none.
       eventId = getClient() ? id : undefined;
       // Answering can end the runtime's work, so deliver before answering.
       await flush(FLUSH_MS).catch(() => false);

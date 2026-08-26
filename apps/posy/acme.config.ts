@@ -25,7 +25,7 @@ export default defineConfig({
     sentryKit({
       // Auth is the only sensitive thing posy handles.
       masking: "light",
-      // The deploy health check probes every deploy; CI already reports its failures.
+      // The deploy check probes every deploy; CI already reports its failures.
       ignoreUserAgent: "acme-ci-health-probe",
     }),
     // Last: it mounts the catch-all every unclaimed path falls through to.

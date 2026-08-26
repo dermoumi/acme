@@ -12,13 +12,8 @@ function startOf(url: string): string {
   return protocol ? `${protocol}...` : "<none>";
 }
 
-/**
- * Turns a sqlite url into a path `better-sqlite3` accepts.
- *
- * Takes both the WHATWG form (`file:///abs/path.db`) and the relaxed one
- * (`file:relative.db`), which `new URL()` would wrongly resolve to an absolute
- * path. `:memory:` is answered explicitly, in either spelling.
- */
+// Takes the relaxed `file:relative.db` form too, which new URL() would resolve
+// to the wrong absolute path. `:memory:` is answered in either spelling.
 export function toDatabasePath(url: string): string {
   if (url === ":memory:") return ":memory:";
   if (url.startsWith("file://")) return fileURLToPath(url);
@@ -26,14 +21,8 @@ export function toDatabasePath(url: string): string {
   throw new Error(`not a sqlite url: "${startOf(url)}"`);
 }
 
-/**
- * Awaits an import, naming the package when it turns out not to be installed.
- *
- * Drivers are optional peers, so a missing one is a wiring mistake worth naming
- * rather than a bare ERR_MODULE_NOT_FOUND from deep inside the package. The
- * specifier at the call site must stay a literal: a variable one is opaque to
- * TypeScript, which types the module `any`, and to the bundler.
- */
+// The specifier at the call site must stay a literal: a variable one is opaque
+// to TypeScript, which types the module `any`, and to the bundler.
 export async function explainIfMissing<Module>(
   name: string,
   imported: Promise<Module>,
@@ -73,13 +62,7 @@ async function postgresDialect(url: string): Promise<Dialect> {
   );
 }
 
-/**
- * Builds the dialect a database url asks for.
- *
- * `:memory:` and `file:` open sqlite through `better-sqlite3`; `postgres:` and
- * `postgresql:` open a `pg` pool, which connects lazily. Both drivers are
- * optional peers, imported only on the branch that needs them.
- */
+// Both drivers are optional peers, imported only on the branch that needs them.
 export async function dialectFromUrl(url: string): Promise<Dialect> {
   if (url === ":memory:" || url.startsWith("file:")) {
     return sqliteDialect(toDatabasePath(url));

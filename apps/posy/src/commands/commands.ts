@@ -16,12 +16,8 @@ async function readPassword(): Promise<string> {
   });
 }
 
-/**
- * posy's own commands, until they have a package to belong to.
- *
- * `set-password` is `@acme/auth`'s the moment that package exists; it lives
- * here so it can reach the database kit the same way that package will.
- */
+// set-password belongs to @acme/auth the moment that package exists; it lives
+// here so it can reach the database kit the same way that package will.
 export default function commands({ cli, require }: KitCli): void {
   cli
     .command(

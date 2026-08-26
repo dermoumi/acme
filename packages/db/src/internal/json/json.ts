@@ -8,7 +8,9 @@ export function jsonText(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** Parses a JSON column's value. Throws `SyntaxError` on invalid JSON. */
+/**
+ * Parses a JSON column's value. Throws `SyntaxError` on invalid JSON.
+ */
 export function parseJsonText(text: string): unknown {
   return JSON.parse(text);
 }

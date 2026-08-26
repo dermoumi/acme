@@ -3,8 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DSN } from "./server/testing/contract";
 import { sentryKit } from "./kit";
 
-// The shape an app has: its own routes, a sub-app mounted under them, and the
-// kit's behind both.
+// The shape an app has: its own routes, a sub-app under them, the kit's behind.
 function buildApp(): Hono {
   const app = new Hono();
   const mounted = new Hono();
@@ -32,7 +31,7 @@ describe("sentryKit", () => {
     });
   });
 
-  // The 403 is the tunnel's own cross-origin guard, so only the tunnel answers it.
+  // The 403 is the tunnel's cross-origin guard, so only it answers there.
   it("answers the path the browser posts its events to", async () => {
     const app = buildApp();
     const env = { SENTRY_DSN: DSN };

@@ -25,15 +25,17 @@ export interface RateLimiterOptions {
   trustedProxies?: readonly string[];
 }
 
-/** Mounts budgets and reports on them. Build with {@link createRateLimiter}. */
+/**
+ * Mounts budgets and reports on them. Build with {@link createRateLimiter}.
+ */
 export interface RateLimiter<Bindings extends object> {
   /**
    * Middleware capping one budget, ready to mount.
    *
-   * @param limit - The budget on node, counted per process, so replicas each
-   * get their own. On Workers the binding carries its own and this only
-   * records intent.
-   * @param periodSeconds - Shapes `Retry-After` only, never the window measured.
+   * @param limit Counted per process on node, so replicas each get their own.
+   *   On Workers the binding carries the budget and this only records intent.
+   * @param periodSeconds Shapes `Retry-After` only, never the window
+   *   measured.
    */
   create(
     binding: LimiterBinding<Bindings>,

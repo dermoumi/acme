@@ -48,13 +48,6 @@ export interface ClientSentryConfig {
 /**
  * Initialises the browser SDK. Call once, before rendering.
  *
- * ```ts
- * initSentryClient({
- *   environment: import.meta.env.VITE_APP_ENV,
- *   release: import.meta.env.VITE_APP_VERSION,
- * });
- * ```
- *
  * Events post to the tunnel route, which adds the real DSN and applies masking,
  * so neither the DSN nor any scrubbing code is in the bundle.
  *

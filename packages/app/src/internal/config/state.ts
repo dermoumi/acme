@@ -4,8 +4,7 @@ import type { Kit, KitState } from "./kit";
 // calls to the same factory are two kits, and hold their own.
 const held = new WeakMap<Kit, KitState>();
 
-// Every reader of a kit's state comes through here, so whatever init does is
-// paid for by the first slot to ask and by no other.
+// Every reader comes through here, so the first slot to ask pays for init.
 export function getKitState(kit: Kit): KitState {
   const found = held.get(kit);
   if (found !== undefined) {

@@ -6,14 +6,10 @@ import type { Plugin, PluginOption } from "vite";
 import { CONFIG_FILE, loadAcmeConfig, resolverFor } from "../cli/config.ts";
 import type { AppIdentity, KitVite, KitViteContext } from "./contract.ts";
 
-// Vite's convention for an id backed by no file, and what keeps other plugins
-// from claiming one.
+// Vite's convention for an id backed by no file, so no other plugin claims it.
 const VIRTUAL_PREFIX = "\0";
 
 interface VirtualContext {
-  /**
-   * Absolute path to the app's `acme.config.ts`.
-   */
   acmeConfigPath: string;
 }
 
@@ -27,8 +23,7 @@ const modules: Record<string, VirtualModule> = {
 
     const url = pathToFileURL(acmeConfigPath).href;
 
-    // A bare specifier is answered unchanged: nothing here can resolve one, and
-    // whatever the caller imports it with is what can.
+    // A bare specifier is answered unchanged: nothing here can resolve one.
     return [
       `export { default } from ${JSON.stringify(acmeConfigPath)};`,
       `export function resolve(specifier) {`,
@@ -61,7 +56,8 @@ function readPackage(from: string): { name?: string; version?: string } {
   return JSON.parse(file) as { name?: string; version?: string };
 }
 
-// VITE_ prefixed because that is the only way a value reaches the browser.
+// Not `define`: on Vite 8 with the Cloudflare plugin a root define misses
+// client code in dev, and the token survives verbatim to throw.
 function stampIdentity(root: string): AppIdentity {
   const own = readPackage(root);
   const fallbackName = (own.name ?? path.basename(root)).replace(
@@ -138,17 +134,11 @@ export interface AcmeViteOptions {
  * Serves the app's `acme.config.ts` as `virtual:acme-config`, so the modules
  * that need it import a flat id instead of counting `../` to the app root.
  *
- * ```ts
- * plugins: [acmeVite(), cloudflare()],
- * ```
- *
  * The virtual module default-exports the config, and exports a `resolve` that
- * turns a specifier the app wrote in that config into one that can be imported,
- * matching what the CLI hands a kit. Which config fields hold paths is each
- * kit's own business, so nothing is resolved for anyone up front.
+ * turns a specifier the app wrote in that config into one that can be imported.
  *
- * Inert until something imports one of its ids: an app that adds the plugin and
- * never uses it is not asked to have a config.
+ * Inert until something imports one of its ids, so an app that adds the plugin
+ * and never uses it is not asked to have a config.
  *
  * A module importing one of these ids reaches its types with
  * `/// <reference types="@acme/app/types" />`, the way `setupKitVars` and

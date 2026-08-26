@@ -24,8 +24,8 @@ const sandbox = () => {
   });
 };
 
-// Plain ESM, written per test: only the loader needs a real file, and .mjs
-// keeps these readable without a transform in the way.
+// Plain ESM per test: only the loader needs a real file, and .mjs needs no
+// transform.
 async function write(dir: string, name: string, source: string) {
   const file = path.join(dir, name);
   await writeFile(file, source);

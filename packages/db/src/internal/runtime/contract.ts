@@ -1,8 +1,7 @@
 import type { Dialect } from "kysely";
 
-// Names, never values: each runtime reads what it needs off the request's env,
-// so nothing is opened before one arrives. workerd uses only the binding, node
-// only the url var, which it derives from the binding unless given one.
+// Names, never values: nothing is opened before a request's env arrives.
+// workerd uses only the binding, node the url var derived from it.
 export type ResolveDialect = (
   env: unknown,
   binding: string,

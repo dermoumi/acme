@@ -7,12 +7,8 @@ import migrations from "../db/migrator";
 import { hashPassword } from "./password";
 import { DbSessionStore } from "./session-db";
 
-/**
- * An env whose database is migrated and empty.
- *
- * Opened through the same accessor the routes reach, so the test and the
- * handler share one database. Reset between cases.
- */
+// Opened through the same accessor the routes reach, so the test and the
+// handler share one database. Reset between cases.
 export async function migratedEnv(): Promise<AppBindings> {
   // The one cast: @acme/db cannot know posy's binding types.
   const database = (await emptyDbEnv("DATABASE")) as Partial<AppBindings>;
@@ -40,7 +36,6 @@ export async function seedUser(
     .execute();
 }
 
-/** A migrated database holding one user, with a store over it. */
 export async function seeded(): Promise<{
   db: Kysely<Database>;
   env: AppBindings;

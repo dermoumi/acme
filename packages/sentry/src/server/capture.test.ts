@@ -68,8 +68,8 @@ describe("createErrorHandler", () => {
     expect(body).not.toContain(COOKIE);
   });
 
-  // Delivery must not depend on waitUntil, which races isolate teardown once the
-  // client has its response. No settle() here on purpose.
+  // Delivery must not depend on waitUntil, which races isolate teardown once
+  // the client has its response. No settle() here on purpose.
   it("sends the event before the response resolves", async () => {
     const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, {});
     await invoke(loginRequest());

@@ -11,13 +11,14 @@ interface Address {
   bits: bigint;
 }
 
-// Node reports IPv4 peers as ::ffff:10.0.0.1, so fold those back to IPv4 or they
-// would never match an IPv4 CIDR.
+// Node reports IPv4 peers as ::ffff:10.0.0.1, so fold those back or they would
+// never match an IPv4 CIDR.
 function parse(text: string): Address | undefined {
   try {
     const type = distinctRemoteAddr(text);
     if (type === "IPv4") return { v4: true, bits: convertIPv4ToBinary(text) };
     if (type !== "IPv6") return undefined;
+
     const bits = convertIPv6ToBinary(text);
     return isIPv4MappedIPv6(bits)
       ? { v4: true, bits: convertIPv4MappedIPv6ToIPv4(bits) }
@@ -43,8 +44,9 @@ function compile(cidr: string): TrustedRange | undefined {
 
   const width = target.v4 ? 32 : 128;
   // Guard the digits before Number(), which reads "" and " " as 0, and a zero
-  // prefix matches every address: a trailing slash would trust the whole family.
+  // prefix matches every address: a trailing slash would trust the family.
   if (prefixText !== undefined && !/^\d+$/u.test(prefixText)) return undefined;
+
   const prefix = prefixText === undefined ? width : Number(prefixText);
   if (prefix > width) return undefined;
 
@@ -71,15 +73,15 @@ export function isTrusted(address: string, trusted: TrustedProxies): boolean {
   if (trusted.length === 0) return false;
   const parsed = parse(address);
   if (!parsed) return false;
+
   return trusted.some(
     (range) =>
       range.v4 === parsed.v4 && parsed.bits / range.host === range.network,
   );
 }
 
-// An untrusted peer vouches for nothing, so its header is ignored and the peer
-// is used: it is the only address that cannot have been forged. Otherwise walk
-// from the right, since proxies append and a client can only prepend.
+// An untrusted peer's header is ignored: the peer is the only address that
+// cannot be forged. Walk from the right, since a client can only prepend.
 export function resolveClientAddress(
   peer: string,
   forwardedFor: string | undefined,

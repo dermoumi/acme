@@ -1,7 +1,9 @@
 import type { Context, Env } from "hono";
 import type { TrustedProxies } from "../trusted-proxies";
 
-/** Structurally identical to Cloudflare's `RateLimit`, which supplies it on workerd. */
+/**
+ * Structural match for Cloudflare's `RateLimit`, which supplies it on workerd.
+ */
 export interface Limiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
 }

@@ -87,6 +87,7 @@ function reachable(root: string, store: string): Set<string> {
   while (queue.length > 0) {
     const entry = queue.pop();
     if (entry === undefined || seen.has(entry)) continue;
+
     seen.add(entry);
     for (const link of linksIn(path.join(store, entry, "node_modules"))) {
       const next = entryOf(store, link);
@@ -107,8 +108,8 @@ function remove(store: string, entries: string[]): void {
  * Drops the named packages from a deployed tree, then everything nothing
  * reaches any more.
  *
- * @param drop - Package names, or `prefix*` to cover every build of one.
- * @param root - The directory holding `node_modules/.pnpm`. Defaults to the
+ * @param drop Package names, or `prefix*` to cover every build of one.
+ * @param root The directory holding `node_modules/.pnpm`. Defaults to the
  *   working directory.
  * @throws If there is no store, nothing is named, or a name matches nothing.
  */
@@ -130,6 +131,7 @@ export function pruneDeployTree(drop: string[], root = "."): PruneResult {
     if (matched.length === 0) {
       throw new Error(`nothing in the store matches "${spec}"`);
     }
+
     remove(store, matched);
   }
 

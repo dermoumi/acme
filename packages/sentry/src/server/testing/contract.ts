@@ -17,7 +17,7 @@ export interface Capture {
   sent: unknown[];
 }
 
-// Both runtimes bind this: the test imports it and never learns which one it runs on.
+// Both runtimes bind this, so the test never learns which one it runs on.
 export interface Bench {
   build: (env: BenchEnv, config: SentryConfig) => Capture;
   settle: () => Promise<void>;

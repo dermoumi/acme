@@ -24,7 +24,7 @@ export default defineConfig({
           cloudflareTest({
             miniflare: {
               compatibilityDate: "2026-07-01",
-              // @sentry/cloudflare needs AsyncLocalStorage, same as posy's worker.
+              // @sentry/cloudflare needs AsyncLocalStorage, like posy's worker.
               compatibilityFlags: ["nodejs_als"],
             },
           }),

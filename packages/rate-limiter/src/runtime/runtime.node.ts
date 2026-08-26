@@ -5,7 +5,8 @@ import { bound } from "../bindings";
 import type { ClientAddress, GetBinding, Limiter } from "./contract";
 import { resolveClientAddress } from "../trusted-proxies";
 
-// No real config to pass: the middleware never runs here, and stores read windowMs.
+// No real config to pass: the middleware never runs here, and stores read
+// windowMs.
 type StoreConfig = Parameters<NonNullable<Store["init"]>>[0];
 
 function peerAddress(ctx: Context): string | undefined {
@@ -30,7 +31,7 @@ export const clientAddress: ClientAddress = (ctx, trustedProxies) => {
 export const SELF_PROVISIONED: boolean = true;
 
 // Nothing needs binding here: the budget itself is enforced, in memory and per
-// process. A bound limiter still wins, so an entrypoint can supply a shared one.
+// process. A bound limiter still wins, so an entrypoint can supply one.
 export const getBinding: GetBinding = (binding, limit, periodSeconds) => {
   const store: Store = new MemoryStore();
   store.init?.({ windowMs: periodSeconds * 1000, limit } as StoreConfig);

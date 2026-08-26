@@ -5,7 +5,7 @@ export type NavigationGuard = (to: string) => boolean;
 
 const guards = new Set<NavigationGuard>();
 
-// Registers a before-leave check; return false from the guard to cancel navigation.
+// Registers a before-leave check; return false from the guard to cancel.
 export function useNavigationGuard(guard: NavigationGuard): void {
   useEffect(() => {
     guards.add(guard);
@@ -15,7 +15,7 @@ export function useNavigationGuard(guard: NavigationGuard): void {
   }, [guard]);
 }
 
-// Drop-in replacement for wouter's location hook that consults registered guards.
+// Drop-in for wouter's location hook, consulting registered guards.
 export const useGuardedLocation: typeof useBrowserLocation = (options) => {
   const [location, navigate] = useBrowserLocation(options);
   const guardedNavigate: typeof navigate = useCallback(

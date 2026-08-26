@@ -19,6 +19,7 @@ function upstreamUrl(dsn: string): string {
   if (!/^\d+$/u.test(projectId)) {
     throw new HTTPException(500, { message: "malformed sentry dsn" });
   }
+
   return `${url.protocol}//${url.host}/api/${projectId}/envelope/`;
 }
 
@@ -68,6 +69,7 @@ function rewriteEnvelope(
 function sameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");
   if (!origin) return false;
+
   try {
     return new URL(origin).host === new URL(request.url).host;
   } catch {
@@ -87,6 +89,7 @@ async function readEnvelope(request: Request): Promise<Uint8Array> {
   if (body.byteLength === 0 || body.byteLength > MAX_ENVELOPE_BYTES) {
     throw new HTTPException(body.byteLength === 0 ? 400 : 413);
   }
+
   return body;
 }
 

@@ -8,7 +8,8 @@ import type { Options } from "@sentry/core";
  * - `full`: also withholds database query data, user info (ip, user id), and
  *   bodies neither JSON nor form-encoded, which cannot be masked key by key
  *
- * Cookies and authorization headers are stripped at every level, `none` included.
+ * Cookies and authorization headers are stripped at every level, `none`
+ * included.
  */
 export type MaskingLevel = "none" | "light" | "full";
 

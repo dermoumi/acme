@@ -19,7 +19,7 @@ const CREDENTIALS = {
   graphQL: { document: false, variables: false },
 } satisfies Partial<DataCollection>;
 
-// Naming dataCollection at all flips every unlisted category permissive, so list them.
+// Naming dataCollection flips every unlisted category permissive: list all.
 function dataCollection(masking: MaskingLevel): DataCollection {
   return {
     ...CREDENTIALS,
@@ -30,7 +30,7 @@ function dataCollection(masking: MaskingLevel): DataCollection {
   };
 }
 
-// userInfo only gates the ip Sentry infers, so an explicit setUser is dropped here.
+// userInfo only gates the ip Sentry infers, so setUser is dropped here.
 function beforeSend(
   masking: MaskingLevel,
   keys: string[],

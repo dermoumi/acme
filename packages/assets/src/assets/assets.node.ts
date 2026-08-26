@@ -7,16 +7,8 @@ import {
   type AssetsConfig,
 } from "./contract";
 
-/**
- * Builds an ASSETS-shaped binding backed by the filesystem, for node hosts.
- *
- * A path with no file behind it answers **404** carrying `index.html`, so a
- * client router still boots on it while crawlers and caches are told the truth.
- * Workers hand back a 200 there instead, which is theirs to decide and not
- * something this arm copies.
- *
- * @param root Directory to serve from, relative to the process working directory.
- */
+// A path with no file answers 404 carrying index.html, so a client router still
+// boots while crawlers are told the truth. Workers answer 200 there instead.
 function createStaticAssets(root: string): AssetsFetcher {
   const files = new Hono();
   files.use("*", serveStatic({ root }));
@@ -40,8 +32,7 @@ function createStaticAssets(root: string): AssetsFetcher {
   };
 }
 
-// What the app declared, then what the deployment set, then where vite puts a
-// client build. Read once: a node process serves every request from one place.
+// Read once: a node process serves every request from one place.
 function resolveRoot(config: AssetsConfig): string {
   return config.root ?? process.env.ASSETS_ROOT ?? DEFAULT_ROOT;
 }

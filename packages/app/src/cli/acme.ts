@@ -9,8 +9,7 @@ const { version } = JSON.parse(
   readFileSync(path.join(import.meta.dirname, "../../package.json"), "utf8"),
 ) as { version: string };
 
-// Which commands exist depends on the config, and cac matches against the
-// commands it already has, so a throwaway CLI reads the flag first.
+// cac matches only commands it has, so reading -c needs a throwaway CLI.
 export function getConfigFile(argv: string[]): string | undefined {
   const probe = cac().option("-c, --config <file>", "the config to read");
   const parsed = probe.parse(["node", "acme", ...argv], { run: false });
@@ -31,8 +30,7 @@ async function buildCli(kits: Kit[], configUrl?: string): Promise<CAC> {
   return cli;
 }
 
-// Errors are wrapped to say which step failed, so the message alone hides the
-// syntax error or missing module that actually explains it.
+// Wrapping says which step failed, so the message alone hides the real cause.
 function messageWithCauses(error: unknown): string {
   const chain: string[] = [];
   for (let at = error; at instanceof Error; at = at.cause) {
@@ -49,13 +47,11 @@ function report(error: unknown): number {
 
 /**
  * Runs one command against a config in hand, and answers the exit code.
+ * Nothing is read from disk, and `-c` is not consulted.
  *
- * @param config - The app's config. Nothing is read from disk, and `-c` is not
- *   consulted: the caller has already decided what the app declares.
- * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
- * @param configUrl - Where that config lives, for the kits whose specifiers are
- *   written relative to it. Without it those kits fail when they resolve one,
- *   which is the honest answer for a config that came from nowhere.
+ * @param argv Arguments after the command name, as `process.argv.slice(2)`.
+ * @param configUrl Where that config lives, for kits whose specifiers are
+ *   relative to it. Without it, those kits fail when they resolve one.
  */
 export async function runWithConfig(
   config: AcmeConfig,
@@ -87,7 +83,7 @@ export async function runWithConfig(
 /**
  * Runs one command, taking the app's config from its file. The CLI's entry.
  *
- * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
+ * @param argv Arguments after the command name, as `process.argv.slice(2)`.
  */
 export async function run(argv: string[]): Promise<number> {
   try {

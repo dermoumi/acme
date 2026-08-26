@@ -55,6 +55,7 @@ describe("auth routes", () => {
     const header = res.headers.get("set-cookie") ?? "";
     const match = /posy_session=([^;]*)/u.exec(header);
     if (!match) throw new Error("no session cookie in response");
+
     return `${SESSION_COOKIE}=${match[1]}`;
   }
 

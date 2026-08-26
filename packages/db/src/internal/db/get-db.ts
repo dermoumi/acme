@@ -5,8 +5,7 @@ import { type DatabaseAccessor, defineDb } from "./define";
 /**
  * The databases an app declares, keyed by the binding naming each.
  *
- * Empty here: an app fills it in beside the schema it names, so `getDb` knows
- * both which databases exist and what shape each one holds.
+ * Empty here: an app fills it in beside the schema it names.
  *
  * ```ts
  * declare module "@acme/db" {
@@ -35,10 +34,9 @@ export type Accessors = ReadonlyMap<string, DatabaseAccessor<unknown>>;
  * Opens an accessor per database, without connecting to any of them.
  *
  * Call it once, where the kit is declared. Each accessor caches for the life of
- * the process, and that cache is what keeps a node host to a single connection
- * pool instead of one per request.
+ * the process, which is what keeps a node host to one connection pool.
  *
- * @param config The app's databases, already checked for duplicates.
+ * @param config Already checked for duplicates.
  */
 export function openDbAccessors(config: readonly DatabaseConfig[]): Accessors {
   return new Map(
@@ -53,7 +51,6 @@ export function openDbAccessors(config: readonly DatabaseConfig[]): Accessors {
  * Hands one request its databases, over accessors already opened.
  *
  * @param accessors What {@link openDbAccessors} answered, built once.
- * @param env Everything this request's host knows.
  */
 export function buildGetDb(accessors: Accessors, env: unknown): GetDb {
   // Cast because the name decides the schema, which only the app's Databases

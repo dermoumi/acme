@@ -8,8 +8,7 @@ const given = vi.hoisted(() => {
   return { shutdown: undefined as KitShutdown | undefined };
 });
 
-// Serving is the only thing a host does differently, and on node it binds a
-// port; standing in for it is what lets one suite cover both runtimes.
+// On node serving binds a port; standing in for it lets one suite cover both.
 vi.mock("#host", () => {
   return {
     host: {

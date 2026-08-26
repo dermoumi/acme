@@ -48,7 +48,7 @@ describe("scrubEvent", () => {
     expect(request?.url).not.toContain(SESSION);
   });
 
-  // Sentry's own scrubbing writes [Filtered]; ours stays distinguishable from it.
+  // Sentry's own scrubbing writes [Filtered]; ours stays distinguishable.
   it("masks with its own marker rather than Sentry's", () => {
     const { request } = scrub();
     expect(request?.data).toContain("[redacted]");
@@ -173,8 +173,8 @@ describe("scrubEvent", () => {
     expect(request?.data).not.toContain("hunter2");
   });
 
-  // A file upload makes the WHOLE form multipart, so this is the shape posy gets
-  // the moment one lands. light ships it, accepting what full withholds.
+  // A file upload makes the WHOLE form multipart, so this is the shape posy
+  // gets the moment one lands. light ships it, accepting what full withholds.
   it("multipart survives light masking and is withheld by full", () => {
     const event: ErrorEvent = {
       type: undefined,

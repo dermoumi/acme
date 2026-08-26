@@ -11,8 +11,8 @@ export const bench: Bench = {
     if (env.SENTRY_DSN) process.env.SENTRY_DSN = env.SENTRY_DSN;
     else delete process.env.SENTRY_DSN;
 
-    // init() sets a process-wide client, so a previous test would otherwise leave
-    // one behind and this bench would not represent a process without a DSN.
+    // init() sets a process-wide client, so a previous test would leave one
+    // behind and this bench would not represent a process without a DSN.
     if (!env.SENTRY_DSN) getCurrentScope().setClient(undefined);
     const recorded = recordingConfig(config, sent);
     const handler = wireApp(recorded);

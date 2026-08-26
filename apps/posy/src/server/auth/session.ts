@@ -44,6 +44,7 @@ export async function resolveSession(
   const session = await store.get(id);
   if (!session) return null;
   if (now - session.lastSeenAt > SESSION_IDLE_MS) return null;
+
   if (now - session.lastSeenAt > LAST_SEEN_REFRESH_MS) {
     await store.touch(id, now);
   }

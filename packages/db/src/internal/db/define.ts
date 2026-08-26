@@ -29,12 +29,11 @@ export interface DatabaseAccessor<DB> {
  * Names a database, without opening it.
  *
  * Call it once at module scope. Nothing is read or connected until a request
- * arrives and a handler asks, which is what keeps a Worker's startup empty. The
- * database is then held for the life of the process, since the binding and the
- * url are fixed for a deployment.
+ * arrives and a handler asks, which keeps a Worker's startup empty. The
+ * database is then held for the life of the process.
  *
- * @param binding The D1 binding on `env`, used on workerd.
- * @throws Error, on first use, when the environment names neither.
+ * @throws Error, on first use, when the environment names neither the binding
+ *   nor a url.
  */
 export function defineDb<DB>(
   binding: string,

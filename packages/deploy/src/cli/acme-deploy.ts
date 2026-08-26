@@ -10,7 +10,7 @@ const { version } = JSON.parse(
 /**
  * Runs one command, and answers the exit code. The CLI's entry.
  *
- * @param argv - Arguments after the command name, as `process.argv.slice(2)`.
+ * @param argv Arguments after the command name, as `process.argv.slice(2)`.
  */
 export async function run(argv: string[]): Promise<number> {
   const cli = cac("acme-deploy");

@@ -56,8 +56,7 @@ describe("runWithConfig", () => {
     expect(out.join("\n")).toContain("greet");
   });
 
-  // Two shouters, not two greeters: the shouter registers nothing, so this
-  // reaches the command check instead of tripping the shared-key one first.
+  // Two shouters, not two greeters: a greeter trips the shared-key check first.
   it<CliContext>("names both kits when they claim one command", async ({
     err,
   }) => {
@@ -181,8 +180,7 @@ describe("run", () => {
     expect(err.join("\n")).toContain("could not read");
   });
 
-  // The wording of the cause is node's or vite's, not ours; what this pins is
-  // that we pass it on instead of printing only our own message.
+  // The cause's wording is node's or vite's; this pins that we pass it on.
   it<CliContext>("says what actually went wrong inside the config", async ({
     err,
   }) => {
@@ -216,8 +214,7 @@ describe("kits reaching what another registered", () => {
     expect(out).toContain("HELLO, world");
   });
 
-  // The rule the slot exists for: registering happens at mount, reading at
-  // action time, so an app never has to order its kits to suit them.
+  // Registering at mount, reading at action time: kit order never matters.
   it<CliContext>("does not care which order the app listed them in", async ({
     out,
   }) => {

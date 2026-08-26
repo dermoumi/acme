@@ -33,7 +33,7 @@ const pwa: Partial<VitePWAOptions> = {
     ],
   },
   workbox: {
-    // generated after Sentry has swept the build, so these would ship unused
+    // Generated after Sentry has swept the build, so these would ship unused.
     sourcemap: false,
     globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
     navigateFallback: "/index.html",
@@ -79,7 +79,6 @@ const test: UserConfig["test"] = {
 };
 
 function nodeBuild(isSsrBuild: boolean) {
-  // We use --ssr to differentiate between server and client builds.
   if (!isSsrBuild) {
     return { outDir: "dist/client" };
   }
