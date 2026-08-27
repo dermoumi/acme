@@ -1,5 +1,5 @@
 import type { Kit } from "@acme/app";
-import { type AssetsConfig, assets } from "../assets";
+import { type AssetsConfig, assets } from "./assets";
 
 /**
  * The assets kit: an app's static files, and the shell behind them.

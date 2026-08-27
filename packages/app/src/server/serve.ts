@@ -1,11 +1,43 @@
+/// <reference path="../types.d.ts" />
 import { host } from "#host";
+import virtualConfig from "virtual:acme-config";
 import { type Env, Hono } from "hono";
-import type { AcmeConfig } from "../internal/config";
+import { type AcmeConfig, getKitState } from "../internal/config";
 import type { Handler } from "./contract";
-import { setupKitRoutes } from "./kit-routes";
-import { shutdownKits } from "./kit-shutdown";
 import { setupKitVars } from "./kit-vars";
-import { wrapWithKits } from "./kit-handler";
+
+export function setupKitRoutes<AppEnv extends Env>(
+  app: Hono<AppEnv>,
+  config: AcmeConfig = virtualConfig,
+): void {
+  for (const kit of config.kits ?? []) {
+    getKitState(kit).routes?.(app);
+  }
+}
+
+export function wrapWithKits(
+  handler: Handler,
+  config: AcmeConfig = virtualConfig,
+): Handler {
+  let wrapped = handler;
+
+  // Right to left, so the first kit the config lists ends up outermost.
+  for (const kit of (config.kits ?? []).toReversed()) {
+    wrapped = getKitState(kit).handler?.(wrapped) ?? wrapped;
+  }
+
+  return wrapped;
+}
+
+export async function shutdownKits(
+  config: AcmeConfig = virtualConfig,
+): Promise<void> {
+  const closing = (config.kits ?? []).map((kit) => {
+    return Promise.resolve(getKitState(kit).shutdown?.());
+  });
+
+  await Promise.all(closing);
+}
 
 /**
  * Wires the config's kits into an app, without serving it.

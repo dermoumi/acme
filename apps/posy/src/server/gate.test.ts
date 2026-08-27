@@ -1,7 +1,7 @@
 import { createBindings } from "#testing/runtime";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { testApp } from "../testing/app";
+import { testApp } from "./testing/app";
 import { gate, type GateBindings, type GateOptions } from "./gate";
 
 function creds(user: string, pass: string): { Authorization: string } {
