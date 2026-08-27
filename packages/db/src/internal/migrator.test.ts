@@ -2,7 +2,7 @@ import { createEmptyDialect } from "#testing/runtime";
 import { type Kysely, sql } from "kysely";
 import { type Migration, NO_MIGRATIONS } from "kysely/migration";
 import { describe, expect, it } from "vitest";
-import { createDb } from "../database";
+import { createDb } from "./database";
 import { createMigrator, type Migrations } from "./migrator";
 
 interface TestSchema {

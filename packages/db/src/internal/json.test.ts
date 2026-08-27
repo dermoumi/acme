@@ -1,7 +1,7 @@
 import { createEmptyDialect } from "#testing/runtime";
 import { sql } from "kysely";
 import { describe, expect, it } from "vitest";
-import { createDb } from "../database";
+import { createDb } from "./database";
 import { jsonText, parseJsonText } from "./json";
 
 const VALUES = [
