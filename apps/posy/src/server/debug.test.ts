@@ -1,7 +1,7 @@
 import { createBindings } from "#testing/runtime";
 import { describe, expect, it } from "vitest";
-import { createApp } from "../app";
-import { noDatabase } from "../testing/no-database";
+import { createApp } from "./app";
+import { noDatabase } from "./testing/no-database";
 
 // The env names no database, so resolving throws: these prove debug routes
 // never reach for one.

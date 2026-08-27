@@ -1,6 +1,13 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import type { AppBindings } from "../bindings";
+import type { AppBindings } from "./bindings";
+
+// Only these environments allow debug content.
+const DEBUG_TIERS = new Set(["development", "preview", "staging"]);
+
+export function isDebugEnabled(env: AppBindings): boolean {
+  return DEBUG_TIERS.has(env.APP_ENV ?? "development");
+}
 
 // Deliberate failures for verifying Sentry against a real project.
 export function debugRoutes(): Hono<{ Bindings: AppBindings }> {
