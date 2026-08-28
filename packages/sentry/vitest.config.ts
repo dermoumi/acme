@@ -19,10 +19,13 @@ export default defineConfig({
       exclude: ["src/server/testing/**", "*.config.ts"],
     },
     projects: [
-      { plugins: [acmeVite()], test: { name: "node", include, env } },
+      {
+        plugins: [acmeVite({ withoutConfig: true })],
+        test: { name: "node", include, env },
+      },
       {
         plugins: [
-          acmeVite(),
+          acmeVite({ withoutConfig: true }),
           cloudflareTest({
             miniflare: {
               compatibilityDate: "2026-07-01",

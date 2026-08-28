@@ -11,20 +11,17 @@ const VIRTUAL_PREFIX = "\0";
 
 interface VirtualContext {
   acmeConfigPath: string;
-  /**
-   * Whether the app named its config, rather than being found at the default.
-   */
-  named: boolean;
+  withoutConfig: boolean;
 }
 
 type VirtualModule = (context: VirtualContext) => string;
 
 const modules: Record<string, VirtualModule> = {
-  "virtual:acme-config": ({ acmeConfigPath, named }) => {
+  "virtual:acme-config": ({ acmeConfigPath, withoutConfig }) => {
     if (!existsSync(acmeConfigPath)) {
-      // One that was named is a typo worth failing on; one that was never named
-      // is a package with no kits, which is what a package's tests are.
-      if (named) {
+      // Only where the caller said it has none: an app that moved or renamed
+      // its own would otherwise build with no kits at all.
+      if (!withoutConfig) {
         throw new Error(`acme config not found: ${acmeConfigPath}`);
       }
 
@@ -138,6 +135,13 @@ export interface AcmeViteOptions {
    * Defaults to the working directory.
    */
   root?: string;
+  /**
+   * Serves an empty config rather than failing where there is none.
+   *
+   * For a package whose own tests reach a module importing the id. An app
+   * leaves it off, so a config it moved or renamed fails the build.
+   */
+  withoutConfig?: boolean;
 }
 
 /**
@@ -182,7 +186,7 @@ export function acmeVite(options: AcmeViteOptions = {}): PluginOption {
 
       return modules[name]?.({
         acmeConfigPath,
-        named: options.config !== undefined,
+        withoutConfig: options.withoutConfig ?? false,
       });
     },
   };

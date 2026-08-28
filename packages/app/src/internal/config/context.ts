@@ -27,9 +27,7 @@ export interface KitContext {
   require: <Key extends keyof KitShared>(key: Key) => KitShared[Key];
 }
 
-// What an app's kits hand each other. Reached only through the two methods
-// below, which is what keeps the app itself from taking a kit's value. One app
-// per module instance, so one map is that app's.
+// One app per module instance, so one map is that app's.
 const values = new Map<string, unknown>();
 const owner = new Map<string, string>();
 

@@ -17,12 +17,12 @@ export default defineConfig({
     },
     projects: [
       {
-        plugins: [acmeVite()],
+        plugins: [acmeVite({ withoutConfig: true })],
         test: { name: "node", include, exclude: ["**/*.workerd.test.ts"] },
       },
       {
         plugins: [
-          acmeVite(),
+          acmeVite({ withoutConfig: true }),
           cloudflareTest({
             miniflare: {
               compatibilityDate: "2026-07-01",

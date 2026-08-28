@@ -12,8 +12,13 @@ interface VirtualPlugin {
 }
 
 // The virtual id, prefixed the way `resolveId` answered it.
-const loadConfigModule = (): string => {
-  const [virtual] = acmeVite({ root }) as unknown as VirtualPlugin[];
+const loadConfigModule = (
+  options: { withoutConfig?: boolean } = {},
+): string => {
+  const [virtual] = acmeVite({
+    ...options,
+    root,
+  }) as unknown as VirtualPlugin[];
   virtual?.configResolved({ root });
 
   return String(virtual?.load("\0virtual:acme-config"));
@@ -37,8 +42,15 @@ describe("acmeVite", () => {
 
   // A package's own tests are the case: they reach a testing helper that
   // imports the id, and have no kits of their own.
-  it("serves an empty config where the app named none and has none", () => {
-    expect(loadConfigModule()).toContain("export default {}");
+  it("serves an empty config to a caller saying it has none", () => {
+    expect(loadConfigModule({ withoutConfig: true })).toContain(
+      "export default {}",
+    );
+  });
+
+  // An app that moved or renamed its config would otherwise build with no kits.
+  it("fails on a missing config the caller never said it was without", () => {
+    expect(loadConfigModule).toThrow(/acme config not found/u);
   });
 
   it("stamps the app's name and version off its package.json", () => {
