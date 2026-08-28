@@ -1,6 +1,10 @@
+import type { HealthStatus } from "@acme/health";
+import { stubHealthKit } from "@acme/health/testing";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { DSN } from "./server/testing/contract";
+import type { SentryConfig } from "./server/config";
+import { DSN, kitContext } from "./server/testing/contract";
 import { sentryKit } from "./kit";
 
 // The shape an app has: its own routes, a sub-app under them, the kit's behind.
@@ -15,10 +19,23 @@ function buildApp(): Hono {
     throw new Error("route exploded");
   });
   app.route("/mounted", mounted);
-  sentryKit().init?.().routes?.(app);
+  sentryKit().init?.(kitContext()).routes?.(app);
 
   return app;
 }
+
+// What the kit hands the health kit while it initialises.
+function reportedBy(config: SentryConfig = {}): HealthStatus {
+  const health = stubHealthKit("@acme/sentry");
+  sentryKit(config).init?.(health.context);
+
+  return health.status("sentry");
+}
+
+// All the status reads is the env, which is what a host hands the context.
+const asked = (env: unknown) => {
+  return { env } as Context;
+};
 
 describe("sentryKit", () => {
   it("names itself by its specifier, so a reader can find it back", () => {
@@ -58,5 +75,27 @@ describe("sentryKit", () => {
 
     expect(res.status).toBe(500);
     expect(await res.json()).toMatchObject({ sentryEventId: null });
+  });
+
+  it("reports itself off where no DSN reached the app", () => {
+    expect(reportedBy()(asked({}))).toBe("off");
+  });
+
+  it("reports itself configured once a DSN is bound", () => {
+    expect(reportedBy()(asked({ SENTRY_DSN: DSN }))).toBe("configured");
+  });
+
+  // The app renamed it, so a status reading SENTRY_DSN would say "off" while
+  // every event still reports.
+  it("reports through the name the app gave the DSN", () => {
+    const config = {
+      settings: (env: Record<string, string | undefined>) => {
+        return { dsn: env.REPORTING_DSN };
+      },
+    };
+
+    expect(reportedBy(config)(asked({ REPORTING_DSN: DSN }))).toBe(
+      "configured",
+    );
   });
 });

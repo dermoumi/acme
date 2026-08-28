@@ -1,5 +1,6 @@
 import type { Hono } from "hono";
 import type { Handler } from "../../server/contract";
+import type { KitContext } from "./context";
 
 /**
  * What a kit puts on every request's context.
@@ -104,6 +105,8 @@ export interface Kit {
    *
    * Synchronous, and called at the worker's module scope, which cannot await.
    * Called once per declared kit, however many slots read what it answered.
+   *
+   * @param context What the kits declared beside this one offered.
    */
-  init?: () => KitState;
+  init?: (context: KitContext) => KitState;
 }

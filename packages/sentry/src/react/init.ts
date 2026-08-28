@@ -8,7 +8,7 @@ import {
   makeFetchTransport,
 } from "@sentry/react";
 import type { Options } from "@sentry/core";
-import { buildReleaseName } from "../release";
+import { buildReleaseName } from "@acme/app";
 import { stopWhenUnconfigured } from "./transport";
 
 // The browser never holds the real dsn; the tunnel swaps it in server-side.

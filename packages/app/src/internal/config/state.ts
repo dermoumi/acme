@@ -1,3 +1,4 @@
+import { getKitContext } from "./context";
 import type { Kit, KitState } from "./kit";
 
 // Keyed on the kit the app declared, which is one object per declaration: two
@@ -11,7 +12,7 @@ export function getKitState(kit: Kit): KitState {
     return found;
   }
 
-  const state = kit.init?.() ?? {};
+  const state = kit.init?.(getKitContext(kit.name)) ?? {};
   held.set(kit, state);
 
   return state;

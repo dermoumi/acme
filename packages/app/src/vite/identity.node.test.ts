@@ -3,6 +3,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { acmeVite } from "./plugin";
 
 const root = fileURLToPath(new URL("fixtures/shop", import.meta.url));
+
+// Vite types its hooks as unions with an object form; these are the plain
+// functions the plugin declares.
+interface VirtualPlugin {
+  configResolved: (config: { root: string }) => void;
+  load: (id: string) => string | undefined;
+}
+
+// The virtual id, prefixed the way `resolveId` answered it.
+const loadConfigModule = (): string => {
+  const [virtual] = acmeVite({ root }) as unknown as VirtualPlugin[];
+  virtual?.configResolved({ root });
+
+  return String(virtual?.load("\0virtual:acme-config"));
+};
 const STAMPED = ["APP_NAME", "APP_VERSION", "APP_ENV", "APP_REVISION"];
 const CLEARED = [...STAMPED, ...STAMPED.map((name) => `VITE_${name}`)];
 
@@ -18,6 +33,12 @@ describe("acmeVite", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  // A package's own tests are the case: they reach a testing helper that
+  // imports the id, and have no kits of their own.
+  it("serves an empty config where the app named none and has none", () => {
+    expect(loadConfigModule()).toContain("export default {}");
   });
 
   it("stamps the app's name and version off its package.json", () => {

@@ -1,0 +1,9 @@
+{
+  "extends": "@acme/tsconfig/tsconfig.workerd.json",
+  "compilerOptions": {
+    // Resolve @acme/app's #host the way workerd does: its node arm reaches for
+    // node globals this project does not have.
+    "customConditions": ["workerd"]
+  },
+  "include": ["src"]
+}

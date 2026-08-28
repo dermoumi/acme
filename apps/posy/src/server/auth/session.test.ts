@@ -1,4 +1,5 @@
-import { resetDb } from "@acme/db/testing";
+import { resetDb, unboundDbEnv } from "@acme/db/testing";
+import { createBindings } from "#testing/runtime";
 import { beforeEach, describe, expect, it } from "vitest";
 import { testApp } from "../testing/app";
 import {
@@ -9,7 +10,6 @@ import {
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
 } from "./session";
-import { noDatabaseEnv } from "../testing/no-database";
 import { seeded } from "./test-utils";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -71,7 +71,7 @@ describe("GET /session", () => {
 
   it("never touches the db without a cookie", async () => {
     const app = testApp();
-    const env = noDatabaseEnv();
+    const env = createBindings(unboundDbEnv("DATABASE"));
     const res = await app.request("/session", {}, env);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ user: null });

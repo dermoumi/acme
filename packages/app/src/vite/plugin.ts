@@ -11,14 +11,24 @@ const VIRTUAL_PREFIX = "\0";
 
 interface VirtualContext {
   acmeConfigPath: string;
+  /**
+   * Whether the app named its config, rather than being found at the default.
+   */
+  named: boolean;
 }
 
 type VirtualModule = (context: VirtualContext) => string;
 
 const modules: Record<string, VirtualModule> = {
-  "virtual:acme-config": ({ acmeConfigPath }) => {
+  "virtual:acme-config": ({ acmeConfigPath, named }) => {
     if (!existsSync(acmeConfigPath)) {
-      throw new Error(`acme config not found: ${acmeConfigPath}`);
+      // One that was named is a typo worth failing on; one that was never named
+      // is a package with no kits, which is what a package's tests are.
+      if (named) {
+        throw new Error(`acme config not found: ${acmeConfigPath}`);
+      }
+
+      return "export default {};\nexport function resolve(s) { return s; }";
     }
 
     const url = pathToFileURL(acmeConfigPath).href;
@@ -170,7 +180,10 @@ export function acmeVite(options: AcmeViteOptions = {}): PluginOption {
         ? id.slice(VIRTUAL_PREFIX.length)
         : id;
 
-      return modules[name]?.({ acmeConfigPath });
+      return modules[name]?.({
+        acmeConfigPath,
+        named: options.config !== undefined,
+      });
     },
   };
 
