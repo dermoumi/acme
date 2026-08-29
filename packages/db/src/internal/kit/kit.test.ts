@@ -1,9 +1,26 @@
+import type { Kit } from "@acme/app";
+import type { HealthStatus } from "@acme/health";
+import { stubHealthKit } from "@acme/health/testing";
+import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { emptyDbEnv } from "../../testing";
 import { openDbAccessors } from "../db";
 import { databaseKit } from "./kit";
 
 // Spied, not replaced: all this needs to know is when it happens.
 vi.mock("../db", { spy: true });
+
+const getHealthStatus = (kit: Kit): HealthStatus => {
+  const health = stubHealthKit("@acme/db");
+  kit.init?.(health.context);
+
+  return health.status("database");
+};
+
+// The status reads only the env, which is what a host hands the context.
+const buildContext = (env: unknown) => {
+  return { env } as Context;
+};
 
 describe("databaseKit", () => {
   beforeEach(() => {
@@ -41,7 +58,7 @@ describe("databaseKit", () => {
     const kit = databaseKit([{ binding: "MAIN" }]);
     expect(openDbAccessors).not.toHaveBeenCalled();
 
-    kit.init?.();
+    kit.init?.(stubHealthKit("@acme/db").context);
 
     expect(openDbAccessors).toHaveBeenCalledOnce();
   });
@@ -51,14 +68,31 @@ describe("databaseKit", () => {
   it("opens one declaration's databases once, however often it is built", () => {
     const kit = databaseKit([{ binding: "MAIN" }]);
 
-    kit.init?.();
-    kit.init?.();
+    kit.init?.(stubHealthKit("@acme/db").context);
+    kit.init?.(stubHealthKit("@acme/db").context);
 
     expect(openDbAccessors).toHaveBeenCalledOnce();
   });
 
+  it("reports a database it can query as ok", async () => {
+    const status = getHealthStatus(databaseKit([{ binding: "DATABASE" }]));
+    const env = await emptyDbEnv("DATABASE");
+
+    await expect(status(buildContext(env))).resolves.toBe("ok");
+  });
+
+  // The binding is only opened on first use, so nothing else notices.
+  it("reports a database it cannot open as down", async () => {
+    const status = getHealthStatus(databaseKit([{ binding: "DATABASE" }]));
+
+    await expect(status(buildContext({}))).resolves.toBe("down");
+  });
+
   it("puts a getDb on every request it reaches", () => {
-    const { vars } = databaseKit([{ binding: "MAIN" }]).init?.() ?? {};
+    const { vars } =
+      databaseKit([{ binding: "MAIN" }]).init?.(
+        stubHealthKit("@acme/db").context,
+      ) ?? {};
 
     expect(vars?.({})).toHaveProperty("getDb", expect.any(Function));
   });

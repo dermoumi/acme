@@ -1,12 +1,12 @@
+import { unboundDbEnv } from "@acme/db/testing";
 import { createBindings } from "#testing/runtime";
 import { describe, expect, it } from "vitest";
 import { createApp } from "./app";
-import { noDatabase } from "./testing/no-database";
 
 // The env names no database, so resolving throws: these prove debug routes
 // never reach for one.
 function env(overrides: Record<string, string> = {}) {
-  return { ...createBindings(noDatabase), ...overrides };
+  return { ...createBindings(unboundDbEnv("DATABASE")), ...overrides };
 }
 
 describe("debug routes", () => {

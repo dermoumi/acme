@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { sentryKit } from "../../kit";
 import type { SentryConfig } from "../config";
 import { setUser } from "../user";
+import { stubHealthKit } from "@acme/health/testing";
 
 export const BOOM = "route exploded";
 export const IDENTIFIED = { id: "u_1", username: "tester" };
@@ -19,7 +20,8 @@ export function wireApp(config: SentryConfig = {}): Handler {
     throw new Error(BOOM);
   });
 
-  const state = sentryKit(config).init?.() ?? {};
+  const state =
+    sentryKit(config).init?.(stubHealthKit("@acme/sentry").context) ?? {};
   state.routes?.(app);
 
   return state.handler?.(app) ?? app;

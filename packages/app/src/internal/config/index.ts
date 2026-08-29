@@ -9,3 +9,4 @@ export type {
   KitVars,
 } from "./kit";
 export { getKitState } from "./state";
+export { type KitContext } from "./context";

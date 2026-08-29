@@ -1,3 +1,4 @@
+import { acmeVite } from "@acme/app/vite";
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
 import { defineConfig } from "vitest/config";
 
@@ -16,10 +17,12 @@ export default defineConfig({
     },
     projects: [
       {
+        plugins: [acmeVite({ withoutConfig: true })],
         test: { name: "node", include, exclude: ["**/*.workerd.test.ts"] },
       },
       {
         plugins: [
+          acmeVite({ withoutConfig: true }),
           cloudflareTest({
             miniflare: {
               compatibilityDate: "2026-07-01",

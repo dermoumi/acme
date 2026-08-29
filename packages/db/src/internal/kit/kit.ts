@@ -1,8 +1,9 @@
 /// <reference types="hono" />
 import type { Kit } from "@acme/app";
-import type { Kysely } from "kysely";
+import type { HealthStatus } from "@acme/health";
+import { type Kysely, sql } from "kysely";
 import { contextFor } from "./context";
-import { buildGetDb, type GetDb } from "../db";
+import { type Accessors, buildGetDb, type GetDb } from "../db";
 
 // What this kit puts on every request, declared beside the `vars` that puts it
 // there, so a route reads ctx.var.getDb with nothing to import.
@@ -50,6 +51,24 @@ export interface DatabaseConfig {
   seed?: string;
 }
 
+// A query per database, not a binding check: a url is only opened on first use,
+// so a deployment serves for a while before anything notices it cannot connect.
+function buildDatabaseStatus(accessors: Accessors): HealthStatus {
+  return async (ctx) => {
+    const queries = [...accessors.values()].map(async (open) => {
+      await sql`select 1`.execute(await open({ env: ctx.env }));
+    });
+
+    try {
+      await Promise.all(queries);
+
+      return "ok";
+    } catch {
+      return "down";
+    }
+  };
+}
+
 function checkDuplicates(databases: DatabaseConfig[]): DatabaseConfig[] {
   // Every reader, not just those that go on to pick one: a duplicate would
   // otherwise resolve silently to whichever came first.
@@ -68,6 +87,9 @@ function checkDuplicates(databases: DatabaseConfig[]): DatabaseConfig[] {
  * An app declares it once, however many databases it holds: a command such as
  * `migrate` acts on all of them unless `--db` names one.
  *
+ * Reports every declared database to `@acme/health`, so an app serving this kit
+ * declares that one ahead of it. Commands do not need it.
+ *
  * @param databases In the order they migrate.
  * @throws If two of them claim the same binding.
  */
@@ -78,8 +100,10 @@ export function databaseKit(databases: DatabaseConfig[]): Kit {
     name: "@acme/db",
     config,
     commands: "@acme/db/commands",
-    init: () => {
+    init: ({ require }) => {
       const { accessors } = contextFor(config);
+      const addHealthStatus = require("addHealthStatus");
+      addHealthStatus("database", buildDatabaseStatus(accessors));
 
       return {
         vars: (env) => {

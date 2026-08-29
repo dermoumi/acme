@@ -1,7 +1,8 @@
 import type { Kit } from "@acme/app";
+import { stubHealthKit } from "@acme/health/testing";
 import { Kysely } from "kysely";
 import { describe, expect, it } from "vitest";
-import { emptyDbEnv } from "../../testing";
+import { emptyDbEnv, unboundDbEnv } from "../../testing";
 import type { Items } from "../kit/fixtures/schema";
 import type { GetDb } from "./get-db";
 import { databaseKit } from "../kit/kit";
@@ -16,7 +17,9 @@ describe("the databases a kit puts on a request", () => {
   // What a host does per request. The cast is one no consumer writes: routes
   // read ctx.var.getDb, which the hono augmentation types for them.
   const onRequest = (kit: Kit, env: unknown): GetDb => {
-    return kit.init?.().vars?.(env).getDb as GetDb;
+    const health = stubHealthKit("@acme/db");
+
+    return kit.init?.(health.context).vars?.(env).getDb as GetDb;
   };
 
   it("opens the one a binding names, typed by what the app declared", async () => {
@@ -34,6 +37,12 @@ describe("the databases a kit puts on a request", () => {
     const second = await onRequest(kit, env)("DATABASE");
 
     expect(first).toBe(second);
+  });
+
+  it("refuses to open one the deployment bound nothing for", async () => {
+    const getDb = onRequest(newKit(), unboundDbEnv("DATABASE"));
+
+    await expect(getDb("DATABASE")).rejects.toThrow();
   });
 
   it("refuses a binding the app never declared, naming what it has", async () => {

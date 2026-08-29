@@ -57,14 +57,19 @@ runs:
             --user-agent "acme-ci-health-probe" "$@"
         }
 
+        # Detail answers only when asked for, and every assertion below reads
+        # this one body.
+        health_url="$BASE_URL$HEALTH_PATH?full"
+
         # curl --retry only retries failures, and a previous deploy answering
         # 200 is not one. Waiting on the revision is what pins this to the new
         # build; the same loop covers a cold route and a starting container.
         deadline=$((SECONDS + TIMEOUT))
         while :; do
-          body=$(probe "$BASE_URL$HEALTH_PATH" || true)
-          served=$(printf '%s' "$body" | jq -r '.revision // empty' 2>/dev/null || true)
-          if [ -n "$body" ] && { [ -z "$REVISION" ] || [ "$served" = "$REVISION" ]; }; then
+          body=$(probe "$health_url" || true)
+          # The build is what follows the last +; the rest names the app.
+          served=$(printf '%s' "$body" | jq -r '.release // empty' 2>/dev/null || true)
+          if [ -n "$body" ] && { [ -z "$REVISION" ] || [ "${served##*+}" = "$REVISION" ]; }; then
             break
           fi
           if [ "$SECONDS" -ge "$deadline" ]; then

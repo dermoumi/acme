@@ -11,14 +11,21 @@ const VIRTUAL_PREFIX = "\0";
 
 interface VirtualContext {
   acmeConfigPath: string;
+  withoutConfig: boolean;
 }
 
 type VirtualModule = (context: VirtualContext) => string;
 
 const modules: Record<string, VirtualModule> = {
-  "virtual:acme-config": ({ acmeConfigPath }) => {
+  "virtual:acme-config": ({ acmeConfigPath, withoutConfig }) => {
     if (!existsSync(acmeConfigPath)) {
-      throw new Error(`acme config not found: ${acmeConfigPath}`);
+      // Only where the caller said it has none: an app that moved or renamed
+      // its own would otherwise build with no kits at all.
+      if (!withoutConfig) {
+        throw new Error(`acme config not found: ${acmeConfigPath}`);
+      }
+
+      return "export default {};\nexport function resolve(s) { return s; }";
     }
 
     const url = pathToFileURL(acmeConfigPath).href;
@@ -128,6 +135,13 @@ export interface AcmeViteOptions {
    * Defaults to the working directory.
    */
   root?: string;
+  /**
+   * Serves an empty config rather than failing where there is none.
+   *
+   * For a package whose own tests reach a module importing the id. An app
+   * leaves it off, so a config it moved or renamed fails the build.
+   */
+  withoutConfig?: boolean;
 }
 
 /**
@@ -170,7 +184,10 @@ export function acmeVite(options: AcmeViteOptions = {}): PluginOption {
         ? id.slice(VIRTUAL_PREFIX.length)
         : id;
 
-      return modules[name]?.({ acmeConfigPath });
+      return modules[name]?.({
+        acmeConfigPath,
+        withoutConfig: options.withoutConfig ?? false,
+      });
     },
   };
 

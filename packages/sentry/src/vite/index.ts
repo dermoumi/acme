@@ -1,8 +1,7 @@
+import { buildReleaseName } from "@acme/app";
 import type { KitVite } from "@acme/app/vite";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import type { Plugin, PluginOption } from "vite";
-// Extension included: node loads this file directly when vite reads its config.
-import { buildReleaseName } from "../release.ts";
 
 export interface SentryViteOptions {
   /**
