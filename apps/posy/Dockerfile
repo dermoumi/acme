@@ -4,7 +4,7 @@
 # live outside this directory.
 #   docker build -f apps/posy/Dockerfile .
 
-FROM node:24.19.0-trixie AS build
+FROM node:24.20.0-trixie AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /app
 RUN corepack enable
@@ -57,7 +57,7 @@ RUN node packages/deploy/src/cli/bin/acme-deploy.js prune --root=/deploy \
       wrangler miniflare workerd '@cloudflare/workerd-*' \
       typescript '@typescript/*'
 
-FROM node:24.19.0-trixie-slim
+FROM node:24.20.0-trixie-slim
 WORKDIR /app
 
 # An unset APP_ENV reads as development, which serves /debug/*.
