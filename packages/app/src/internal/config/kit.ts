@@ -10,6 +10,14 @@ import type { Handler } from "../../server/contract";
 export type KitVars = (env: unknown) => Record<string, unknown>;
 
 /**
+ * What a kit mounts ahead of the app's own routes.
+ *
+ * Unlike {@link KitRoutes}: a cap mounted behind the route it caps never runs.
+ */
+// oxlint-disable-next-line no-explicit-any
+export type KitMiddleware = (app: Hono<any>) => void;
+
+/**
  * What a kit adds to a built app.
  *
  * Runs behind the app's own routes, in the order the config lists the kits, so
@@ -42,6 +50,10 @@ export interface KitState {
    * What this kit puts on every request's context. See {@link KitVars}.
    */
   vars?: KitVars;
+  /**
+   * What this kit mounts ahead of the app's routes. See {@link KitMiddleware}.
+   */
+  middleware?: KitMiddleware;
   /**
    * What this kit adds to the built app. See {@link KitRoutes}.
    */

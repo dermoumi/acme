@@ -4,6 +4,7 @@ export {
   type Kit,
   type KitRoutes,
   type KitHandlerWrapper,
+  type KitMiddleware,
   type KitShutdown,
   type KitState,
   type KitVars,

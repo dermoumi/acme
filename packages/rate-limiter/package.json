@@ -23,6 +23,7 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@acme/app": "workspace:*",
     "@hono/node-server": "catalog:",
     "hono-rate-limiter": "catalog:"
   },
