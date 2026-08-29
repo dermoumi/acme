@@ -31,6 +31,10 @@ component_management:
       name: "@acme/deploy"
       paths:
         - packages/deploy/**
+    - component_id: health
+      name: "@acme/health"
+      paths:
+        - packages/health/**
     - component_id: rate-limiter
       name: "@acme/rate-limiter"
       paths:

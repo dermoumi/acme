@@ -1,6 +1,7 @@
 import { defineConfig, type Kit } from "@acme/app";
 import { assetsKit } from "@acme/assets";
 import { databaseKit } from "@acme/db";
+import { healthKit } from "@acme/health";
 import { sentryKit } from "@acme/sentry";
 
 // Everything an app owns itself, until it has a package to belong to.
@@ -10,8 +11,12 @@ const posy: Kit = {
 };
 
 export default defineConfig({
-  // Listed before the kit it requires, which the registry allows on purpose.
   kits: [
+    // Ahead of the kits reporting to it, and of the catch-all below, which
+    // would answer its route instead.
+    healthKit(),
+    // Listed before the database kit its commands require, which the CLI
+    // registry allows on purpose.
     posy,
     databaseKit([
       {

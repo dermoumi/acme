@@ -1,6 +1,6 @@
 import type { ErrorEvent, Options } from "@sentry/core";
 import { readSettings } from "./env";
-import { buildReleaseName } from "../release";
+import { buildReleaseName } from "@acme/app";
 import type { MaskingLevel, SentryConfig } from "./config";
 import {
   DEFAULT_REDACT_KEYS,

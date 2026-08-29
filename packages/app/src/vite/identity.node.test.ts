@@ -3,6 +3,27 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { acmeVite } from "./plugin";
 
 const root = fileURLToPath(new URL("fixtures/shop", import.meta.url));
+
+// Vite types its hooks as unions with an object form; these are the plain
+// functions the plugin declares.
+interface VirtualPlugin {
+  configResolved: (config: { root: string }) => void;
+  load: (id: string) => string | undefined;
+}
+
+// The virtual id, prefixed the way `resolveId` answered it.
+const loadConfigModule = (
+  options: { withoutConfig?: boolean } = {},
+): string => {
+  const [virtual] = acmeVite({
+    ...options,
+    root,
+  }) as unknown as VirtualPlugin[];
+  virtual?.configResolved({ root });
+
+  return String(virtual?.load("\0virtual:acme-config"));
+};
+
 const STAMPED = ["APP_NAME", "APP_VERSION", "APP_ENV", "APP_REVISION"];
 const CLEARED = [...STAMPED, ...STAMPED.map((name) => `VITE_${name}`)];
 
@@ -18,6 +39,19 @@ describe("acmeVite", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  // A package's own tests are the case: they reach a testing helper that
+  // imports the id, and have no kits of their own.
+  it("serves an empty config to a caller saying it has none", () => {
+    expect(loadConfigModule({ withoutConfig: true })).toContain(
+      "export default {}",
+    );
+  });
+
+  // An app that moved or renamed its config would otherwise build with no kits.
+  it("fails on a missing config the caller never said it was without", () => {
+    expect(loadConfigModule).toThrow(/acme config not found/u);
   });
 
   it("stamps the app's name and version off its package.json", () => {

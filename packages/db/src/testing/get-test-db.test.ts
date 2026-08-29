@@ -1,4 +1,5 @@
 import { defineConfig } from "@acme/app";
+import { healthKit } from "@acme/health";
 import { Kysely } from "kysely";
 import { describe, expect, it } from "vitest";
 import { databaseKit } from "../internal/kit/kit";
@@ -20,8 +21,12 @@ const migrations = {
 };
 
 describe("getTestDb", () => {
+  // With the health kit ahead of it, as an app serving this one declares: the
+  // database kit reports itself to that one while it initialises.
   const config = () => {
-    return defineConfig({ kits: [databaseKit([{ binding: "DATABASE" }])] });
+    return defineConfig({
+      kits: [healthKit(), databaseKit([{ binding: "DATABASE" }])],
+    });
   };
 
   it("empties a database and opens it when given no env", async () => {
@@ -87,8 +92,12 @@ describe("migrateDb", () => {
 });
 
 describe("resetDb", () => {
+  // With the health kit ahead of it, as an app serving this one declares: the
+  // database kit reports itself to that one while it initialises.
   const config = () => {
-    return defineConfig({ kits: [databaseKit([{ binding: "DATABASE" }])] });
+    return defineConfig({
+      kits: [healthKit(), databaseKit([{ binding: "DATABASE" }])],
+    });
   };
 
   it("drops what an accessor was holding, so the next open is a new one", async () => {

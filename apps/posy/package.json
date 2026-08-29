@@ -26,6 +26,7 @@
     "@acme/app": "workspace:*",
     "@acme/assets": "workspace:*",
     "@acme/db": "workspace:*",
+    "@acme/health": "workspace:*",
     "@acme/rate-limiter": "workspace:*",
     "@acme/sentry": "workspace:*",
     "@hono/node-server": "catalog:",
