@@ -468,6 +468,9 @@ importers:
         specifier: 'catalog:'
         version: 0.5.3(hono@4.13.5)
     devDependencies:
+      '@acme/health':
+        specifier: workspace:*
+        version: link:../health
       '@acme/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig

@@ -6,7 +6,7 @@ import type { Limiter } from "./runtime/contract";
 import { compileTrustedProxies, type TrustedProxies } from "./trusted-proxies";
 
 /**
- * Whether the declared budgets can count. `partial` means one went missing.
+ * Whether every declared budget can be enforced. `partial` means only some.
  */
 export type LimiterStatus = "on" | "partial" | "off";
 
