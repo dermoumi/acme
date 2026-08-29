@@ -24,16 +24,16 @@ export interface HealthStub {
  * @param kit The contributor's specifier, which its errors are named for.
  */
 export function stubHealthKit(kit: string): HealthStub {
-  const offered = new Map<string, HealthStatus>();
+  const statuses = new Map<string, HealthStatus>();
   const context = createKitContext(kit);
   context.register("addHealthStatus", (key, status) => {
-    offered.set(key, status);
+    statuses.set(key, status);
   });
 
   return {
     context,
     status: (key) => {
-      const found = offered.get(key);
+      const found = statuses.get(key);
       if (!found) {
         throw new Error(`the kit offered no "${key}" status`);
       }

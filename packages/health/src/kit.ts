@@ -34,8 +34,7 @@ export interface HealthStatusOptions {
  * Offers one line of the endpoint's body, under a key the calling kit owns.
  *
  * Reached with `require("addHealthStatus")` from a kit's `init`, so the app has
- * to declare this kit ahead of whoever contributes. Registering a key twice
- * replaces it, leaving its place in the body alone.
+ * to declare this kit ahead of whoever contributes.
  */
 export type AddHealthStatus = (
   key: string,
@@ -66,8 +65,7 @@ interface Identity {
   APP_REVISION?: string;
 }
 
-// Insertion ordered, and replacing a key keeps its place, so the body stays in
-// one order for whoever diffs two deployments.
+// Insertion ordered: the body keeps one order for whoever diffs two deploys.
 const contributions = new Map<string, Contribution>();
 
 const addHealthStatus: AddHealthStatus = (key, status, options = {}) => {
@@ -93,10 +91,11 @@ async function buildHealthBody(
 ): Promise<Record<string, unknown>> {
   // Both hosts always pass one; an app built in hand for a test may not.
   const env = (ctx.env ?? {}) as Identity;
-  const asked = [...contributions.values()].filter((one) => {
-    return full || !one.optional;
-  });
-  const lines = await Promise.all(asked.map(async (one) => answer(one, ctx)));
+  const lines = await Promise.all(
+    [...contributions.values()]
+      .filter((one) => full || !one.optional)
+      .map(async (one) => answer(one, ctx)),
+  );
 
   return {
     status: "ok",

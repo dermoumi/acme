@@ -8,7 +8,7 @@ function or(value: string | undefined, fallback: string): string {
  * Call it rather than spelling the format again: two spellings put an app's
  * events, its source maps and its health body in different releases.
  *
- * @param name Omit where whoever reads the string already knows the app.
+ * @param name Omit for an unprefixed string.
  * @param version Defaults to `dev`.
  * @param revision Defaults to `dev`.
  */

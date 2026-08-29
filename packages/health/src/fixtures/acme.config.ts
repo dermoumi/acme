@@ -1,9 +1,7 @@
 import { defineConfig, type Kit } from "@acme/app";
 import { healthKit } from "../kit";
 
-// Declared after the health kit, which is what lets it require what that kit
-// registered. One contributor stands in for every shape: verdict, detail, and
-// one that is broken.
+// After the health kit, which is what lets it require what that kit registered.
 const contributor: Kit = {
   name: "@fixture/contributor",
   init: ({ require }) => {

@@ -55,12 +55,12 @@ export interface DatabaseConfig {
 // so a deployment serves for a while before anything notices it cannot connect.
 function buildDatabaseStatus(accessors: Accessors): HealthStatus {
   return async (ctx) => {
-    const reached = [...accessors.values()].map(async (open) => {
+    const queries = [...accessors.values()].map(async (open) => {
       await sql`select 1`.execute(await open({ env: ctx.env }));
     });
 
     try {
-      await Promise.all(reached);
+      await Promise.all(queries);
 
       return "ok";
     } catch {

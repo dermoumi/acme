@@ -29,7 +29,8 @@ export function sentryKit(config: SentryConfig = {}): Kit {
     config,
     vite: "@acme/sentry/vite",
     init: ({ require }) => {
-      require("addHealthStatus")("sentry", sentryStatus, { optional: true });
+      const addHealthStatus = require("addHealthStatus");
+      addHealthStatus("sentry", sentryStatus, { optional: true });
 
       return {
         routes: (app) => {

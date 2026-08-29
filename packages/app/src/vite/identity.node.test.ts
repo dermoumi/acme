@@ -23,6 +23,7 @@ const loadConfigModule = (
 
   return String(virtual?.load("\0virtual:acme-config"));
 };
+
 const STAMPED = ["APP_NAME", "APP_VERSION", "APP_ENV", "APP_REVISION"];
 const CLEARED = [...STAMPED, ...STAMPED.map((name) => `VITE_${name}`)];
 

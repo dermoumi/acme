@@ -5,9 +5,10 @@ import { urlVarFor } from "../internal/db/url-var";
 /**
  * An environment naming an empty database, whichever runtime is running.
  *
- * A D1 binding with its schema dropped on workerd, a url on node, so an app's
- * tests never learn which engine they are on. Pass the binding name the app
- * gave `defineDb`.
+ * A D1 binding with its schema dropped on workerd, a url on node, so a test
+ * never learns which engine it is on.
+ *
+ * @param binding The name the app gave `defineDb`.
  */
 export async function emptyDbEnv(
   binding: string,
@@ -20,9 +21,9 @@ export async function emptyDbEnv(
  * An environment naming no database at all, whichever runtime is running.
  *
  * Neither the binding a worker takes nor the url a node process reads, so
- * resolving throws rather than opening an empty one: what a test proving a
- * request never reached for a database needs. Pass the binding name the app
- * gave `defineDb`.
+ * resolving throws instead of opening an empty one.
+ *
+ * @param binding The name the app gave `defineDb`.
  */
 export function unboundDbEnv(
   binding: string,

@@ -4,7 +4,7 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import type { SentryConfig } from "./server/config";
-import { DSN, kitContext } from "./server/testing/contract";
+import { DSN } from "./server/testing/contract";
 import { sentryKit } from "./kit";
 
 // The shape an app has: its own routes, a sub-app under them, the kit's behind.
@@ -19,21 +19,21 @@ function buildApp(): Hono {
     throw new Error("route exploded");
   });
   app.route("/mounted", mounted);
-  sentryKit().init?.(kitContext()).routes?.(app);
+  sentryKit().init?.(stubHealthKit("@acme/sentry").context).routes?.(app);
 
   return app;
 }
 
 // What the kit hands the health kit while it initialises.
-function reportedBy(config: SentryConfig = {}): HealthStatus {
+function getHealthStatus(config: SentryConfig = {}): HealthStatus {
   const health = stubHealthKit("@acme/sentry");
   sentryKit(config).init?.(health.context);
 
   return health.status("sentry");
 }
 
-// All the status reads is the env, which is what a host hands the context.
-const asked = (env: unknown) => {
+// The status reads only the env, which is what a host hands the context.
+const buildContext = (env: unknown) => {
   return { env } as Context;
 };
 
@@ -78,11 +78,13 @@ describe("sentryKit", () => {
   });
 
   it("reports itself off where no DSN reached the app", () => {
-    expect(reportedBy()(asked({}))).toBe("off");
+    expect(getHealthStatus()(buildContext({}))).toBe("off");
   });
 
   it("reports itself configured once a DSN is bound", () => {
-    expect(reportedBy()(asked({ SENTRY_DSN: DSN }))).toBe("configured");
+    expect(getHealthStatus()(buildContext({ SENTRY_DSN: DSN }))).toBe(
+      "configured",
+    );
   });
 
   // The app renamed it, so a status reading SENTRY_DSN would say "off" while
@@ -94,7 +96,7 @@ describe("sentryKit", () => {
       },
     };
 
-    expect(reportedBy(config)(asked({ REPORTING_DSN: DSN }))).toBe(
+    expect(getHealthStatus(config)(buildContext({ REPORTING_DSN: DSN }))).toBe(
       "configured",
     );
   });

@@ -1,5 +1,3 @@
-import { stubHealthKit } from "@acme/health/testing";
-import type { KitContext } from "@acme/app";
 import type { SentryConfig } from "../config";
 
 export const DSN = "https://dummy@dummy.ingest.sentry.io/1";
@@ -23,12 +21,6 @@ export interface Capture {
 export interface Bench {
   build: (env: BenchEnv, config: SentryConfig) => Capture;
   settle: () => Promise<void>;
-}
-
-// This kit reports to the health kit, so a test building it by hand stands in
-// for the one an app would have declared.
-export function kitContext(): KitContext {
-  return stubHealthKit("@acme/sentry").context;
 }
 
 export function loginRequest(base = "https://posy.test"): Request {
