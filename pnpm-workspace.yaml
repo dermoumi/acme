@@ -20,7 +20,7 @@ catalog:
   "@types/pg": "8.23.1"
   "@types/react": "19.2.18"
   "@types/react-dom": "19.2.5"
-  "@vitejs/plugin-react": "6.1.0"
+  "@vitejs/plugin-react": "6.1.1"
   "@vitest/coverage-istanbul": "4.1.11"
   better-sqlite3: "13.0.3"
   cac: "7.0.0"
