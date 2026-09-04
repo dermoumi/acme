@@ -1,22 +1,51 @@
 import { Hono } from "hono";
-import { createRateLimiter, type RateLimiterOptions } from "../rate-limiter";
+import {
+  type Budget,
+  createRateLimiter,
+  type LimitedRoute,
+  type RateLimiterConfig,
+} from "../rate-limiter";
 import { OTHER_LIMIT, OTHER_PERIOD, TEST_LIMIT, TEST_PERIOD } from "./budgets";
 import type { TestBindings } from "./runtime/contract";
 
-export function limitedApp(options: RateLimiterOptions = {}) {
-  const limiter = createRateLimiter<TestBindings>(options);
+export const TEST_BUDGET: Budget<TestBindings> = {
+  binding: "RATE_LIMIT_TEST",
+  limit: TEST_LIMIT,
+  periodSeconds: TEST_PERIOD,
+};
+
+export const OTHER_BUDGET: Budget<TestBindings> = {
+  binding: "RATE_LIMIT_OTHER",
+  limit: OTHER_LIMIT,
+  periodSeconds: OTHER_PERIOD,
+};
+
+export const TEST_ROUTE: LimitedRoute<TestBindings> = {
+  method: "POST",
+  path: "/limited",
+  binding: "RATE_LIMIT_TEST",
+};
+
+const OTHER_ROUTE: LimitedRoute<TestBindings> = {
+  method: "POST",
+  path: "/other",
+  binding: "RATE_LIMIT_OTHER",
+};
+
+export const TEST_BUDGETS = [TEST_BUDGET, OTHER_BUDGET];
+export const TEST_ROUTES = [TEST_ROUTE, OTHER_ROUTE];
+
+export function limitedApp(
+  overrides: Partial<RateLimiterConfig<TestBindings>> = {},
+) {
+  const limiter = createRateLimiter<TestBindings>({
+    budgets: TEST_BUDGETS,
+    routes: TEST_ROUTES,
+    ...overrides,
+  });
   const app = new Hono<{ Bindings: TestBindings }>();
 
-  app.on(
-    "POST",
-    "/limited",
-    limiter.create("RATE_LIMIT_TEST", TEST_LIMIT, TEST_PERIOD),
-  );
-  app.on(
-    "POST",
-    "/other",
-    limiter.create("RATE_LIMIT_OTHER", OTHER_LIMIT, OTHER_PERIOD),
-  );
+  limiter.mount(app);
   app.get("/status", (ctx) => ctx.text(limiter.status(ctx.env)));
   app.all("*", (ctx) => ctx.text("served"));
 
