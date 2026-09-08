@@ -64,8 +64,8 @@ catalogs:
       specifier: 4.13.7
       version: 4.13.7
     hono-rate-limiter:
-      specifier: 0.5.3
-      version: 0.5.3
+      specifier: 0.5.4
+      version: 0.5.4
     husky:
       specifier: 9.1.7
       version: 9.1.7
@@ -463,7 +463,7 @@ importers:
         version: 2.1.1(hono@4.13.7)
       hono-rate-limiter:
         specifier: 'catalog:'
-        version: 0.5.3(hono@4.13.7)
+        version: 0.5.4(hono@4.13.7)
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
@@ -2926,8 +2926,8 @@ packages:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
-  hono-rate-limiter@0.5.3:
-    resolution: {integrity: sha512-M0DxbVMpPELEzLi0AJg1XyBHLGJXz7GySjsPoK+gc5YeeBsdGDGe+2RvVuCAv8ydINiwlbxqYMNxUEyYfRji/A==}
+  hono-rate-limiter@0.5.4:
+    resolution: {integrity: sha512-P3/cscAmz1hA+MuM+Hn9gP/EyO2zWv2aXIFkVYuLZkPzrPa4oaWdVCS94vyDlsNBgeMnE/Hr2+LznIKQxrF0ng==}
     peerDependencies:
       hono: ^4.10.8
       unstorage: ^1.17.3
@@ -6176,7 +6176,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hono-rate-limiter@0.5.3(hono@4.13.7):
+  hono-rate-limiter@0.5.4(hono@4.13.7):
     dependencies:
       hono: 4.13.7
 
