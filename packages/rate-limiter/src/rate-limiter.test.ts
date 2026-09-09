@@ -10,26 +10,56 @@ import {
   OTHER_PERIOD,
   post,
   sequence,
+  OTHER_BUDGET,
+  TEST_BUDGET,
+  TEST_BUDGETS,
   TEST_LIMIT,
   TEST_PERIOD,
+  TEST_ROUTE,
   type TestBindings,
 } from "./testing";
 
+// Built at module load on workerd, so a bad config fails the boot rather than
+// sitting there uncapped for the worker's whole life.
 describe("createRateLimiter", () => {
   it("throws on a malformed trusted proxy range", () => {
-    // Built at module load on workerd, so a typo fails the boot rather than
-    // silently trusting nobody for the worker's whole life.
-    expect(() => createRateLimiter({ trustedProxies: ["10.0.0.0/"] })).toThrow(
+    expect(() => limitedApp({ trustedProxies: ["10.0.0.0/"] })).toThrow(
       "10.0.0.0/",
     );
 
     expect(() =>
-      createRateLimiter({ trustedProxies: ["10.0.0.0/8", "fc00::/7"] }),
+      limitedApp({ trustedProxies: ["10.0.0.0/8", "fc00::/7"] }),
     ).not.toThrow();
+  });
+
+  it("throws when one binding carries two budgets", () => {
+    const budgets = [...TEST_BUDGETS, TEST_BUDGET];
+
+    expect(() => limitedApp({ budgets })).toThrow(
+      "RATE_LIMIT_TEST is declared more than once",
+    );
+  });
+
+  // A route naming a budget nobody declared would otherwise mount nothing.
+  it("throws when a route names an undeclared budget", () => {
+    const budgets = [OTHER_BUDGET];
+
+    expect(() => limitedApp({ budgets })).toThrow(
+      "POST /limited names an undeclared budget: RATE_LIMIT_TEST",
+    );
+  });
+
+  // Otherwise status() reports a cap that sits on no route at all.
+  it("throws when a budget caps no route", () => {
+    const routes = [TEST_ROUTE];
+
+    expect(() => limitedApp({ routes })).toThrow(
+      "RATE_LIMIT_OTHER is declared but caps no route",
+    );
   });
 });
 
-describe("create", () => {
+describe("mount", () => {
   it("refuses once the budget is spent", async () => {
     const app = limitedApp();
     const env = createBindings();
@@ -90,7 +120,7 @@ describe("create", () => {
     },
   );
 
-  // Nothing to lose: create() described a budget, so it still applies.
+  // Nothing to lose: the config described a budget, so it still applies.
   it.runIf(SELF_PROVISIONED)(
     "enforces its own budget when nothing is bound",
     async () => {
@@ -120,15 +150,18 @@ describe("status", () => {
     env: TestBindings,
   ) => (await app.request("/status", {}, env)).text();
 
-  // The one case limitedApp cannot cover: an app that mounted no budget at all.
+  // The one case limitedApp cannot cover: an app that declared no budget.
   const unlimitedApp = () => {
-    const limiter = createRateLimiter<TestBindings>();
+    const limiter = createRateLimiter<TestBindings>({
+      budgets: [],
+      routes: [],
+    });
     const app = new Hono<{ Bindings: TestBindings }>();
     app.get("/status", (ctx) => ctx.text(limiter.status(ctx.env)));
     return app;
   };
 
-  it("reads off when nothing was created", async () => {
+  it("reads off when nothing was declared", async () => {
     // Bindings are present, but nothing enforces them, so "off" is the truth.
     expect(await readStatus(unlimitedApp(), createBindings())).toBe("off");
   });

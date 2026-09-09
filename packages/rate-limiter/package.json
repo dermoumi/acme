@@ -23,10 +23,12 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@acme/app": "workspace:*",
     "@hono/node-server": "catalog:",
     "hono-rate-limiter": "catalog:"
   },
   "devDependencies": {
+    "@acme/health": "workspace:*",
     "@acme/tsconfig": "workspace:*",
     "@cloudflare/vitest-pool-workers": "catalog:",
     "@cloudflare/workers-types": "catalog:",
