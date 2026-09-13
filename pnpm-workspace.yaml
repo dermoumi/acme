@@ -9,7 +9,7 @@ catalog:
   "@cloudflare/vite-plugin": "1.54.7"
   "@hono/node-server": "2.1.1"
   "@cloudflare/vitest-pool-workers": "0.22.0"
-  "@cloudflare/workers-types": "5.20260910.1"
+  "@cloudflare/workers-types": "5.20260911.1"
   "@sentry/cloudflare": "10.74.0"
   "@sentry/core": "10.74.0"
   "@sentry/node": "10.74.0"
