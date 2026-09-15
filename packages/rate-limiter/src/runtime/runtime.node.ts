@@ -2,7 +2,12 @@ import { getConnInfo } from "@hono/node-server/conninfo";
 import type { Context } from "hono";
 import { MemoryStore, type Store } from "hono-rate-limiter";
 import { bound } from "../bindings";
-import type { ClientAddress, GetBinding, Limiter } from "./contract";
+import type {
+  ClientAddress,
+  GetBinding,
+  Limiter,
+  GetTrustedProxies,
+} from "./contract";
 import { resolveClientAddress } from "../trusted-proxies";
 
 // No real config to pass: the middleware never runs here, and stores read
@@ -26,6 +31,17 @@ export const clientAddress: ClientAddress = (ctx, trustedProxies) => {
   const forwarded = ctx.req.header("x-forwarded-for");
 
   return resolveClientAddress(peer, forwarded, trustedProxies);
+};
+
+export const getTrustedProxies: GetTrustedProxies = (configured) => {
+  if (typeof configured === "function") return configured(process.env);
+  if (configured) return configured;
+
+  // Comma separated. Empty trusts none, which is the safe default.
+  return (process.env.TRUSTED_PROXIES ?? "")
+    .split(",")
+    .map((range) => range.trim())
+    .filter(Boolean);
 };
 
 export const SELF_PROVISIONED: boolean = true;

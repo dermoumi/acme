@@ -10,21 +10,22 @@ import { createRateLimiter, type RateLimiterConfig } from "./rate-limiter";
  *
  * Reports itself to `@acme/health`, so an app declares that one ahead of it.
  *
- * @throws If a range is malformed, a budget is repeated, a route names no
- *   declared budget, or a budget caps no route.
+ * @throws From `init`, if a range is malformed, a budget is repeated, a route
+ *   names no declared budget, or a budget caps no route.
  */
 export function rateLimiterKit<Bindings extends object>(
   config: RateLimiterConfig<Bindings>,
 ): Kit {
-  const limiter = createRateLimiter<Bindings>(config);
-  const limiterStatus: HealthStatus = (ctx) => {
-    return limiter.status(ctx.env as Bindings);
-  };
-
   return {
     name: "@acme/rate-limiter",
     config,
+    // Built here, not in the factory: a config is read on build machines too.
     init: ({ require }) => {
+      const limiter = createRateLimiter<Bindings>(config);
+      const limiterStatus: HealthStatus = (ctx) => {
+        return limiter.status(ctx.env as Bindings);
+      };
+
       const addHealthStatus = require("addHealthStatus");
       addHealthStatus("rateLimit", limiterStatus, { optional: true });
 

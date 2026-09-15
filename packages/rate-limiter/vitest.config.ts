@@ -45,7 +45,8 @@ export default defineConfig({
             },
           }),
         ],
-        test: { name: "workerd", include },
+        // The node arm reads process.env, which workerd does not have.
+        test: { name: "workerd", include, exclude: ["**/*.node.test.ts"] },
       },
     ],
   },

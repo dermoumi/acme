@@ -1,9 +1,18 @@
-import { clientAddress, getBinding, SELF_PROVISIONED } from "#runtime";
+import {
+  clientAddress,
+  getBinding,
+  getTrustedProxies,
+  SELF_PROVISIONED,
+} from "#runtime";
 import type { Hono, MiddlewareHandler } from "hono";
 import { rateLimiter } from "hono-rate-limiter";
 import { bound } from "./bindings";
 import type { Limiter } from "./runtime/contract";
-import { compileTrustedProxies, type TrustedProxies } from "./trusted-proxies";
+import {
+  compileTrustedProxies,
+  type TrustedProxies,
+  type TrustedProxiesConfig,
+} from "./trusted-proxies";
 
 /**
  * Whether every declared budget can be enforced. `partial` means only some.
@@ -65,8 +74,11 @@ export interface RateLimiterConfig<Bindings extends object> {
    * malformed ones throw. Inert on Workers, which set `cf-connecting-ip`
    * themselves, and load-bearing on node, so it can look unused without being
    * dead config.
+   *
+   * A function is called with the environment, on node only. Defaults to
+   * comma-separated `TRUSTED_PROXIES`, and empty trusts none.
    */
-  trustedProxies?: readonly string[];
+  trustedProxies?: TrustedProxiesConfig;
 }
 
 type Cap<Bindings extends object> = MiddlewareHandler<{ Bindings: Bindings }>;
@@ -154,7 +166,9 @@ export function createRateLimiter<Bindings extends object>(
   config: RateLimiterConfig<Bindings>,
 ): RateLimiter<Bindings> {
   // Built before anything mounts, so a bad config cannot sit unnoticed.
-  const trustedProxies = compileTrustedProxies(config.trustedProxies ?? []);
+  const trustedProxies = compileTrustedProxies(
+    getTrustedProxies(config.trustedProxies),
+  );
   const caps = buildCaps(config.budgets, trustedProxies);
   const mounts = planMounts(config.routes, caps);
 
