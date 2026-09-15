@@ -15,6 +15,15 @@ export function setupKitRoutes<AppEnv extends Env>(
   }
 }
 
+export function setupKitMiddleware<AppEnv extends Env>(
+  app: Hono<AppEnv>,
+  config: AcmeConfig = virtualConfig,
+): void {
+  for (const kit of config.kits ?? []) {
+    getKitState(kit).middleware?.(app);
+  }
+}
+
 export function wrapWithKits(
   handler: Handler,
   config: AcmeConfig = virtualConfig,
@@ -52,6 +61,8 @@ export function composeApp<AppEnv extends Env>(
 ): Hono<AppEnv> {
   const outer = new Hono<AppEnv>();
   setupKitVars(outer, config);
+  // Ahead of the app's routes: a cap mounted behind one would never run.
+  setupKitMiddleware(outer, config);
 
   outer.route("/", app);
 

@@ -1,5 +1,5 @@
 import type { Context, Env } from "hono";
-import type { TrustedProxies } from "../trusted-proxies";
+import type { TrustedProxies, TrustedProxiesConfig } from "../trusted-proxies";
 
 /**
  * Structural match for Cloudflare's `RateLimit`, which supplies it on workerd.
@@ -22,3 +22,8 @@ export type ClientAddress = <BoundEnv extends Env>(
   ctx: Context<BoundEnv>,
   trustedProxies: TrustedProxies,
 ) => string | undefined;
+
+// The app's declaration wins; only node has an environment to fall back to.
+export type GetTrustedProxies = (
+  configured?: TrustedProxiesConfig,
+) => readonly string[];
