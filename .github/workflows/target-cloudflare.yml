@@ -117,12 +117,12 @@ jobs:
           fetch-depth: 100 # Allows sentry's set-commit to work properly.
 
       - name: Setup
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
 
       - name: Resolve preview names
         id: names
         if: inputs.environment == 'preview'
-        uses: ./.github/actions/resolve-names
+        uses: $/.github/actions/resolve-names
         with:
           app: ${{ inputs.app }}
           branch: ${{ inputs.branch }}
@@ -313,7 +313,7 @@ jobs:
 
       - name: Health check
         if: env.CLOUDFLARE_API_TOKEN != '' && inputs.health-path != ''
-        uses: ./.github/actions/probe-app
+        uses: $/.github/actions/probe-app
         with:
           base-url: ${{ inputs.url != '' && inputs.url || steps.deploy.outputs.url }}
           health-path: ${{ inputs.health-path }}

@@ -10,7 +10,7 @@ jobs:
   verify:
     permissions:
       contents: read
-    uses: ./.github/workflows/target-docker.yml
+    uses: $/.github/workflows/target-docker.yml
     with:
       app: posy
 
@@ -19,6 +19,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: ./.github/workflows/target-docker-publish.yml
+    uses: $/.github/workflows/target-docker-publish.yml
     with:
       app: posy
