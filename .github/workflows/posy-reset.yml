@@ -40,12 +40,12 @@ jobs:
           persist-credentials: false
 
       - name: Setup
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
 
       - name: Resolve names
         id: names
         if: github.ref != 'refs/heads/main'
-        uses: ./.github/actions/resolve-names
+        uses: $/.github/actions/resolve-names
         with:
           app: posy
           branch: ${{ github.ref_name }}
@@ -67,7 +67,7 @@ jobs:
 
       - name: Delete database
         id: deleted
-        uses: ./.github/actions/delete-d1
+        uses: $/.github/actions/delete-d1
         with:
           app: posy
           name: ${{ steps.names.outputs.db || steps.staging-db.outputs.name }}
@@ -88,7 +88,7 @@ jobs:
     needs: delete
     permissions:
       contents: read
-    uses: ./.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
+    uses: $/.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
     with:
       app: posy
       environment: ${{ github.ref == 'refs/heads/main' && 'staging' || 'preview' }}

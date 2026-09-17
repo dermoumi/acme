@@ -30,6 +30,6 @@ jobs:
   verify:
     permissions:
       contents: read
-    uses: ./.github/workflows/target-docker.yml
+    uses: $/.github/workflows/target-docker.yml
     with:
       app: posy

@@ -116,7 +116,7 @@ jobs:
 
       - name: Probe
         if: inputs.health-path != ''
-        uses: ./.github/actions/probe-app
+        uses: $/.github/actions/probe-app
         with:
           base-url: http://localhost:3000
           health-path: ${{ inputs.health-path }}
