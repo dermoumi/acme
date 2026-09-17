@@ -22,11 +22,11 @@ jobs:
           persist-credentials: false
 
       - name: Setup
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
 
       - name: Resolve names
         id: names
-        uses: ./.github/actions/resolve-names
+        uses: $/.github/actions/resolve-names
         with:
           app: posy
           branch: ${{ github.head_ref }}
@@ -41,7 +41,7 @@ jobs:
 
       - name: Delete database
         if: env.CLOUDFLARE_API_TOKEN != ''
-        uses: ./.github/actions/delete-d1
+        uses: $/.github/actions/delete-d1
         with:
           app: posy
           name: ${{ steps.names.outputs.db }}

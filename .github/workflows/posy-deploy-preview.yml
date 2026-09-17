@@ -17,7 +17,7 @@ jobs:
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     permissions:
       contents: read
-    uses: ./.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
+    uses: $/.github/workflows/target-cloudflare.yml # zizmor: ignore[secrets-inherit]
     with:
       app: posy
       environment: preview

@@ -1,0 +1,7 @@
+# actionlint 1.7.12 predates GitHub's `$/` self-repository syntax.
+# Drop this file once rhysd/actionlint#732 ships.
+paths:
+  .github/workflows/**:
+    ignore:
+      - reusable workflow call "\$/.+" at "uses" is not following the format
+      - specifying action "\$/.+" in invalid format because ref is missing
