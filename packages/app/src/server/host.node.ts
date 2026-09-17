@@ -1,4 +1,8 @@
-import { serve } from "@hono/node-server";
+import {
+  type Http2Bindings,
+  type HttpBindings,
+  serve,
+} from "@hono/node-server";
 import type { KitShutdown } from "../internal/config";
 import type { Handler, Host } from "./contract";
 
@@ -57,13 +61,28 @@ function drain(server: Server, shutdown: KitShutdown): void {
   }
 }
 
+// One per request: a shared object would carry the last request's socket.
+export function buildEnv(
+  bindings: HttpBindings | Http2Bindings,
+): Record<string, unknown> {
+  const env: Record<string, unknown> = { ...process.env };
+
+  // Every one, including the symbol the websocket upgrade passes. Kept
+  // non-enumerable, so a kit reading the environment finds no socket in it.
+  for (const key of Reflect.ownKeys(bindings)) {
+    Object.defineProperty(env, key, { value: Reflect.get(bindings, key) });
+  }
+
+  return env;
+}
+
 export const host: Host = {
   serve: (handler: Handler, shutdown: KitShutdown) => {
     const server = serve(
       {
         // The same place workerd puts a deployment's values, which kits read.
-        fetch: (request: Request) => {
-          return handler.fetch(request, process.env);
+        fetch: (request: Request, bindings: HttpBindings | Http2Bindings) => {
+          return handler.fetch(request, buildEnv(bindings));
         },
         port: Number(process.env.PORT ?? 3000),
         hostname: "0.0.0.0",

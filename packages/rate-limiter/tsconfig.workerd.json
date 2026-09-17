@@ -5,5 +5,5 @@
     "customConditions": ["workerd"]
   },
   "include": ["src"],
-  "exclude": ["**/*.node.ts"]
+  "exclude": ["**/*.node.ts", "**/*.node.test.ts"]
 }
