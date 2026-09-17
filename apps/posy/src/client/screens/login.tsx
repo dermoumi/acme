@@ -67,7 +67,10 @@ export function LoginScreen() {
       setBusy(true);
       setError("");
       try {
-        if (!(await login(username, password))) setError(INVALID);
+        const success = await login(username, password);
+        if (!success) {
+          setError(INVALID);
+        }
       } catch (err) {
         const message =
           err instanceof LoginRateLimitedError
@@ -76,9 +79,9 @@ export function LoginScreen() {
               ? OFFLINE
               : SERVER_ERROR;
         setError(message);
-      } finally {
-        setBusy(false);
       }
+
+      setBusy(false);
     },
     [login],
   );

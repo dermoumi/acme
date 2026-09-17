@@ -18,7 +18,7 @@ const debug = import.meta.env.VITE_APP_ENV !== "production";
 export function App() {
   return (
     <AuthProvider>
-      {/* oxlint-disable-next-line react/react-compiler -- wouter's API takes the hook itself */}
+      {/* oxlint-disable-next-line react/hooks -- wouter's API takes the hook itself */}
       <Router hook={useGuardedLocation}>
         <Switch>
           <Route component={LoginScreen} path="/login" />
