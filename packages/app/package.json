@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",
-    "@cloudflare/vitest-pool-workers": "catalog:",
+    "@cloudflare/vitest-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@hono/node-server": "catalog:",
     "@types/node": "catalog:",

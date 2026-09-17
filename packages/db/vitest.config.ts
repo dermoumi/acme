@@ -1,5 +1,5 @@
 import { acmeVite } from "@acme/app/vite";
-import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { cloudflareTest } from "@cloudflare/vitest-plugin";
 import { defineConfig, type ViteUserConfig } from "vitest/config";
 
 // Two vocabularies that never overlap, so a suffix names its own axis. A plain

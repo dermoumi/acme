@@ -1,5 +1,5 @@
 import { acmeVite } from "@acme/app/vite";
-import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { cloudflareTest } from "@cloudflare/vitest-plugin";
 import { defineConfig } from "vitest/config";
 
 // One include for both projects, so the same test file runs on both runtimes.
