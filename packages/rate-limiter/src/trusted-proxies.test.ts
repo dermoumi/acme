@@ -1,3 +1,4 @@
+import { getTrustedProxies, SELF_PROVISIONED } from "#runtime";
 import { describe, expect, it } from "vitest";
 import {
   compileTrustedProxies,
@@ -147,5 +148,21 @@ describe("resolveClientAddress", () => {
     expect(resolveClientAddress("10.0.0.2", undefined, TRUSTED)).toBe(
       "10.0.0.2",
     );
+  });
+});
+
+describe("getTrustedProxies", () => {
+  it("keeps a declared list, so a typo in one fails the boot everywhere", () => {
+    expect(getTrustedProxies(["10.0.0.0/8"])).toEqual(["10.0.0.0/8"]);
+  });
+
+  // Workers set cf-connecting-ip themselves, so there is no environment at
+  // module scope to read one out of and nothing would believe the answer.
+  it.skipIf(SELF_PROVISIONED)("never calls a declared function", () => {
+    const readRanges = () => {
+      return ["10.0.0.0/8"];
+    };
+
+    expect(getTrustedProxies(readRanges)).toEqual([]);
   });
 });

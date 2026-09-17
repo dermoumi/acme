@@ -6,6 +6,13 @@ import {
   isIPv4MappedIPv6,
 } from "hono/utils/ipaddr";
 
+/**
+ * CIDR ranges, or a function taking them out of the environment.
+ */
+export type TrustedProxiesConfig =
+  | readonly string[]
+  | ((env: Record<string, string | undefined>) => readonly string[]);
+
 interface Address {
   v4: boolean;
   bits: bigint;
