@@ -10,4 +10,4 @@ export type {
 } from "./kit";
 export { checkKitRequires, orderKits } from "./order";
 export { getKitState } from "./state";
-export { type KitContext } from "./context";
+export { type KitRegistry } from "./registry";

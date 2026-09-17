@@ -12,7 +12,7 @@ export type KitCommands = Pick<CAC, "command">;
 /**
  * What a kit reaches the other kits an app declared through.
  */
-export interface KitRegistry {
+export interface KitCliRegistry {
   /**
    * Offers a value to the other kits, under a name this kit owns.
    *
@@ -40,7 +40,7 @@ export interface KitRegistry {
 /**
  * What a kit's `commands` module is handed when mounted.
  */
-export interface KitCli extends KitRegistry {
+export interface KitCli extends KitCliRegistry {
   cli: KitCommands;
   /**
    * The config the app declared for this kit.
@@ -70,7 +70,7 @@ export type KitCommandsMount = (context: KitCli) => void;
 
 // A view per kit, so both errors below can name who is at fault. Keyed by
 // plain strings, since KitShared is the app's business and not this file's.
-function kitRegistry(): (kit: string) => KitRegistry {
+function kitRegistry(): (kit: string) => KitCliRegistry {
   const values = new Map<string, unknown>();
   const owner = new Map<string, string>();
 
@@ -95,7 +95,7 @@ function kitRegistry(): (kit: string) => KitRegistry {
       return values.get(key);
     };
 
-    return { register, require } as KitRegistry;
+    return { register, require } as KitCliRegistry;
   };
 }
 
