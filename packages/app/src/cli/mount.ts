@@ -128,26 +128,16 @@ async function loadMount(
   return cliMount;
 }
 
-function checkRequires(kits: Kit[]): void {
-  const declared = new Set(kits.map((kit) => kit.name));
-
-  for (const kit of kits) {
-    const missing = (kit.requires ?? []).find((one) => !declared.has(one));
-    if (missing !== undefined) {
-      const message = `${kit.name} requires ${missing}, which this app does not declare`;
-      throw new Error(message);
-    }
-  }
-}
-
 /**
- * Mounts every kit's commands onto the CLI, in the order the app declared.
+ * Mounts every kit's commands onto the CLI, in the order given.
+ *
+ * What a kit requires is not checked here: a command never composes the app.
  *
  * @param kits Those declaring no `commands` add nothing.
  * @param configUrl What specifiers inside the config resolve against. Absent
  *   when the caller passed a config in hand.
- * @throws If a kit requires one the app does not declare, if a kit's module
- *   cannot be loaded, or if two kits register the same command or shared key.
+ * @throws If a kit's module cannot be loaded, or if two kits register the same
+ *   command or shared key.
  */
 export async function mountCommands(
   cli: CAC,
@@ -157,8 +147,7 @@ export async function mountCommands(
   const owner = new Map(cli.commands.map((cmd) => [cmd.name, cli.name]));
   const registryFor = kitRegistry();
   const resolve = resolverFor(configUrl);
-  checkRequires(kits);
-  // Loaded at once, mounted in order: that order is what the app declared.
+  // Loaded at once, mounted in order: that order is the caller's to settle.
   const mounts = await Promise.all(
     kits.map(async (kit) => loadMount(kit, resolve)),
   );

@@ -8,5 +8,6 @@ export type {
   KitState,
   KitVars,
 } from "./kit";
+export { checkKitRequires, orderKits } from "./order";
 export { getKitState } from "./state";
 export { type KitContext } from "./context";

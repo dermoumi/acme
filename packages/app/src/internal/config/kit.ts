@@ -108,8 +108,9 @@ export interface Kit {
   /**
    * The kits this one needs the app to declare too, by {@link Kit.name}.
    *
-   * Checked, never acted on: what a kit needs says nothing about where it
-   * belongs in `kits`, which is the app's to decide.
+   * Sorts this kit behind every one it names, and fails the app that
+   * declares none of them as it composes. Two kits with no requirement
+   * between them keep the order the app wrote.
    */
   requires?: string[];
   /**

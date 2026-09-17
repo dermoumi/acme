@@ -1,5 +1,6 @@
 import type { Kit } from "@acme/app";
 import { runWithConfig } from "@acme/app/cli";
+import { orderKits } from "@acme/app/testing";
 import { describe, expect, it, vi } from "vitest";
 import appConfig from "../kit/fixtures/app/acme.config";
 import { type CliContext, rows, sandbox, tables } from "./test-utils";
@@ -212,5 +213,12 @@ describe("the database kit registering how to open one", () => {
 
   it<CliContext>("says so when no database kit is declared at all", async () => {
     expect(await runWithConfig({ kits: [asker()] }, ["ask", "MAIN"])).toBe(1);
+  });
+});
+
+// Pins the order against the day a kit here starts requiring another.
+describe("the kits this app declares", () => {
+  it("composes in the order the config wrote them", () => {
+    expect(orderKits(appConfig.kits ?? [])).toEqual(appConfig.kits);
   });
 });
