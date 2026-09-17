@@ -1,4 +1,4 @@
-import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { cloudflareTest } from "@cloudflare/vitest-plugin";
 // Relative: a package cannot resolve its own name.
 import { acmeVite } from "./src/vite/index.ts";
 import { defineConfig } from "vitest/config";
