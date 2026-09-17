@@ -7,7 +7,7 @@ const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
 
 // Loose because the fields are Cloudflare's to add and `meta` is handed on as
 // it arrived; nullish because a failed query answers `result: null`.
-const QueryResponse = v.looseObject({
+const queryResponseSchema = v.looseObject({
   success: v.boolean(),
   errors: v.nullish(
     v.array(v.looseObject({ code: v.number(), message: v.string() })),
@@ -25,7 +25,7 @@ const QueryResponse = v.looseObject({
   ),
 });
 
-type QueryResponse = v.InferOutput<typeof QueryResponse>;
+type QueryResponse = v.InferOutput<typeof queryResponseSchema>;
 
 // An edge 5xx answers HTML, and a body that parses but drifted from the shape
 // is no more usable: both come back as a problem for the caller to blame.
@@ -34,7 +34,7 @@ async function readBody(
 ): Promise<{ body?: QueryResponse; problem?: unknown }> {
   try {
     const payload = await response.json();
-    const parsed = v.safeParse(QueryResponse, payload);
+    const parsed = v.safeParse(queryResponseSchema, payload);
 
     return parsed.success
       ? { body: parsed.output }
