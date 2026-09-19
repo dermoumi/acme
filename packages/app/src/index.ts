@@ -2,7 +2,7 @@ export {
   type AcmeConfig,
   defineConfig,
   type Kit,
-  type KitContext,
+  type KitRegistry,
   type KitRoutes,
   type KitHandlerWrapper,
   type KitMiddleware,

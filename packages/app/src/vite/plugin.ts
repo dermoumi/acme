@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import type { Plugin, PluginOption } from "vite";
 // Extension included: node loads this file directly when vite reads its config.
 import { CONFIG_FILE, loadAcmeConfig, resolverFor } from "../cli/config.ts";
+import { orderKits } from "../internal/config/order.ts";
 import type { AppIdentity, KitVite, KitViteContext } from "./contract.ts";
 
 // Vite's convention for an id backed by no file, so no other plugin claims it.
@@ -101,7 +102,7 @@ async function loadKitPlugins(
   const config = await loadAcmeConfig(file, importWithTsx);
   const resolve = resolverFor(pathToFileURL(file).href);
 
-  const loading = (config.kits ?? []).map(async (kit) => {
+  const loading = orderKits(config.kits ?? []).map(async (kit) => {
     if (kit.vite === undefined) return;
 
     const loaded = (await importWithTsx(resolve(kit.vite))) as {
