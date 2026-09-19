@@ -27,7 +27,7 @@ catalog:
   hono: "4.13.8"
   hono-rate-limiter: "0.5.4"
   husky: "9.1.7"
-  kysely: "0.29.5"
+  kysely: "0.29.6"
   kysely-d1: "0.4.0"
   oxfmt: "0.68.0"
   oxlint: "1.83.0"
