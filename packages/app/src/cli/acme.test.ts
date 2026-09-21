@@ -81,20 +81,22 @@ describe("runWithConfig", () => {
     expect(out.join("\n")).toContain("Usage");
   });
 
-  it<CliContext>("refuses a kit requiring one the app never declared", async ({
-    err,
-  }) => {
-    const kits = [{ ...shouter(), requires: ["@fixture/greeter"] }];
-
-    expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(1);
-    expect(err.join("\n")).toContain(
-      "@fixture/shouter requires @fixture/greeter, which this app does not declare",
-    );
-  });
-
-  it<CliContext>("takes a kit whose requirement the app declares", async ({
+  // A command never composes the app, so composeApp is where this is checked.
+  it<CliContext>("runs a command though a requirement is undeclared", async ({
     out,
   }) => {
+    const kits = [{ ...greeter(), requires: ["@fixture/absent"] }];
+    const exitCode = await runWithConfig(
+      { kits },
+      ["greet", "world"],
+      appConfigUrl,
+    );
+
+    expect(exitCode).toBe(0);
+    expect(out).toContain("hello, world");
+  });
+
+  it<CliContext>("mounts a kit behind the one it requires", async ({ out }) => {
     const kits = [{ ...shouter(), requires: ["@fixture/greeter"] }, greeter()];
 
     expect(await runWithConfig({ kits }, ["shout", "world"])).toBe(0);

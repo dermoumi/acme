@@ -2,7 +2,12 @@
 import { host } from "#host";
 import virtualConfig from "virtual:acme-config";
 import { type Env, Hono } from "hono";
-import { type AcmeConfig, getKitState } from "../internal/config";
+import {
+  type AcmeConfig,
+  checkKitRequires,
+  getKitState,
+  orderKits,
+} from "../internal/config";
 import type { Handler } from "./contract";
 import { setupKitVars } from "./kit-vars";
 
@@ -10,7 +15,7 @@ export function setupKitRoutes<AppEnv extends Env>(
   app: Hono<AppEnv>,
   config: AcmeConfig = virtualConfig,
 ): void {
-  for (const kit of config.kits ?? []) {
+  for (const kit of orderKits(config.kits ?? [])) {
     getKitState(kit).routes?.(app);
   }
 }
@@ -19,7 +24,7 @@ export function setupKitMiddleware<AppEnv extends Env>(
   app: Hono<AppEnv>,
   config: AcmeConfig = virtualConfig,
 ): void {
-  for (const kit of config.kits ?? []) {
+  for (const kit of orderKits(config.kits ?? [])) {
     getKitState(kit).middleware?.(app);
   }
 }
@@ -30,8 +35,8 @@ export function wrapWithKits(
 ): Handler {
   let wrapped = handler;
 
-  // Right to left, so the first kit the config lists ends up outermost.
-  for (const kit of (config.kits ?? []).toReversed()) {
+  // Right to left, so the first kit the order settles on ends up outermost.
+  for (const kit of orderKits(config.kits ?? []).toReversed()) {
     wrapped = getKitState(kit).handler?.(wrapped) ?? wrapped;
   }
 
@@ -41,7 +46,7 @@ export function wrapWithKits(
 export async function shutdownKits(
   config: AcmeConfig = virtualConfig,
 ): Promise<void> {
-  const closing = (config.kits ?? []).map((kit) => {
+  const closing = orderKits(config.kits ?? []).map((kit) => {
     return Promise.resolve(getKitState(kit).shutdown?.());
   });
 
@@ -57,8 +62,10 @@ export async function shutdownKits(
  */
 export function composeApp<AppEnv extends Env>(
   app: Hono<AppEnv>,
-  config?: AcmeConfig,
+  config: AcmeConfig = virtualConfig,
 ): Hono<AppEnv> {
+  checkKitRequires(config.kits ?? []);
+
   const outer = new Hono<AppEnv>();
   setupKitVars(outer, config);
   // Ahead of the app's routes: a cap mounted behind one would never run.

@@ -159,6 +159,28 @@ describe("composeApp", () => {
 
     await expect(ask(composeApp(app, config), "/nothing")).resolves.toBe("kit");
   });
+
+  it("names the kit whose requirement the app never declared", () => {
+    const config = defineConfig({
+      kits: [{ ...greeter, requires: ["@fixture/absent"] }],
+    });
+    const composing = () => {
+      composeApp(buildApp(), config);
+    };
+
+    expect(composing).toThrow(
+      "@fixture/greeter requires @fixture/absent, which this app does not declare",
+    );
+  });
+
+  it("adds the routes of a kit declared behind what it requires", async () => {
+    const providerKit: Kit = { name: "@fixture/provider" };
+    const needyKit = { ...answeringKit("kit"), requires: [providerKit.name] };
+    const config = defineConfig({ kits: [needyKit, providerKit] });
+    const composed = composeApp(buildApp(), config);
+
+    await expect(ask(composed, "/nothing")).resolves.toBe("kit");
+  });
 });
 
 describe("setupKitRoutes", () => {

@@ -12,7 +12,7 @@ export type KitCommands = Pick<CAC, "command">;
 /**
  * What a kit reaches the other kits an app declared through.
  */
-export interface KitRegistry {
+export interface KitCliRegistry {
   /**
    * Offers a value to the other kits, under a name this kit owns.
    *
@@ -40,7 +40,7 @@ export interface KitRegistry {
 /**
  * What a kit's `commands` module is handed when mounted.
  */
-export interface KitCli extends KitRegistry {
+export interface KitCli extends KitCliRegistry {
   cli: KitCommands;
   /**
    * The config the app declared for this kit.
@@ -70,7 +70,7 @@ export type KitCommandsMount = (context: KitCli) => void;
 
 // A view per kit, so both errors below can name who is at fault. Keyed by
 // plain strings, since KitShared is the app's business and not this file's.
-function kitRegistry(): (kit: string) => KitRegistry {
+function kitRegistry(): (kit: string) => KitCliRegistry {
   const values = new Map<string, unknown>();
   const owner = new Map<string, string>();
 
@@ -95,7 +95,7 @@ function kitRegistry(): (kit: string) => KitRegistry {
       return values.get(key);
     };
 
-    return { register, require } as KitRegistry;
+    return { register, require } as KitCliRegistry;
   };
 }
 
@@ -128,26 +128,16 @@ async function loadMount(
   return cliMount;
 }
 
-function checkRequires(kits: Kit[]): void {
-  const declared = new Set(kits.map((kit) => kit.name));
-
-  for (const kit of kits) {
-    const missing = (kit.requires ?? []).find((one) => !declared.has(one));
-    if (missing !== undefined) {
-      const message = `${kit.name} requires ${missing}, which this app does not declare`;
-      throw new Error(message);
-    }
-  }
-}
-
 /**
- * Mounts every kit's commands onto the CLI, in the order the app declared.
+ * Mounts every kit's commands onto the CLI, in the order given.
+ *
+ * What a kit requires is not checked here: a command never composes the app.
  *
  * @param kits Those declaring no `commands` add nothing.
  * @param configUrl What specifiers inside the config resolve against. Absent
  *   when the caller passed a config in hand.
- * @throws If a kit requires one the app does not declare, if a kit's module
- *   cannot be loaded, or if two kits register the same command or shared key.
+ * @throws If a kit's module cannot be loaded, or if two kits register the same
+ *   command or shared key.
  */
 export async function mountCommands(
   cli: CAC,
@@ -157,8 +147,7 @@ export async function mountCommands(
   const owner = new Map(cli.commands.map((cmd) => [cmd.name, cli.name]));
   const registryFor = kitRegistry();
   const resolve = resolverFor(configUrl);
-  checkRequires(kits);
-  // Loaded at once, mounted in order: that order is what the app declared.
+  // Loaded at once, mounted in order: that order is the caller's to settle.
   const mounts = await Promise.all(
     kits.map(async (kit) => loadMount(kit, resolve)),
   );

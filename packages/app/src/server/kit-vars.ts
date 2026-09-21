@@ -1,7 +1,7 @@
 /// <reference path="../types.d.ts" />
 import virtualConfig from "virtual:acme-config";
 import type { Env, Hono, MiddlewareHandler } from "hono";
-import { type AcmeConfig, getKitState } from "../internal/config";
+import { type AcmeConfig, getKitState, orderKits } from "../internal/config";
 
 /**
  * Puts every declared kit's variables on each request the app answers.
@@ -15,7 +15,7 @@ export function setupKitVars<AppEnv extends Env>(
   app: Hono<AppEnv>,
   config: AcmeConfig = virtualConfig,
 ): void {
-  const allVars = (config.kits ?? [])
+  const allVars = orderKits(config.kits ?? [])
     .map((kit) => getKitState(kit).vars)
     .filter((vars) => vars !== undefined);
   // Flattened on the first request and read back on the rest: workerd hands

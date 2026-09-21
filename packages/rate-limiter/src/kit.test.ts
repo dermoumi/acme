@@ -1,4 +1,4 @@
-import { createKitContext } from "@acme/app/testing";
+import { createKitRegistry } from "@acme/app/testing";
 import type { HealthStatusOptions } from "@acme/health";
 import { stubHealthKit } from "@acme/health/testing";
 import { createBindings } from "#testing/runtime";
@@ -45,7 +45,7 @@ function getHealthStatus() {
 
 // The stub drops the options, and whether the line is detail is the point.
 function getHealthOptions(): HealthStatusOptions | undefined {
-  const context = createKitContext(KIT);
+  const context = createKitRegistry(KIT);
   let healthOptions: HealthStatusOptions | undefined;
   context.register("addHealthStatus", (_key, _status, options) => {
     healthOptions = options;
@@ -71,7 +71,7 @@ describe("rateLimiterKit", () => {
 
   // An app listing healthKit() after this one gets this throw, not a silent miss.
   it("throws where no declared kit registers the health registry", () => {
-    const context = createKitContext(KIT);
+    const context = createKitRegistry(KIT);
 
     expect(() => buildKit().init?.(context)).toThrow(
       'requires "addHealthStatus"',
