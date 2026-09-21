@@ -63,9 +63,13 @@ describe("healthKit", () => {
   });
 });
 
-// Pins the order against the day a kit here starts requiring another.
 describe("the kits this app declares", () => {
-  it("composes in the order the config wrote them", () => {
-    expect(orderKits(appConfig.kits ?? [])).toEqual(appConfig.kits);
+  it("sorts this kit ahead of the one requiring it", () => {
+    const ordered = orderKits(appConfig.kits ?? []);
+
+    expect(ordered.map((kit) => kit.name)).toEqual([
+      "@acme/health",
+      "@fixture/contributor",
+    ]);
   });
 });

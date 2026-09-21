@@ -216,9 +216,8 @@ describe("the database kit registering how to open one", () => {
   });
 });
 
-// Pins the order against the day a kit here starts requiring another.
 describe("the kits this app declares", () => {
-  it("composes in the order the config wrote them", () => {
+  it("leaves them in the order the config wrote them", () => {
     expect(orderKits(appConfig.kits ?? [])).toEqual(appConfig.kits);
   });
 });

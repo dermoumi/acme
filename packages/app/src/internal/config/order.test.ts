@@ -30,7 +30,6 @@ describe("orderKits", () => {
     expect(getNames(orderKits(kits))).toEqual(["@fixture/b", "@fixture/a"]);
   });
 
-  // The case the feature exists for: what everything needs is listed last.
   it("keeps the order of kits requiring the same one", () => {
     const kits = [
       kit("@fixture/db", ["@fixture/health"]),
@@ -66,7 +65,6 @@ describe("orderKits", () => {
     );
   });
 
-  // The kit merely waiting on the cycle is not part of it.
   it("names only the kits the cycle runs through", () => {
     const kits = [
       kit("@fixture/waiting", ["@fixture/b"]),
@@ -79,7 +77,6 @@ describe("orderKits", () => {
     );
   });
 
-  // Pins the order against the day a kit here starts requiring another.
   it("leaves this package's fixture config as declared", () => {
     expect(orderKits(appConfig.kits ?? [])).toEqual(appConfig.kits);
   });

@@ -88,7 +88,7 @@ function checkDuplicates(databases: DatabaseConfig[]): DatabaseConfig[] {
  * `migrate` acts on all of them unless `--db` names one.
  *
  * Reports every declared database to `@acme/health`, so an app serving this kit
- * declares that one ahead of it. Commands do not need it.
+ * declares that one too, in any order. Commands do not need it.
  *
  * @param databases In the order they migrate.
  * @throws If two of them claim the same binding.
@@ -100,6 +100,7 @@ export function databaseKit(databases: DatabaseConfig[]): Kit {
     name: "@acme/db",
     config,
     commands: "@acme/db/commands",
+    requires: ["@acme/health"],
     init: ({ require }) => {
       const { accessors } = contextFor(config);
       const addHealthStatus = require("addHealthStatus");
