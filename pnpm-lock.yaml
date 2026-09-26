@@ -165,8 +165,8 @@ settings:
 catalogs:
   default:
     '@cloudflare/vite-plugin':
-      specifier: 1.56.0
-      version: 1.56.0
+      specifier: 1.59.0
+      version: 1.59.0
     '@cloudflare/vitest-plugin':
       specifier: 1.2.5
       version: 1.2.5
@@ -364,7 +364,7 @@ importers:
         version: link:../../packages/tsconfig
       '@cloudflare/vite-plugin':
         specifier: 'catalog:'
-        version: 1.56.0(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13))(wrangler@4.135.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6))
+        version: 1.59.0(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13))(wrangler@4.135.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6))
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
         version: 1.2.5(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
@@ -1264,12 +1264,12 @@ packages:
       workerd:
         optional: true
 
-  '@cloudflare/vite-plugin@1.56.0':
-    resolution: {integrity: sha512-JkVJgSuUM1dlxpl/XMSTcx3oD84hKIAwPtqUs9pjfBXiKcUx8Jez+Tuxg3l2O7nt87AxoArgve0KAeW7hc0Kqw==}
+  '@cloudflare/vite-plugin@1.59.0':
+    resolution: {integrity: sha512-OpG8HdJgzpo360i7lDGS0cF4E94+AKmUYIGglYNwlMUVGORxhZBNbgwMYBdXGxp5GortD6SJjgSi96G9AgR8jA==}
     hasBin: true
     peerDependencies:
       vite: ^6.1.0 || ^7.0.0 || ^8.0.0
-      wrangler: ^4.135.0
+      wrangler: ^4.138.0
 
   '@cloudflare/vitest-plugin@1.2.5':
     resolution: {integrity: sha512-McfN3960DTIquDbkgch/wFSfPuWfafR7qSRv5DuzHKNRGm3GlPsZ8W6UM0QUcx2Mp+8hywfr1WOfR+dXnAyGbQ==}
@@ -4954,13 +4954,13 @@ snapshots:
     optionalDependencies:
       workerd: 1.20260921.1
 
-  '@cloudflare/vite-plugin@1.56.0(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13))(wrangler@4.135.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6))':
+  '@cloudflare/vite-plugin@1.59.0(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13))(wrangler@4.135.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6))':
     dependencies:
-      '@cloudflare/unenv-preset': 2.16.1(unenv@2.0.0-rc.24)(workerd@1.20260918.1)
-      miniflare: 5.20260918.0-alpha(@types/node@24.13.6)
+      '@cloudflare/unenv-preset': 2.16.2(unenv@2.0.0-rc.24)(workerd@1.20260921.1)
+      miniflare: 5.20260921.1-alpha(@types/node@24.13.6)
       unenv: 2.0.0-rc.24
       vite: 8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13)
-      workerd: 1.20260918.1
+      workerd: 1.20260921.1
       wrangler: 4.135.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)
       ws: 8.21.0
     transitivePeerDependencies:
