@@ -168,8 +168,8 @@ catalogs:
       specifier: 1.56.0
       version: 1.56.0
     '@cloudflare/vitest-plugin':
-      specifier: 1.2.6
-      version: 1.2.6
+      specifier: 1.2.7
+      version: 1.2.7
     '@cloudflare/workers-types':
       specifier: 5.20260924.1
       version: 5.20260924.1
@@ -367,7 +367,7 @@ importers:
         version: 1.56.0(@types/node@24.13.6)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13))(wrangler@4.135.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6))
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.2.6(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
+        version: 1.2.7(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260924.1
@@ -425,7 +425,7 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.2.6(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
+        version: 1.2.7(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260924.1
@@ -462,7 +462,7 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.2.6(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
+        version: 1.2.7(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260924.1
@@ -514,7 +514,7 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.2.6(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
+        version: 1.2.7(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260924.1
@@ -591,7 +591,7 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.2.6(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
+        version: 1.2.7(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260924.1
@@ -634,7 +634,7 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.2.6(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
+        version: 1.2.7(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260924.1
@@ -674,7 +674,7 @@ importers:
         version: link:../tsconfig
       '@cloudflare/vitest-plugin':
         specifier: 'catalog:'
-        version: 1.2.6(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
+        version: 1.2.7(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20260924.1
@@ -1271,8 +1271,8 @@ packages:
       vite: ^6.1.0 || ^7.0.0 || ^8.0.0
       wrangler: ^4.135.0
 
-  '@cloudflare/vitest-plugin@1.2.6':
-    resolution: {integrity: sha512-tor8iGIGAnLlqd6FNJQD43vmtAg8QD9W/3JzNolZoEhHYmD3FL02aEoxtYyb9k6BHo4gUr9ewfw/xcWhU5V2fw==}
+  '@cloudflare/vitest-plugin@1.2.7':
+    resolution: {integrity: sha512-1lXmyvwVzxvOywGs/0L+V6wOwREJDy9892u9bLNTB2As+Z8CNfImS4QdfBKSGSZT533D6OCgMCasSYeA/ClS7g==}
     peerDependencies:
       '@vitest/runner': ^4.1.0
       '@vitest/snapshot': ^4.1.0
@@ -4220,8 +4220,8 @@ packages:
       '@cloudflare/workers-types':
         optional: true
 
-  wrangler@4.139.0:
-    resolution: {integrity: sha512-9RtaWkIkxqntg58bGwNVRfGVSgf+cAq/45YzC87LN5YniCt4DDNrFM2gXK5SHMj3iG5YnDHhRVvh63FWnmJnaA==}
+  wrangler@4.140.0:
+    resolution: {integrity: sha512-XeKeC33B4Nglg0RAJ8F8ecGHOW+cPFeE5+fp4WBzn1c0u+H/96cVQYjto3/0ahilfPurnnGcUslJ1xaZXy+NGQ==}
     engines: {node: '>=22.0.0'}
     hasBin: true
     peerDependencies:
@@ -4968,7 +4968,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@cloudflare/vitest-plugin@1.2.6(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)':
+  '@cloudflare/vitest-plugin@1.2.7(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)':
     dependencies:
       '@vitest/runner': 4.1.11
       '@vitest/snapshot': 4.1.11
@@ -4976,7 +4976,7 @@ snapshots:
       esbuild: 0.28.1
       miniflare: 5.20260923.0-alpha(@types/node@24.13.6)
       vitest: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.13.6)(@vitest/coverage-istanbul@4.1.11)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13))
-      wrangler: 4.139.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)
+      wrangler: 4.140.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6)
       zod: 4.4.3
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
@@ -7713,7 +7713,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  wrangler@4.139.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6):
+  wrangler@4.140.0(@cloudflare/workers-types@5.20260924.1)(@types/node@24.13.6):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.2(unenv@2.0.0-rc.24)(workerd@1.20260923.1)
