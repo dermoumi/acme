@@ -276,8 +276,8 @@ catalogs:
       specifier: 7.4.1
       version: 7.4.1
     wouter:
-      specifier: 3.11.0
-      version: 3.11.0
+      specifier: 3.11.1
+      version: 3.11.1
     wrangler:
       specifier: 4.142.0
       version: 4.142.0
@@ -357,7 +357,7 @@ importers:
         version: 7.4.1
       wouter:
         specifier: 'catalog:'
-        version: 3.11.0(react@19.3.0)
+        version: 3.11.1(react@19.3.0)
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
@@ -4195,8 +4195,8 @@ packages:
     engines: {node: '>=16'}
     hasBin: true
 
-  wouter@3.11.0:
-    resolution: {integrity: sha512-xyMLHhytdGhIjXVRcSjeYbXd7TR1lrxVTPLGBWmmyW52ZuWVQ1jXmsgoJ4G5s4tjloJCq7h4i2eREljWUQ4+/A==}
+  wouter@3.11.1:
+    resolution: {integrity: sha512-HodhSFaJTnASOFifOKl+eFXmwDMsEkxb9lO0r1GGUptm1nsWxJfpf/PThCUI4GMHw5ANFMzZAycZgmW7T2Nf+g==}
     peerDependencies:
       react: '>=16.8.0'
 
@@ -7660,7 +7660,7 @@ snapshots:
       '@cloudflare/workerd-linux-arm64': 1.20260926.1
       '@cloudflare/workerd-windows-64': 1.20260926.1
 
-  wouter@3.11.0(react@19.3.0):
+  wouter@3.11.1(react@19.3.0):
     dependencies:
       react: 19.3.0
       regexparam: 3.0.0
