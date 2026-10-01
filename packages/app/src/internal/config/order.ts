@@ -11,6 +11,27 @@ function isReady(
   });
 }
 
+// Compared, not sorted: a sort loses the declared order of equal priorities.
+function readyFirst(
+  pendingKits: Kit[],
+  declaredNames: Set<string>,
+  settledNames: Set<string>,
+) {
+  let firstKit: Kit | undefined;
+
+  for (const kit of pendingKits) {
+    if (!isReady(kit, declaredNames, settledNames)) continue;
+    if (
+      firstKit === undefined ||
+      (kit.priority ?? 0) < (firstKit.priority ?? 0)
+    ) {
+      firstKit = kit;
+    }
+  }
+
+  return firstKit;
+}
+
 // Every pending kit is blocked by a pending kit, so the walk closes a loop.
 function cycleThrough(pendingKits: Kit[]): string[] {
   const byName = new Map(pendingKits.map((kit) => [kit.name, kit]));
@@ -27,10 +48,11 @@ function cycleThrough(pendingKits: Kit[]): string[] {
 }
 
 /**
- * Sorts kits so each comes after what it requires, keeping the declared order
- * wherever no requirement forces a move.
+ * Sorts kits so each comes after what it requires, then by
+ * {@link Kit.priority}, keeping the declared order wherever neither moves one.
  *
- * A requirement the app never declared moves nothing: see checkKitRequires.
+ * A requirement outranks a priority, and one the app never declared moves
+ * nothing: see checkKitRequires.
  *
  * @throws If the kits require one another in a cycle, naming the ones in it.
  */
@@ -41,9 +63,7 @@ export function orderKits(kits: Kit[]): Kit[] {
   const orderedKits: Kit[] = [];
 
   while (pendingKits.length > 0) {
-    const next = pendingKits.find((kit) => {
-      return isReady(kit, declaredNames, settledNames);
-    });
+    const next = readyFirst(pendingKits, declaredNames, settledNames);
     if (next === undefined) {
       const cycle = cycleThrough(pendingKits).join(" -> ");
       const message = `Kits require one another in a cycle: ${cycle}`;

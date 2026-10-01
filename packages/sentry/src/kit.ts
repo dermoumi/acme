@@ -12,8 +12,7 @@ const TUNNEL_PATH = "/sentry";
 /**
  * The Sentry kit: error reporting for the server and the browser both.
  *
- * Declare it before any kit mounting a catch-all, or the tunnel falls through
- * to that instead. A sub-app setting its own `onError` is not covered.
+ * A sub-app setting its own `onError` is not covered.
  *
  * Reports itself to `@acme/health`, so an app declares that one too, in any
  * order.

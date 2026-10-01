@@ -114,6 +114,13 @@ export interface Kit {
    */
   requires?: string[];
   /**
+   * Where this kit sits among the kits nothing requires, lowest first.
+   *
+   * Defaults to 0, so `-1` goes ahead of an ordinary kit and `9999` behind one.
+   * A requirement outranks it, and equal values keep the order the app wrote.
+   */
+  priority?: number;
+  /**
    * Builds what this kit holds, and answers it. See {@link KitState}.
    *
    * Synchronous, and called at the worker's module scope, which cannot await.

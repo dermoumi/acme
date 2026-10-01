@@ -7,6 +7,10 @@ const kit = (name: string, requires?: string[]): Kit => {
   return { name, requires };
 };
 
+const ranked = (name: string, priority: number): Kit => {
+  return { name, priority };
+};
+
 const getNames = (kits: Kit[]) => {
   return kits.map((one) => one.name);
 };
@@ -52,6 +56,51 @@ describe("orderKits", () => {
 
   it("takes an app declaring no kits at all", () => {
     expect(orderKits([])).toEqual([]);
+  });
+
+  it("sorts a kit behind every ordinary one for a priority above zero", () => {
+    const kits = [ranked("@fixture/catchall", 9999), kit("@fixture/a")];
+
+    expect(getNames(orderKits(kits))).toEqual([
+      "@fixture/a",
+      "@fixture/catchall",
+    ]);
+  });
+
+  it("sorts a kit ahead of every ordinary one for a priority below zero", () => {
+    const kits = [kit("@fixture/a"), ranked("@fixture/first", -1)];
+
+    expect(getNames(orderKits(kits))).toEqual(["@fixture/first", "@fixture/a"]);
+  });
+
+  it("keeps the declared order of kits sharing a priority", () => {
+    const kits = [ranked("@fixture/a", 9999), ranked("@fixture/b", 9999)];
+
+    expect(getNames(orderKits(kits))).toEqual(["@fixture/a", "@fixture/b"]);
+  });
+
+  it("ranks an undeclared priority as zero", () => {
+    const kits = [
+      ranked("@fixture/late", 1),
+      kit("@fixture/plain"),
+      ranked("@fixture/early", -1),
+    ];
+
+    expect(getNames(orderKits(kits))).toEqual([
+      "@fixture/early",
+      "@fixture/plain",
+      "@fixture/late",
+    ]);
+  });
+
+  it("lets a requirement outrank a priority", () => {
+    const neededKit = ranked("@fixture/needed", 9999);
+    const kits = [kit("@fixture/a", [neededKit.name]), neededKit];
+
+    expect(getNames(orderKits(kits))).toEqual([
+      "@fixture/needed",
+      "@fixture/a",
+    ]);
   });
 
   it("names the two kits requiring one another", () => {

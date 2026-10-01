@@ -1,4 +1,4 @@
-import { createKitRegistry } from "@acme/app/testing";
+import { createKitRegistry, orderKits } from "@acme/app/testing";
 import { createBindings } from "#testing/runtime";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
@@ -32,6 +32,15 @@ describe("assetsKit", () => {
 
   it("carries what the app declared, for whoever reads it back", () => {
     expect(assetsKit({ root: FIXTURES }).config).toEqual({ root: FIXTURES });
+  });
+
+  it("sorts behind a kit the app declared after it", () => {
+    const kits = [assetsKit(), { name: "@fixture/late" }];
+
+    expect(orderKits(kits).map((kit) => kit.name)).toEqual([
+      "@fixture/late",
+      "@acme/assets",
+    ]);
   });
 
   it("serves a path the app left unclaimed from its static files", async () => {
