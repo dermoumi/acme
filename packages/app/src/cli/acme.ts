@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { type CAC, cac } from "cac";
-import type { AcmeConfig, Kit } from "../internal/config";
+import { type AcmeConfig, type Kit, orderKits } from "../internal/config";
 import { acmeConfigUrl, CONFIG_FILE, loadAcmeConfig } from "./config";
 import { mountCommands } from "./mount";
 
@@ -59,7 +59,7 @@ export async function runWithConfig(
   configUrl?: string,
 ): Promise<number> {
   try {
-    const cli = await buildCli(config.kits ?? [], configUrl);
+    const cli = await buildCli(orderKits(config.kits ?? []), configUrl);
     // Parsing prints help or the version itself; running is ours to do, so the
     // action's promise is awaited rather than left dangling.
     cli.parse(["node", "acme", ...argv], { run: false });

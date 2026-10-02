@@ -1,4 +1,4 @@
-import { createKitContext } from "@acme/app/testing";
+import { createKitRegistry } from "@acme/app/testing";
 import { createBindings } from "#testing/runtime";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
@@ -8,7 +8,7 @@ import { assetsKit } from "./kit";
 // and the workerd project's miniflare binding serves the same files.
 const FIXTURES = "./test/fixtures/assets";
 // This kit reaches for nothing another kit registered.
-const context = createKitContext("@acme/assets");
+const context = createKitRegistry("@acme/assets");
 
 const buildApp = () => {
   const app = new Hono();

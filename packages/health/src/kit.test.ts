@@ -1,6 +1,7 @@
-import { composeApp, createKitContext } from "@acme/app/testing";
+import { composeApp, createKitRegistry, orderKits } from "@acme/app/testing";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
+import appConfig from "./fixtures/acme.config";
 import { healthKit } from "./kit";
 
 const IDENTITY = {
@@ -53,11 +54,18 @@ describe("healthKit", () => {
   it("answers where the app said, for an app that serves it elsewhere", async () => {
     // By hand, on its own context: a second app is what no process has.
     const app = new Hono();
-    const context = createKitContext("@acme/health");
+    const context = createKitRegistry("@acme/health");
     healthKit({ path: "/-/live" }).init?.(context).routes?.(app);
 
     const response = await app.request("/-/live", {}, IDENTITY);
 
     await expect(response.json()).resolves.toMatchObject({ status: "ok" });
+  });
+});
+
+// Pins the order against the day a kit here starts requiring another.
+describe("the kits this app declares", () => {
+  it("composes in the order the config wrote them", () => {
+    expect(orderKits(appConfig.kits ?? [])).toEqual(appConfig.kits);
   });
 });
