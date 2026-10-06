@@ -93,7 +93,8 @@
       "files": ["**/*.test.ts", "**/*.test.tsx"],
       "rules": {
         "max-lines-per-function": "off",
-        "unicorn/consistent-function-scoping": "off"
+        "unicorn/consistent-function-scoping": "off",
+        "eslint/max-lines": ["warn", { "max": 500 }]
       }
     },
     {
