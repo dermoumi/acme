@@ -12,7 +12,7 @@ function isReady(
 }
 
 // Compared, not sorted: a sort loses the declared order of equal priorities.
-function readyFirst(
+function findNextKit(
   pendingKits: Kit[],
   declaredNames: Set<string>,
   settledNames: Set<string>,
@@ -33,7 +33,7 @@ function readyFirst(
 }
 
 // Every pending kit is blocked by a pending kit, so the walk closes a loop.
-function cycleThrough(pendingKits: Kit[]): string[] {
+function findCycleNames(pendingKits: Kit[]): string[] {
   const byName = new Map(pendingKits.map((kit) => [kit.name, kit]));
   const walkedNames: string[] = [];
   let at = pendingKits[0]?.name;
@@ -49,7 +49,7 @@ function cycleThrough(pendingKits: Kit[]): string[] {
 
 /**
  * Sorts kits so each comes after what it requires, then by
- * {@link Kit.priority}, keeping the declared order wherever neither moves one.
+ * {@link Kit.priority}, and otherwise keeps the order the app declared.
  *
  * A requirement outranks a priority, and one the app never declared moves
  * nothing: see checkKitRequires.
@@ -63,16 +63,16 @@ export function orderKits(kits: Kit[]): Kit[] {
   const orderedKits: Kit[] = [];
 
   while (pendingKits.length > 0) {
-    const next = readyFirst(pendingKits, declaredNames, settledNames);
-    if (next === undefined) {
-      const cycle = cycleThrough(pendingKits).join(" -> ");
+    const nextKit = findNextKit(pendingKits, declaredNames, settledNames);
+    if (nextKit === undefined) {
+      const cycle = findCycleNames(pendingKits).join(" -> ");
       const message = `Kits require one another in a cycle: ${cycle}`;
       throw new Error(message);
     }
 
-    orderedKits.push(next);
-    settledNames.add(next.name);
-    pendingKits.splice(pendingKits.indexOf(next), 1);
+    orderedKits.push(nextKit);
+    settledNames.add(nextKit.name);
+    pendingKits.splice(pendingKits.indexOf(nextKit), 1);
   }
 
   return orderedKits;
@@ -82,9 +82,7 @@ export function checkKitRequires(kits: Kit[]): void {
   const declaredNames = new Set(kits.map((kit) => kit.name));
 
   for (const kit of kits) {
-    const missing = (kit.requires ?? []).find((one) => {
-      return !declaredNames.has(one);
-    });
+    const missing = (kit.requires ?? []).find((one) => !declaredNames.has(one));
     if (missing !== undefined) {
       const message = `${kit.name} requires ${missing}, which this app does not declare`;
       throw new Error(message);
