@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["packages/tsconfig/tsconfig.*.json"],
+  "agentGuidance": false,
   "tasks": {
     "dev": {
       "cache": false,
