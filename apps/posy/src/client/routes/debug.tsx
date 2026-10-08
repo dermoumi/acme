@@ -1,5 +1,6 @@
 import { addBreadcrumb, captureMessage } from "@acme/sentry/react";
 import { useState } from "react";
+import { redirect } from "react-router";
 
 interface Actions {
   explode: () => void;
@@ -81,7 +82,12 @@ function Exploding(): never {
   throw new Error("debug: render error");
 }
 
-export function DebugScreen() {
+// Unlisted and absent from production, matching the server routes it drives.
+export function loader() {
+  return import.meta.env.VITE_APP_ENV === "production" ? redirect("/") : null;
+}
+
+export default function DebugScreen() {
   const [exploding, setExploding] = useState(false);
   const [log, setLog] = useState<string[]>([]);
 

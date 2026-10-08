@@ -49,6 +49,13 @@ export default defineConfig({
       ignoreUserAgent: "acme-ci-health-probe",
     }),
     // Last: it mounts the catch-all every unclaimed path falls through to.
-    assetsKit(),
+    assetsKit({
+      // Lazy: the CLI loads this file in node, where the router's build does not exist.
+      fallback: async (ctx) => {
+        const { renderDocument } = await import("./src/server/document");
+
+        return renderDocument(ctx);
+      },
+    }),
   ],
 });

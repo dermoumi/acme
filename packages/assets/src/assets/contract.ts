@@ -28,6 +28,13 @@ export interface AssetsConfig {
    * build. Workers ignore it: the platform holds the files.
    */
   root?: string;
+  /**
+   * Answers a path no file matches, instead of the shell.
+   *
+   * Workers only reach it when the platform answers 404, so set the app's
+   * `not_found_handling` to `"none"` there.
+   */
+  fallback?: (ctx: Context) => Response | Promise<Response>;
 }
 
 /**

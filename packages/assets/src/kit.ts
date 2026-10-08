@@ -1,5 +1,6 @@
 import type { Kit } from "@acme/app";
-import { type AssetsConfig, assets } from "./assets";
+import type { Context } from "hono";
+import { type AssetsBindings, type AssetsConfig, assets } from "./assets";
 
 /**
  * The assets kit: an app's static files, and the shell behind them.
@@ -17,7 +18,14 @@ export function assetsKit(config: AssetsConfig = {}): Kit {
     priority: 9999,
     init: () => ({
       routes: (app) => {
-        app.all("*", assets.createHandler(config));
+        const serve = assets.createHandler(config);
+        const { fallback } = config;
+
+        app.all("*", async (ctx: Context<{ Bindings: AssetsBindings }>) => {
+          const response = await serve(ctx);
+
+          return response.status === 404 && fallback ? fallback(ctx) : response;
+        });
       },
     }),
   };

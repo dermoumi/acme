@@ -3,7 +3,7 @@ import styles from "./collection.module.css";
 
 type CollectionTab = "flowers" | "bouquets";
 
-export function CollectionScreen() {
+export default function CollectionScreen() {
   const [tab, setTab] = useState<CollectionTab>("flowers");
 
   const tabClass = (own: CollectionTab) =>

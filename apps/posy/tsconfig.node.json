@@ -1,5 +1,15 @@
 {
   "extends": "@acme/tsconfig/tsconfig.node.json",
-  "include": ["acme.config.ts", "src/commands", "src/server", "vite.config.ts"],
+  "compilerOptions": {
+    "types": ["node", "vite/client"]
+  },
+  "include": [
+    "acme.config.ts",
+    "react-router.config.ts",
+    "src/commands",
+    "src/server",
+    "vite.config.ts",
+    ".react-router/types/+server-build.d.ts"
+  ],
   "exclude": ["**/*.workerd.ts"]
 }

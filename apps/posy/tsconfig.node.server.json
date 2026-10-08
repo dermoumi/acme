@@ -1,5 +1,5 @@
 {
   "extends": "@acme/tsconfig/tsconfig.node.server.json",
-  "include": ["src/server"],
+  "include": ["src/server", ".react-router/types/+server-build.d.ts"],
   "exclude": ["**/*.workerd.ts"]
 }
