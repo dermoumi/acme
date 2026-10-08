@@ -11,7 +11,7 @@ const rankedKit = (name: string, priority: number): Kit => {
   return { name, priority };
 };
 
-const getNames = (kits: Kit[]) => {
+const getNames = (kits: readonly Kit[]) => {
   return kits.map((one) => one.name);
 };
 
@@ -26,6 +26,18 @@ describe("orderKits", () => {
     const only = kit("@fixture/a");
 
     expect(orderKits([only])[0]).toBe(only);
+  });
+
+  it("answers one list however many slots ask for it", () => {
+    const kits = [kit("@fixture/a"), kit("@fixture/b")];
+
+    expect(orderKits(kits)).toBe(orderKits(kits));
+  });
+
+  it("sorts each declared list on its own", () => {
+    const one = orderKits([kit("@fixture/a")]);
+
+    expect(one).not.toBe(orderKits([kit("@fixture/a")]));
   });
 
   it("sorts a kit behind what it requires", () => {

@@ -18,7 +18,10 @@ export function getConfigFile(argv: string[]): string | undefined {
   return typeof config === "string" ? config : undefined;
 }
 
-async function buildCli(kits: Kit[], configUrl?: string): Promise<CAC> {
+async function buildCli(
+  kits: readonly Kit[],
+  configUrl?: string,
+): Promise<CAC> {
   const cli = cac("acme");
   cli.option("-c, --config <file>", "the config to read", {
     default: CONFIG_FILE,

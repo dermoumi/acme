@@ -141,7 +141,7 @@ async function loadMount(
  */
 export async function mountCommands(
   cli: CAC,
-  kits: Kit[],
+  kits: readonly Kit[],
   configUrl?: string,
 ): Promise<void> {
   const owner = new Map(cli.commands.map((cmd) => [cmd.name, cli.name]));

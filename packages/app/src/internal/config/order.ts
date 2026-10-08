@@ -47,16 +47,24 @@ function findCycleNames(pendingKits: Kit[]): string[] {
   return [...walkedNames.slice(walkedNames.indexOf(at)), at];
 }
 
+// Keyed on the list the app declared: one sort per config, not one per slot.
+const orders = new WeakMap<Kit[], readonly Kit[]>();
+
 /**
  * Sorts kits so each comes after what it requires, then by
  * {@link Kit.priority}, and otherwise keeps the order the app declared.
  *
  * A requirement outranks a priority, and one the app never declared moves
- * nothing: see checkKitRequires.
+ * nothing: see checkKitRequires. The answer is shared, so never mutate it.
  *
  * @throws If the kits require one another in a cycle, naming the ones in it.
  */
-export function orderKits(kits: Kit[]): Kit[] {
+export function orderKits(kits: Kit[]): readonly Kit[] {
+  const found = orders.get(kits);
+  if (found !== undefined) {
+    return found;
+  }
+
   const declaredNames = new Set(kits.map((kit) => kit.name));
   const settledNames = new Set<string>();
   const pendingKits = [...kits];
@@ -74,6 +82,8 @@ export function orderKits(kits: Kit[]): Kit[] {
     settledNames.add(nextKit.name);
     pendingKits.splice(pendingKits.indexOf(nextKit), 1);
   }
+
+  orders.set(kits, orderedKits);
 
   return orderedKits;
 }
