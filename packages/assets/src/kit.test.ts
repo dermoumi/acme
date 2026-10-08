@@ -1,4 +1,4 @@
-import { createKitContext } from "@acme/app/testing";
+import { createKitRegistry, orderKits } from "@acme/app/testing";
 import { createBindings } from "#testing/runtime";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
@@ -8,7 +8,7 @@ import { assetsKit } from "./kit";
 // and the workerd project's miniflare binding serves the same files.
 const FIXTURES = "./test/fixtures/assets";
 // This kit reaches for nothing another kit registered.
-const context = createKitContext("@acme/assets");
+const context = createKitRegistry("@acme/assets");
 
 const buildApp = () => {
   const app = new Hono();
@@ -32,6 +32,15 @@ describe("assetsKit", () => {
 
   it("carries what the app declared, for whoever reads it back", () => {
     expect(assetsKit({ root: FIXTURES }).config).toEqual({ root: FIXTURES });
+  });
+
+  it("sorts behind a kit the app declared after it", () => {
+    const kits = [assetsKit(), { name: "@fixture/late" }];
+
+    expect(orderKits(kits).map((kit) => kit.name)).toEqual([
+      "@fixture/late",
+      "@acme/assets",
+    ]);
   });
 
   it("serves a path the app left unclaimed from its static files", async () => {

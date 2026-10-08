@@ -12,10 +12,10 @@ const TUNNEL_PATH = "/sentry";
 /**
  * The Sentry kit: error reporting for the server and the browser both.
  *
- * Declare it before any kit mounting a catch-all, or the tunnel falls through
- * to that instead. A sub-app setting its own `onError` is not covered.
+ * A sub-app setting its own `onError` is not covered.
  *
- * Reports itself to `@acme/health`, so an app declares that one ahead of it.
+ * Reports itself to `@acme/health`, so an app declares that one too, in any
+ * order.
  */
 export function sentryKit(config: SentryConfig = {}): Kit {
   // Whether a DSN reached the app, not whether Sentry answers: capture is
@@ -28,6 +28,7 @@ export function sentryKit(config: SentryConfig = {}): Kit {
     name: "@acme/sentry",
     config,
     vite: "@acme/sentry/vite",
+    requires: ["@acme/health"],
     init: ({ require }) => {
       const addHealthStatus = require("addHealthStatus");
       addHealthStatus("sentry", sentryStatus, { optional: true });

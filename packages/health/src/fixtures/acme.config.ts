@@ -1,9 +1,10 @@
 import { defineConfig, type Kit } from "@acme/app";
 import { healthKit } from "../kit";
 
-// After the health kit, which is what lets it require what that kit registered.
+// Ahead of the health kit it requires: the sort is what puts these in order.
 const contributor: Kit = {
   name: "@fixture/contributor",
+  requires: ["@acme/health"],
   init: ({ require }) => {
     const addHealthStatus = require("addHealthStatus");
     addHealthStatus("verdict", () => "up");
@@ -16,4 +17,4 @@ const contributor: Kit = {
   },
 };
 
-export default defineConfig({ kits: [healthKit(), contributor] });
+export default defineConfig({ kits: [contributor, healthKit()] });

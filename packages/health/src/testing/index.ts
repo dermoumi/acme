@@ -1,5 +1,5 @@
-import type { KitContext } from "@acme/app";
-import { createKitContext } from "@acme/app/testing";
+import type { KitRegistry } from "@acme/app";
+import { createKitRegistry } from "@acme/app/testing";
 import type { HealthStatus } from "../kit";
 
 /**
@@ -9,7 +9,7 @@ export interface HealthStub {
   /**
    * What the kit under test is initialised with.
    */
-  context: KitContext;
+  context: KitRegistry;
   /**
    * What that kit offered under one key.
    *
@@ -25,7 +25,7 @@ export interface HealthStub {
  */
 export function stubHealthKit(kit: string): HealthStub {
   const statuses = new Map<string, HealthStatus>();
-  const context = createKitContext(kit);
+  const context = createKitRegistry(kit);
   context.register("addHealthStatus", (key, status) => {
     statuses.set(key, status);
   });

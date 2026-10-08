@@ -3,9 +3,9 @@ import type { KitShared } from "../shared";
 /**
  * What a kit reaches the other kits an app declared through.
  *
- * Not the CLI's registry, which is a separate one on `KitCli`.
+ * Not `KitCliRegistry`, which a kit's commands get instead.
  */
-export interface KitContext {
+export interface KitRegistry {
   /**
    * Offers a value to the other kits, under a name this kit owns.
    *
@@ -32,11 +32,11 @@ const appOwners = new Map<string, string>();
 
 // A view per kit, so both errors below can name who is at fault. Keyed by plain
 // strings, since KitShared is the app's business and not this file's.
-function contextFor(
+function registryFor(
   kit: string,
   values: Map<string, unknown>,
   owners: Map<string, string>,
-): KitContext {
+): KitRegistry {
   const register = (key: string, value: unknown) => {
     const taken = owners.get(key);
     if (taken !== undefined) {
@@ -57,18 +57,18 @@ function contextFor(
     return values.get(key);
   };
 
-  return { register, require } as KitContext;
+  return { register, require } as KitRegistry;
 }
 
-export function getKitContext(kit: string): KitContext {
-  return contextFor(kit, appValues, appOwners);
+export function getKitRegistry(kit: string): KitRegistry {
+  return registryFor(kit, appValues, appOwners);
 }
 
 /**
- * One kit's view of a context no other kit has reached.
+ * One kit's view of a registry no other kit has reached.
  *
  * For a test calling a kit's `init` by hand; an app never builds one.
  */
-export function createKitContext(kit: string): KitContext {
-  return contextFor(kit, new Map(), new Map());
+export function createKitRegistry(kit: string): KitRegistry {
+  return registryFor(kit, new Map(), new Map());
 }

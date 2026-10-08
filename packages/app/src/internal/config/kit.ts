@@ -1,6 +1,6 @@
 import type { Hono } from "hono";
 import type { Handler } from "../../server/contract";
-import type { KitContext } from "./context";
+import type { KitRegistry } from "./registry";
 
 /**
  * What a kit puts on every request's context.
@@ -108,17 +108,25 @@ export interface Kit {
   /**
    * The kits this one needs the app to declare too, by {@link Kit.name}.
    *
-   * Checked, never acted on: what a kit needs says nothing about where it
-   * belongs in `kits`, which is the app's to decide.
+   * Sorts this kit behind every one it names, and fails the app that
+   * declares none of them as it composes. Two kits with no requirement
+   * between them keep the order the app wrote.
    */
   requires?: string[];
+  /**
+   * Where this kit sits among the kits nothing requires, lowest first.
+   *
+   * Defaults to 0, so `-1` goes ahead of an ordinary kit and `9999` behind one.
+   * A requirement outranks it, and equal values keep the order the app wrote.
+   */
+  priority?: number;
   /**
    * Builds what this kit holds, and answers it. See {@link KitState}.
    *
    * Synchronous, and called at the worker's module scope, which cannot await.
    * Called once per declared kit, however many slots read what it answered.
    *
-   * @param context What the kits declared beside this one offered.
+   * @param registry What the kits declared beside this one offered.
    */
-  init?: (context: KitContext) => KitState;
+  init?: (registry: KitRegistry) => KitState;
 }

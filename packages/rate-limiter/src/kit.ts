@@ -8,7 +8,8 @@ import { createRateLimiter, type RateLimiterConfig } from "./rate-limiter";
  * Mounts them itself, ahead of the app's own. Where nothing can count the route
  * keeps serving: this bounds cost, it is not a security boundary.
  *
- * Reports itself to `@acme/health`, so an app declares that one ahead of it.
+ * Reports itself to `@acme/health`, so an app declares that one too, in any
+ * order.
  *
  * @throws From `init`, if a range is malformed, a budget is repeated, a route
  *   names no declared budget, or a budget caps no route.
@@ -19,6 +20,7 @@ export function rateLimiterKit<Bindings extends object>(
   return {
     name: "@acme/rate-limiter",
     config,
+    requires: ["@acme/health"],
     // Built here, not in the factory: a config is read on build machines too.
     init: ({ require }) => {
       const limiter = createRateLimiter<Bindings>(config);
