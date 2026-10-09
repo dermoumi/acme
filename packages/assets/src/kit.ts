@@ -2,6 +2,25 @@ import type { Kit } from "@acme/app";
 import type { Context } from "hono";
 import { type AssetsBindings, type AssetsConfig, assets } from "./assets";
 
+declare module "@acme/app" {
+  interface KitShared {
+    setAssetsFallback: SetAssetsFallback;
+  }
+}
+
+/**
+ * Answers a path no file matches, in place of the shell.
+ */
+export type AssetsFallback = (ctx: Context) => Response | Promise<Response>;
+
+/**
+ * Hands every path no file matches to one fallback, such as a server renderer.
+ *
+ * Workers only reach it when the platform answers 404, so set the app's
+ * `not_found_handling` to `"none"` there.
+ */
+export type SetAssetsFallback = (fallback: AssetsFallback) => void;
+
 /**
  * The assets kit: an app's static files, and the shell behind them.
  *
@@ -16,17 +35,25 @@ export function assetsKit(config: AssetsConfig = {}): Kit {
     config,
     // A route behind this kit's catch-all never sees a request.
     priority: 9999,
-    init: () => ({
-      routes: (app) => {
-        const serve = assets.createHandler(config);
-        const { fallback } = config;
+    init: ({ register }) => {
+      let fallback: AssetsFallback | undefined;
+      register("setAssetsFallback", (next) => {
+        fallback = next;
+      });
 
-        app.all("*", async (ctx: Context<{ Bindings: AssetsBindings }>) => {
-          const response = await serve(ctx);
+      return {
+        routes: (app) => {
+          const serve = assets.createHandler(config);
 
-          return response.status === 404 && fallback ? fallback(ctx) : response;
-        });
-      },
-    }),
+          app.all("*", async (ctx: Context<{ Bindings: AssetsBindings }>) => {
+            const response = await serve(ctx);
+
+            return response.status === 404 && fallback
+              ? fallback(ctx)
+              : response;
+          });
+        },
+      };
+    },
   };
 }

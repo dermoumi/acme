@@ -6,6 +6,6 @@
     "customConditions": ["workerd"],
     "types": ["@cloudflare/workers-types", "vite/client"]
   },
-  "include": ["src/server", ".react-router/types/+server-build.d.ts"],
+  "include": ["src/server"],
   "exclude": ["**/*.node.ts"]
 }

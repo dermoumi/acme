@@ -322,6 +322,9 @@ importers:
       '@acme/rate-limiter':
         specifier: workspace:*
         version: link:../../packages/rate-limiter
+      '@acme/router':
+        specifier: workspace:*
+        version: link:../../packages/router
       '@acme/sentry':
         specifier: workspace:*
         version: link:../../packages/sentry
@@ -653,6 +656,55 @@ importers:
       hono:
         specifier: 'catalog:'
         version: 4.13.13
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.3(@types/node@24.19.1)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-istanbul@4.1.11)(vite@8.3.3(@types/node@24.19.1)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13))
+
+  packages/router:
+    dependencies:
+      '@acme/app':
+        specifier: workspace:*
+        version: link:../app
+    devDependencies:
+      '@acme/assets':
+        specifier: workspace:*
+        version: link:../assets
+      '@acme/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@cloudflare/vitest-plugin':
+        specifier: 'catalog:'
+        version: 1.3.6(@cloudflare/workers-types@5.20261006.1)(@types/node@24.19.1)(@vitest/runner@4.1.11)(@vitest/snapshot@4.1.11)(vitest@4.1.11)
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 5.20261006.1
+      '@react-router/dev':
+        specifier: 'catalog:'
+        version: 8.4.0(react-router@8.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.3(@types/node@24.19.1)(esbuild@0.28.1)(terser@5.49.0)(tsx@4.23.13))(wrangler@4.147.0(@cloudflare/workers-types@5.20261006.1)(@types/node@24.19.1))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.1
+      '@vitest/coverage-istanbul':
+        specifier: 'catalog:'
+        version: 4.1.11(supports-color@10.2.2)(vitest@4.1.11)
+      hono:
+        specifier: 'catalog:'
+        version: 4.13.13
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.3.0(react@19.3.0)
+      react-router:
+        specifier: 'catalog:'
+        version: 8.4.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       typescript:
         specifier: 'catalog:'
         version: 7.0.2

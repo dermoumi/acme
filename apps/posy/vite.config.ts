@@ -1,8 +1,7 @@
 import { acmeVite } from "@acme/app/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { cloudflareTest } from "@cloudflare/vitest-plugin";
-import { reactRouter } from "@react-router/dev/vite";
-import type { Plugin, PluginOption, UserConfig } from "vite";
+import type { PluginOption, UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
 import { VitePWA, type VitePWAOptions } from "vite-plugin-pwa";
 
@@ -75,55 +74,22 @@ const test: UserConfig["test"] = {
   ],
 };
 
-const routerBuild: Plugin = {
-  name: "posy:router-build",
-  resolveId(id) {
-    return id === "virtual:react-router/server-build"
-      ? { id: "./router.mjs", external: true }
-      : undefined;
-  },
-};
-
-const nodeServerBuild = {
-  outDir: "dist/server",
-  // The router's build is already here.
-  emptyOutDir: false,
-  // Keep stack traces readable; size is not a concern here.
-  minify: false,
-  // public/ already ships in dist/client.
-  copyPublicDir: false,
-  rolldownOptions: {
-    input: { index: "src/server/index.ts" },
-    output: {
-      // /app has no package.json, so .js there would be read as CommonJS.
-      entryFileNames: "[name].mjs",
-      // One file, so the router's build resolves beside it.
-      codeSplitting: false,
-    },
-  },
-};
-
-function buildPlugins(isSsrBuild: boolean): PluginOption[] {
-  if (isNode && isSsrBuild) {
-    return [acmeVite(), routerBuild];
-  }
-
+function buildPlugins(): PluginOption[] {
   return [
-    acmeVite(),
+    // Ahead of the router plugin, which acmeVite() loads from the router kit.
     ...(isNode ? [] : [cloudflare({ viteEnvironment: { name: "ssr" } })]),
-    reactRouter(),
+    acmeVite(),
     VitePWA(pwa),
   ];
 }
 
-export default defineConfig(({ isSsrBuild = false }) => ({
-  build: isNode && isSsrBuild ? nodeServerBuild : undefined,
+export default defineConfig({
   // One copy for both the bundle and `acme migrate`; better-sqlite3 is native.
   // Node only: on workers this is the worker's environment, which rejects these.
   ssr: isNode
     ? { noExternal: true, external: ["better-sqlite3", "pg"] }
     : undefined,
-  plugins: isTest ? [] : buildPlugins(isSsrBuild),
+  plugins: isTest ? [] : buildPlugins(),
   server: { host: "0.0.0.0" },
   test,
-}));
+});

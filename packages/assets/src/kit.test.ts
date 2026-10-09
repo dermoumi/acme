@@ -2,34 +2,32 @@ import { createKitRegistry, orderKits } from "@acme/app/testing";
 import { createBindings } from "#testing/runtime";
 import { type Context, Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import type { AssetsConfig } from "./assets";
 import { assetsKit } from "./kit";
 
 // One directory for both runtimes: the node arm is pointed at it by config,
 // and the workerd project's miniflare binding serves the same files.
 const FIXTURES = "./test/fixtures/assets";
-// This kit reaches for nothing another kit registered.
-const context = createKitRegistry("@acme/assets");
+const fallback = (ctx: Context) => {
+  return ctx.text(`rendered ${ctx.req.path}`);
+};
 
-const buildApp = (config: AssetsConfig = {}) => {
+const buildApp = (withFallback: boolean) => {
   const app = new Hono();
   app.get("/health", (ctx) => ctx.text("routed"));
-  assetsKit({ root: FIXTURES, ...config })
-    .init?.(context)
-    .routes?.(app);
+  const context = createKitRegistry("@acme/assets");
+  const state = assetsKit({ root: FIXTURES }).init?.(context);
+  if (withFallback) context.require("setAssetsFallback")(fallback);
+  state?.routes?.(app);
 
   return app;
 };
 
-const ask = async (path: string, config?: AssetsConfig) => {
+const ask = async (path: string, withFallback = false) => {
   const request = new Request(`http://app.test${path}`);
-  const response = await buildApp(config).fetch(request, createBindings());
+  const app = buildApp(withFallback);
+  const response = await app.fetch(request, createBindings());
 
   return response.text();
-};
-
-const fallback = (ctx: Context) => {
-  return ctx.text(`rendered ${ctx.req.path}`);
 };
 
 describe("assetsKit", () => {
@@ -59,14 +57,10 @@ describe("assetsKit", () => {
   });
 
   it("serves a file ahead of the fallback", async () => {
-    await expect(ask("/asset.txt", { fallback })).resolves.toContain(
-      "fixture asset",
-    );
+    await expect(ask("/asset.txt", true)).resolves.toContain("fixture asset");
   });
 
   it("hands a path with no file to the fallback", async () => {
-    await expect(ask("/some/page", { fallback })).resolves.toBe(
-      "rendered /some/page",
-    );
+    await expect(ask("/some/page", true)).resolves.toBe("rendered /some/page");
   });
 });

@@ -4,7 +4,6 @@ export default {
   appDirectory: "src/client",
   // Where turbo, the Dockerfile and the assets kit already look.
   buildDirectory: "dist",
-  // Beside the node server, which imports it; .js would load as CommonJS.
-  serverBuildFile:
-    process.env.BUILD_TARGET === "node" ? "router.mjs" : "index.js",
+  // A node host has no package.json beside it, so .js would load as CommonJS.
+  serverBuildFile: "index.mjs",
 } satisfies Config;
