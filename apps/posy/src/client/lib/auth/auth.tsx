@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Redirect } from "wouter";
+import { Navigate } from "react-router";
 import {
   endSession,
   fetchSession,
@@ -60,6 +60,6 @@ export function RequireAuth({ children }: { children: ReactNode }): ReactNode {
   const { status } = useAuth();
 
   if (status === "unknown") return null;
-  if (status === "guest") return <Redirect replace to="/login" />;
+  if (status === "guest") return <Navigate replace to="/login" />;
   return children;
 }

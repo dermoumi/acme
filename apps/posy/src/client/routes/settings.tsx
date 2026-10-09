@@ -26,7 +26,7 @@ function ConfirmLogout({
   );
 }
 
-export function SettingsScreen() {
+export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);

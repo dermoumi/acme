@@ -1,2 +1,2 @@
 export type { AssetsConfig } from "./assets";
-export { assetsKit } from "./kit";
+export { type AssetsFallback, assetsKit, type SetAssetsFallback } from "./kit";

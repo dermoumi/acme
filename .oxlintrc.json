@@ -105,6 +105,14 @@
         // An ambient `declare module` file must NOT be a module itself
         "import/unambiguous": "off"
       }
+    },
+    {
+      // Route modules export loaders beside components; both aliases must be off.
+      "files": ["apps/*/src/client/routes/**"],
+      "rules": {
+        "react/only-export-components": "off",
+        "eslint-plugin-react/only-export-components": "off"
+      }
     }
   ]
 }

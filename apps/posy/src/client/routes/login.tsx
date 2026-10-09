@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Redirect } from "wouter";
+import { Navigate } from "react-router";
 import { LoginRateLimitedError, useAuth } from "../lib/auth";
 import styles from "./login.module.css";
 
@@ -57,7 +57,7 @@ function LoginForm({
   );
 }
 
-export function LoginScreen() {
+export default function LoginScreen() {
   const { status, login } = useAuth();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -86,7 +86,7 @@ export function LoginScreen() {
     [login],
   );
 
-  if (status === "authed") return <Redirect replace to="/" />;
+  if (status === "authed") return <Navigate replace to="/" />;
 
   return (
     <main className={styles.screen}>

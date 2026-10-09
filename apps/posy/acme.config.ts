@@ -3,6 +3,7 @@ import { assetsKit } from "@acme/assets";
 import { databaseKit } from "@acme/db";
 import { healthKit } from "@acme/health";
 import { rateLimiterKit } from "@acme/rate-limiter";
+import { routerKit } from "@acme/router";
 import { sentryKit } from "@acme/sentry";
 import type { AppBindings } from "./src/server/bindings";
 
@@ -50,5 +51,6 @@ export default defineConfig({
     }),
     // Last: it mounts the catch-all every unclaimed path falls through to.
     assetsKit(),
+    routerKit(),
   ],
 });

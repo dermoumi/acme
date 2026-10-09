@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router";
 import styles from "./tab-bar.module.css";
 
 const tabs = [
@@ -9,7 +9,7 @@ const tabs = [
 ];
 
 export function TabBar() {
-  const [location] = useLocation();
+  const { pathname } = useLocation();
 
   return (
     <nav className={styles.bar}>
@@ -17,12 +17,12 @@ export function TabBar() {
         <Link
           // oxlint-disable-next-line react/forbid-component-props -- forwarded to the rendered <a>
           className={
-            location === tab.href
+            pathname === tab.href
               ? `${styles.tab} ${styles.active}`
               : styles.tab
           }
-          href={tab.href}
           key={tab.href}
+          to={tab.href}
         >
           {tab.label}
         </Link>

@@ -1,26 +1,31 @@
 import { createKitRegistry, orderKits } from "@acme/app/testing";
 import { createBindings } from "#testing/runtime";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { assetsKit } from "./kit";
 
 // One directory for both runtimes: the node arm is pointed at it by config,
 // and the workerd project's miniflare binding serves the same files.
 const FIXTURES = "./test/fixtures/assets";
-// This kit reaches for nothing another kit registered.
-const context = createKitRegistry("@acme/assets");
+const fallback = (ctx: Context) => {
+  return ctx.text(`rendered ${ctx.req.path}`);
+};
 
-const buildApp = () => {
+const buildApp = (withFallback: boolean) => {
   const app = new Hono();
   app.get("/health", (ctx) => ctx.text("routed"));
-  assetsKit({ root: FIXTURES }).init?.(context).routes?.(app);
+  const context = createKitRegistry("@acme/assets");
+  const state = assetsKit({ root: FIXTURES }).init?.(context);
+  if (withFallback) context.require("setAssetsFallback")(fallback);
+  state?.routes?.(app);
 
   return app;
 };
 
-const ask = async (path: string) => {
+const ask = async (path: string, withFallback = false) => {
   const request = new Request(`http://app.test${path}`);
-  const response = await buildApp().fetch(request, createBindings());
+  const app = buildApp(withFallback);
+  const response = await app.fetch(request, createBindings());
 
   return response.text();
 };
@@ -47,11 +52,15 @@ describe("assetsKit", () => {
     await expect(ask("/asset.txt")).resolves.toContain("fixture asset");
   });
 
-  it("serves the shell for a path with no file behind it", async () => {
-    await expect(ask("/some/page")).resolves.toContain("fixture shell");
-  });
-
   it("leaves the routes the app already claimed alone", async () => {
     await expect(ask("/health")).resolves.toBe("routed");
+  });
+
+  it("serves a file ahead of the fallback", async () => {
+    await expect(ask("/asset.txt", true)).resolves.toContain("fixture asset");
+  });
+
+  it("hands a path with no file to the fallback", async () => {
+    await expect(ask("/some/page", true)).resolves.toBe("rendered /some/page");
   });
 });
