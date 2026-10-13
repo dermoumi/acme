@@ -46,6 +46,11 @@ export function assetsKit(config: AssetsConfig = {}): Kit {
           const serve = assets.createHandler(config);
 
           app.all("*", async (ctx: Context<{ Bindings: AssetsBindings }>) => {
+            // No file answers a write, and the platform lookup consumes its body.
+            const isRead =
+              ctx.req.method === "GET" || ctx.req.method === "HEAD";
+            if (fallback && !isRead) return fallback(ctx);
+
             const response = await serve(ctx);
 
             return response.status === 404 && fallback

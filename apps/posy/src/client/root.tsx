@@ -2,7 +2,6 @@ import { ErrorBoundary } from "@acme/sentry/react";
 import type { ReactNode } from "react";
 import { Links, Meta, Outlet, Scripts } from "react-router";
 import { UpdatePrompt } from "./components";
-import { AuthProvider } from "./lib/auth";
 import "./index.css";
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -33,10 +32,8 @@ export function Layout({ children }: { children: ReactNode }) {
 export default function Root() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <Outlet />
-        <UpdatePrompt />
-      </AuthProvider>
+      <Outlet />
+      <UpdatePrompt />
     </ErrorBoundary>
   );
 }

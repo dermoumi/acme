@@ -1,16 +1,7 @@
 import type { Context } from "hono";
 import { Hono } from "hono";
-import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { AppEnv } from "../bindings";
-import { verifyPassword } from "./password";
-import { DbSessionStore } from "./session-db";
-import {
-  createSession,
-  resolveSession,
-  revokeSession,
-  SESSION_COOKIE,
-  SESSION_MAX_AGE_SECONDS,
-} from "./session";
+import { getSessionUser, signIn, signOut } from "./account";
 
 interface LoginBody {
   username: string | null;
@@ -37,63 +28,31 @@ function parseLoginBody(body: unknown): LoginBody {
   };
 }
 
-type Ctx = Context<AppEnv>;
-
-async function handleLogin(ctx: Ctx): Promise<Response> {
+async function handleLogin(ctx: Context<AppEnv>): Promise<Response> {
   const { username, password, clientVersion } = parseLoginBody(
     await ctx.req.json().catch(() => null),
   );
-  if (!username || !password) {
-    return ctx.json({ error: "invalid_credentials" }, 401);
-  }
+  const session =
+    username && password
+      ? await signIn(ctx, username, password, clientVersion)
+      : null;
+  if (!session) return ctx.json({ error: "invalid_credentials" }, 401);
 
-  const db = await ctx.var.getDb("DATABASE");
-  const user = await verifyPassword(db, username, password);
-  if (!user) return ctx.json({ error: "invalid_credentials" }, 401);
-
-  const store = new DbSessionStore(db);
-  const token = await createSession(store, user.id, clientVersion, Date.now());
-
-  setCookie(ctx, SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "Strict",
-    path: "/",
-    maxAge: SESSION_MAX_AGE_SECONDS,
-  });
-  return ctx.json({ user: { id: user.id, name: user.name } });
+  ctx.header("Set-Cookie", session.cookie);
+  return ctx.json({ user: session.user });
 }
 
 export function authRoutes(): Hono<AppEnv> {
   const routes = new Hono<AppEnv>();
 
   routes.get("/", async (ctx) => {
-    const token = getCookie(ctx, SESSION_COOKIE);
-    if (!token) return ctx.json({ user: null });
-
-    const db = await ctx.var.getDb("DATABASE");
-    const store = new DbSessionStore(db);
-    const userId = await resolveSession(store, token, Date.now());
-    if (!userId) return ctx.json({ user: null });
-
-    const user = await db
-      .selectFrom("users")
-      .select(["id", "name"])
-      .where("id", "=", userId)
-      .executeTakeFirst();
-    return ctx.json({ user: user ?? null });
+    return ctx.json({ user: await getSessionUser(ctx) });
   });
 
   routes.post("/", (ctx) => handleLogin(ctx));
 
   routes.delete("/", async (ctx) => {
-    const token = getCookie(ctx, SESSION_COOKIE);
-    if (token) {
-      const db = await ctx.var.getDb("DATABASE");
-
-      await revokeSession(new DbSessionStore(db), token);
-    }
-    deleteCookie(ctx, SESSION_COOKIE, { path: "/" });
+    ctx.header("Set-Cookie", await signOut(ctx));
     return ctx.body(null, 204);
   });
 

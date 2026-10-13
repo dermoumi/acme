@@ -7,8 +7,10 @@ import { assetsKit } from "./kit";
 // One directory for both runtimes: the node arm is pointed at it by config,
 // and the workerd project's miniflare binding serves the same files.
 const FIXTURES = "./test/fixtures/assets";
-const fallback = (ctx: Context) => {
-  return ctx.text(`rendered ${ctx.req.path}`);
+const fallback = async (ctx: Context) => {
+  const body = await ctx.req.text();
+
+  return ctx.text(`rendered ${ctx.req.path}${body ? ` with ${body}` : ""}`);
 };
 
 const buildApp = (withFallback: boolean) => {
@@ -22,8 +24,8 @@ const buildApp = (withFallback: boolean) => {
   return app;
 };
 
-const ask = async (path: string, withFallback = false) => {
-  const request = new Request(`http://app.test${path}`);
+const ask = async (path: string, withFallback = false, init?: RequestInit) => {
+  const request = new Request(`http://app.test${path}`, init);
   const app = buildApp(withFallback);
   const response = await app.fetch(request, createBindings());
 
@@ -62,5 +64,13 @@ describe("assetsKit", () => {
 
   it("hands a path with no file to the fallback", async () => {
     await expect(ask("/some/page", true)).resolves.toBe("rendered /some/page");
+  });
+
+  it("hands a form post to the fallback with its body unread", async () => {
+    const init = { method: "POST", body: "name=posy" };
+
+    await expect(ask("/some/page", true, init)).resolves.toBe(
+      "rendered /some/page with name=posy",
+    );
   });
 });

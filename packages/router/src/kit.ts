@@ -1,6 +1,23 @@
 /// <reference path="./server-build.d.ts" />
 import type { Kit } from "@acme/app";
-import { createRequestHandler } from "react-router";
+import type { AssetsFallback } from "@acme/assets";
+import type { Context } from "hono";
+import {
+  createContext,
+  createRequestHandler,
+  RouterContextProvider,
+} from "react-router";
+
+/**
+ * The Hono env `honoContext` carries, empty until the app augments it.
+ */
+// oxlint-disable-next-line no-empty-object-type
+export interface RouterEnv {}
+
+/**
+ * The request's Hono context, read in a loader or action with `context.get`.
+ */
+export const honoContext = createContext<Context<RouterEnv>>();
 
 /**
  * The router kit: renders every page no static file answers with React Router.
@@ -20,7 +37,14 @@ export function routerKit(): Kit {
         async () => import("virtual:react-router/server-build"),
         import.meta.env.MODE,
       );
-      setAssetsFallback(async (ctx) => handleRequest(ctx.req.raw));
+      const render: AssetsFallback = async (ctx) => {
+        const context = new RouterContextProvider();
+        // The app declares its env by augmenting RouterEnv; Hono cannot check it.
+        context.set(honoContext, ctx as Context<RouterEnv>);
+
+        return handleRequest(ctx.req.raw, context);
+      };
+      setAssetsFallback(render);
 
       return {};
     },

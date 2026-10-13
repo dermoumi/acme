@@ -1,3 +1,4 @@
+import type { GetDb } from "@acme/db";
 import type { Limiter } from "@acme/rate-limiter";
 import type { GateBindings } from "./gate";
 
@@ -11,7 +12,7 @@ export interface AppBindings extends GateBindings {
   RATE_LIMIT_SENTRY?: Limiter;
 }
 
-// Only bindings today; the place a middleware's `Variables` would join.
 export interface AppEnv {
   Bindings: AppBindings;
+  Variables: { getDb: GetDb };
 }

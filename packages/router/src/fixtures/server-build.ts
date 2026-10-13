@@ -1,6 +1,14 @@
 import type { ServerBuild } from "react-router";
+import { honoContext } from "../kit";
 
-// Stands in for an app's router build: one root route, rendered as its path.
+declare module "../kit" {
+  interface RouterEnv {
+    Variables: { viewer?: string };
+  }
+}
+
+// Stands in for an app's router build: one root route, rendered as its path
+// and the viewer the Hono context carries.
 const root = { id: "root", path: "", module: { default: () => null } };
 
 export const assets: ServerBuild["assets"] = {
@@ -29,10 +37,13 @@ export const assetsBuildDirectory = "dist/client";
 export const basename = "/";
 export const entry: ServerBuild["entry"] = {
   module: {
-    default: (request, status, headers) => {
+    default: (request, status, headers, _routerContext, loadContext) => {
       const { pathname } = new URL(request.url);
+      const ctx = loadContext.get(honoContext);
+      const viewer = ctx.var.viewer ?? "nobody";
+      const body = `rendered ${pathname} for ${viewer}`;
 
-      return new Response(`rendered ${pathname}`, { status, headers });
+      return new Response(body, { status, headers });
     },
   },
 };

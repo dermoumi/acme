@@ -13,14 +13,14 @@ function toBase64(data: ArrayBuffer | Uint8Array): string {
   return btoa(binary);
 }
 
-function fromBase64(encoded: string): Uint8Array {
+function fromBase64(encoded: string): Uint8Array<ArrayBuffer> {
   const binary = atob(encoded);
   return Uint8Array.from(binary, (ch) => ch.codePointAt(0) ?? 0);
 }
 
 async function deriveKey(
   password: string,
-  salt: Uint8Array,
+  salt: Uint8Array<ArrayBuffer>,
   iterations: number,
 ): Promise<ArrayBuffer> {
   const baseKey = await crypto.subtle.importKey(

@@ -1,102 +1,85 @@
-import { useCallback, useState } from "react";
-import { Navigate } from "react-router";
-import { LoginRateLimitedError, useAuth } from "../lib/auth";
+import { honoContext } from "@acme/router";
+import {
+  data,
+  Form,
+  isRouteErrorResponse,
+  redirect,
+  useNavigation,
+} from "react-router";
+import { getSessionUser, signIn } from "../../server/auth";
+import type { Route } from "./+types/login";
 import styles from "./login.module.css";
 
 const INVALID = "Wrong username or password.";
+const TOO_MANY = "Too many sign-in attempts. Try again in a minute.";
 const SERVER_ERROR = "Something went wrong. Try again in a moment.";
 const OFFLINE = "Could not reach Posy. Check your connection and try again.";
 
-function tooManyAttempts(seconds: number): string {
-  return `Too many sign-in attempts. Try again in ${seconds} seconds.`;
+function readField(form: FormData, name: string): string {
+  const value = form.get(name);
+  return typeof value === "string" ? value : "";
 }
 
-function LoginForm({
-  busy,
-  onSubmit,
-}: {
-  busy: boolean;
-  onSubmit: (username: string, password: string) => void;
-}) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+export async function loader({ context }: Route.LoaderArgs) {
+  const user = await getSessionUser(context.get(honoContext));
+  if (user) return redirect("/");
 
-  return (
-    <form
-      className={styles.form}
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (username.trim() && password) onSubmit(username.trim(), password);
-      }}
-    >
-      <input
-        aria-label="Username"
-        autoComplete="username"
-        className={styles.code}
-        onChange={(event) => {
-          setUsername(event.target.value);
-        }}
-        placeholder="username"
-        value={username}
-      />
-      <input
-        aria-label="Password"
-        autoComplete="current-password"
-        className={styles.code}
-        onChange={(event) => {
-          setPassword(event.target.value);
-        }}
-        placeholder="password"
-        type="password"
-        value={password}
-      />
-      <button disabled={busy} type="submit">
-        Sign in
-      </button>
-    </form>
-  );
+  return null;
 }
 
-export default function LoginScreen() {
-  const { status, login } = useAuth();
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+export async function action({ context, request }: Route.ActionArgs) {
+  const form = await request.formData();
+  const username = readField(form, "username").trim();
+  const password = readField(form, "password");
+  const version = readField(form, "clientVersion") || null;
 
-  const submit = useCallback(
-    async (username: string, password: string) => {
-      setBusy(true);
-      setError("");
-      try {
-        const success = await login(username, password);
-        if (!success) {
-          setError(INVALID);
-        }
-      } catch (err) {
-        const message =
-          err instanceof LoginRateLimitedError
-            ? tooManyAttempts(err.retryAfter)
-            : err instanceof TypeError
-              ? OFFLINE
-              : SERVER_ERROR;
-        setError(message);
-      }
+  const ctx = context.get(honoContext);
+  const session =
+    username && password
+      ? await signIn(ctx, username, password, version)
+      : null;
+  if (!session) return data({ error: INVALID }, { status: 401 });
 
-      setBusy(false);
-    },
-    [login],
-  );
+  return redirect("/", { headers: { "Set-Cookie": session.cookie } });
+}
 
-  if (status === "authed") return <Navigate replace to="/" />;
+function LoginScreen({ error }: { error?: string }) {
+  const busy = useNavigation().state !== "idle";
 
   return (
     <main className={styles.screen}>
       <h1>Posy</h1>
-      <LoginForm
-        busy={busy}
-        onSubmit={(un, pw) => {
-          void submit(un, pw);
-        }}
-      />
+      <Form
+        // oxlint-disable-next-line react/forbid-component-props -- forwarded to the rendered <form>
+        className={styles.form}
+        method="post"
+      >
+        <input
+          aria-label="Username"
+          autoComplete="username"
+          className={styles.code}
+          name="username"
+          placeholder="username"
+          required
+        />
+        <input
+          aria-label="Password"
+          autoComplete="current-password"
+          className={styles.code}
+          name="password"
+          placeholder="password"
+          required
+          type="password"
+        />
+        <input
+          name="clientVersion"
+          type="hidden"
+          value={import.meta.env.VITE_APP_VERSION}
+        />
+        <button disabled={busy} type="submit">
+          Sign in
+        </button>
+      </Form>
       {error ? (
         <p className={styles.error} role="alert">
           {error}
@@ -104,4 +87,20 @@ export default function LoginScreen() {
       ) : null}
     </main>
   );
+}
+
+export default function Login({ actionData }: Route.ComponentProps) {
+  return <LoginScreen error={actionData?.error} />;
+}
+
+// Only reached with JS: without it the browser shows whatever the server sent.
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const isRateLimited = isRouteErrorResponse(error) && error.status === 429;
+  const message = isRateLimited
+    ? TOO_MANY
+    : error instanceof TypeError
+      ? OFFLINE
+      : SERVER_ERROR;
+
+  return <LoginScreen error={message} />;
 }

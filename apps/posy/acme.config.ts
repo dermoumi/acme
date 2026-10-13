@@ -38,6 +38,9 @@ export default defineConfig({
       // double. The tunnel itself is the sentry kit's, mounted behind this.
       routes: [
         { method: "POST", path: "/session", binding: "RATE_LIMIT_LOGIN" },
+        // The login form: /login without JS, /login.data with it.
+        { method: "POST", path: "/login", binding: "RATE_LIMIT_LOGIN" },
+        { method: "POST", path: "/login.data", binding: "RATE_LIMIT_LOGIN" },
         { method: "POST", path: "/sentry", binding: "RATE_LIMIT_SENTRY" },
       ],
     }),
