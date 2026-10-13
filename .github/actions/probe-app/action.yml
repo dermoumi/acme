@@ -52,7 +52,7 @@ runs:
         fi
 
         probe() {
-          curl --fail --silent --show-error \
+          curl --fail --silent --show-error --location \
             --connect-timeout 10 --max-time 30 \
             --user-agent "acme-ci-health-probe" "$@"
         }
