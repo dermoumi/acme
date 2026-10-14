@@ -1,11 +1,5 @@
 import { honoContext } from "@acme/router";
-import {
-  data,
-  Form,
-  isRouteErrorResponse,
-  redirect,
-  useNavigation,
-} from "react-router";
+import { data, Form, redirect, useNavigation } from "react-router";
 import { getSessionUser, signIn } from "../../server/auth";
 import type { Route } from "./+types/login";
 import styles from "./login.module.css";
@@ -34,6 +28,9 @@ export async function action({ context, request }: Route.ActionArgs) {
   const version = readField(form, "clientVersion") || null;
 
   const ctx = context.get(honoContext);
+  const isAllowed = await ctx.var.consumeRateLimit(ctx, "RATE_LIMIT_LOGIN");
+  if (!isAllowed) return data({ error: TOO_MANY }, { status: 429 });
+
   const session =
     username && password
       ? await signIn(ctx, username, password, version)
@@ -95,12 +92,7 @@ export default function Login({ actionData }: Route.ComponentProps) {
 
 // Only reached with JS: without it the browser shows whatever the server sent.
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const isRateLimited = isRouteErrorResponse(error) && error.status === 429;
-  const message = isRateLimited
-    ? TOO_MANY
-    : error instanceof TypeError
-      ? OFFLINE
-      : SERVER_ERROR;
+  const message = error instanceof TypeError ? OFFLINE : SERVER_ERROR;
 
   return <LoginScreen error={message} />;
 }

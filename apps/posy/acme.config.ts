@@ -37,10 +37,8 @@ export default defineConfig({
       // POST only keeps the per-load GET uncapped; /sentry exact, /* would
       // double. The tunnel itself is the sentry kit's, mounted behind this.
       routes: [
+        // Shared with the login action, which spends it through consumeRateLimit.
         { method: "POST", path: "/session", binding: "RATE_LIMIT_LOGIN" },
-        // The login form: /login without JS, /login.data with it.
-        { method: "POST", path: "/login", binding: "RATE_LIMIT_LOGIN" },
-        { method: "POST", path: "/login.data", binding: "RATE_LIMIT_LOGIN" },
         { method: "POST", path: "/sentry", binding: "RATE_LIMIT_SENTRY" },
       ],
     }),
