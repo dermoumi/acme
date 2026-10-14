@@ -15,7 +15,6 @@ import {
   TEST_BUDGETS,
   TEST_LIMIT,
   TEST_PERIOD,
-  TEST_ROUTE,
   type TestBindings,
 } from "./testing";
 
@@ -46,15 +45,6 @@ describe("createRateLimiter", () => {
 
     expect(() => limitedApp({ budgets })).toThrow(
       "POST /limited names an undeclared budget: RATE_LIMIT_TEST",
-    );
-  });
-
-  // Otherwise status() reports a cap that sits on no route at all.
-  it("throws when a budget caps no route", () => {
-    const routes = [TEST_ROUTE];
-
-    expect(() => limitedApp({ routes })).toThrow(
-      "RATE_LIMIT_OTHER is declared but caps no route",
     );
   });
 });

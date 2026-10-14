@@ -1,4 +1,4 @@
-export { rateLimiterKit } from "./kit";
+export { type ConsumeRateLimit, rateLimiterKit } from "./kit";
 export type {
   Budget,
   LimitedRoute,

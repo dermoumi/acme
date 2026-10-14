@@ -4,13 +4,12 @@ import {
   getTrustedProxies,
   SELF_PROVISIONED,
 } from "#runtime";
-import type { Hono, MiddlewareHandler } from "hono";
+import type { Context, Hono, MiddlewareHandler } from "hono";
 import { rateLimiter } from "hono-rate-limiter";
 import { bound } from "./bindings";
 import type { Limiter } from "./runtime/contract";
 import {
   compileTrustedProxies,
-  type TrustedProxies,
   type TrustedProxiesConfig,
 } from "./trusted-proxies";
 
@@ -52,8 +51,17 @@ export interface Budget<Bindings extends object> {
  * One route a budget caps.
  */
 export interface LimitedRoute<Bindings extends object> {
+  /**
+   * Other methods on the same path stay uncapped.
+   */
   method: Method;
+  /**
+   * A Hono route pattern, such as `/login` or `/api/*`.
+   */
   path: string;
+  /**
+   * Names the budget to count against; one no budget declares throws.
+   */
   binding: LimiterBinding<Bindings>;
 }
 
@@ -82,42 +90,50 @@ export interface RateLimiterConfig<Bindings extends object> {
 }
 
 type Cap<Bindings extends object> = MiddlewareHandler<{ Bindings: Bindings }>;
+type KeyOf = (ctx: Context) => string;
 
-function buildCap<Bindings extends object>(
+// The route caps and consume() share it, so both spend the same budget.
+interface Counter<Bindings extends object> {
+  cap: Cap<Bindings>;
+  getLimiter: ReturnType<typeof getBinding>;
+}
+
+function buildCounter<Bindings extends object>(
   budget: Budget<Bindings>,
-  trustedProxies: TrustedProxies,
-): Cap<Bindings> {
+  keyOf: KeyOf,
+): Counter<Bindings> {
   const { binding, limit, periodSeconds } = budget;
-
-  return rateLimiter<{ Bindings: Bindings }>({
-    binding: getBinding(binding, limit, periodSeconds),
-    // Unidentifiable callers share one budget.
-    keyGenerator: (ctx) => clientAddress(ctx, trustedProxies) ?? "unknown",
+  const getLimiter = getBinding(binding, limit, periodSeconds);
+  const cap = rateLimiter<{ Bindings: Bindings }>({
+    binding: getLimiter,
+    keyGenerator: keyOf,
     handler: (ctx) => {
       ctx.res = ctx.json({ error: "rate_limited" }, 429, {
         "Retry-After": String(periodSeconds),
       });
     },
   });
+
+  return { cap, getLimiter };
 }
 
-// One cap per budget, not per route: on node each counts in its own store.
-function buildCaps<Bindings extends object>(
+// One counter per budget, not per route: on node each counts in its own store.
+function buildCounters<Bindings extends object>(
   budgets: readonly Budget<Bindings>[],
-  trustedProxies: TrustedProxies,
-): Map<string, Cap<Bindings>> {
-  const caps = new Map<string, Cap<Bindings>>();
+  keyOf: KeyOf,
+): Map<string, Counter<Bindings>> {
+  const counters = new Map<string, Counter<Bindings>>();
 
   for (const budget of budgets) {
-    if (caps.has(budget.binding)) {
+    if (counters.has(budget.binding)) {
       const message = `${budget.binding} is declared more than once`;
       throw new Error(message);
     }
 
-    caps.set(budget.binding, buildCap(budget, trustedProxies));
+    counters.set(budget.binding, buildCounter(budget, keyOf));
   }
 
-  return caps;
+  return counters;
 }
 
 interface Mount<Bindings extends object> {
@@ -127,30 +143,17 @@ interface Mount<Bindings extends object> {
 
 function planMounts<Bindings extends object>(
   routes: readonly LimitedRoute<Bindings>[],
-  caps: Map<string, Cap<Bindings>>,
+  counters: Map<string, Counter<Bindings>>,
 ): Mount<Bindings>[] {
-  const mounts = routes.map((route) => {
-    const cap = caps.get(route.binding);
-    if (!cap) {
+  return routes.map((route) => {
+    const counter = counters.get(route.binding);
+    if (!counter) {
       const message = `${route.method} ${route.path} names an undeclared budget: ${route.binding}`;
       throw new Error(message);
     }
 
-    return { route, cap };
+    return { route, cap: counter.cap };
   });
-
-  const mountedBindings = new Set<string>(
-    mounts.map((mount) => mount.route.binding),
-  );
-  const idleBinding = [...caps.keys()].find(
-    (binding) => !mountedBindings.has(binding),
-  );
-  if (idleBinding !== undefined) {
-    const message = `${idleBinding} is declared but caps no route`;
-    throw new Error(message);
-  }
-
-  return mounts;
 }
 
 export interface RateLimiter<Bindings extends object> {
@@ -160,6 +163,7 @@ export interface RateLimiter<Bindings extends object> {
   mount(app: Hono<any>): void;
   // Per request: on workerd the bindings only exist once one is in.
   status(env: Bindings): LimiterStatus;
+  consume(ctx: Context, binding: string): Promise<boolean>;
 }
 
 export function createRateLimiter<Bindings extends object>(
@@ -169,8 +173,12 @@ export function createRateLimiter<Bindings extends object>(
   const trustedProxies = compileTrustedProxies(
     getTrustedProxies(config.trustedProxies),
   );
-  const caps = buildCaps(config.budgets, trustedProxies);
-  const mounts = planMounts(config.routes, caps);
+  // Unidentifiable callers share one budget.
+  const keyOf: KeyOf = (ctx) => {
+    return clientAddress(ctx, trustedProxies) ?? "unknown";
+  };
+  const counters = buildCounters(config.budgets, keyOf);
+  const mounts = planMounts(config.routes, counters);
 
   return {
     mount(app) {
@@ -180,11 +188,24 @@ export function createRateLimiter<Bindings extends object>(
     },
 
     status(env): LimiterStatus {
-      if (caps.size === 0) return "off";
+      if (counters.size === 0) return "off";
       if (SELF_PROVISIONED) return "on";
 
-      const count = [...caps.keys()].filter((name) => bound(env, name)).length;
-      return count === caps.size ? "on" : count === 0 ? "off" : "partial";
+      const names = [...counters.keys()];
+      const count = names.filter((name) => bound(env, name)).length;
+      return count === counters.size ? "on" : count === 0 ? "off" : "partial";
+    },
+
+    async consume(ctx, binding) {
+      const counter = counters.get(binding);
+      if (!counter) {
+        const message = `consumeRateLimit names an undeclared budget: ${binding}`;
+        throw new Error(message);
+      }
+
+      const limiter = counter.getLimiter(ctx);
+      const { success } = await limiter.limit({ key: keyOf(ctx) });
+      return success;
     },
   };
 }

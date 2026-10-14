@@ -24,12 +24,27 @@ function buildKit() {
   });
 }
 
-// The shape composeApp builds: the kit's middleware ahead of the app's routes.
+// The shape composeApp builds: the kit's vars and middleware ahead of the app's routes.
 function buildApp() {
   const app = new Hono<{ Bindings: TestBindings }>();
   const health = stubHealthKit(KIT);
 
-  buildKit().init?.(health.context).middleware?.(app);
+  const state = buildKit().init?.(health.context);
+  const vars = state?.vars?.({}) ?? {};
+  app.use(async (ctx, next) => {
+    for (const [key, value] of Object.entries(vars))
+      ctx.set(key as never, value);
+    await next();
+  });
+  state?.middleware?.(app);
+  app.post("/self", async (ctx) => {
+    const isAllowed = await ctx.var.consumeRateLimit(ctx, "RATE_LIMIT_TEST");
+    return isAllowed ? ctx.text("served") : ctx.text("capped", 429);
+  });
+  app.post("/unknown", async (ctx) => {
+    await ctx.var.consumeRateLimit(ctx, "RATE_LIMIT_NOPE");
+    return ctx.text("served");
+  });
   app.all("*", (ctx) => ctx.text("served"));
 
   return app;
@@ -99,6 +114,36 @@ describe("rateLimiterKit", () => {
     });
 
     for (const response of responses) expect(response.status).toBe(200);
+  });
+
+  it("lets a route spend a budget itself", async () => {
+    const app = buildApp();
+    const env = createBindings();
+    const headers = client();
+
+    const allowed = await sequence(TEST_LIMIT, () => {
+      return post(app, env, "/self", headers);
+    });
+    for (const response of allowed) expect(response.status).toBe(200);
+
+    expect((await post(app, env, "/self", headers)).status).toBe(429);
+  });
+
+  it("spends the same budget as the routes it caps", async () => {
+    const app = buildApp();
+    const env = createBindings();
+    const headers = client();
+
+    await sequence(TEST_LIMIT, () => post(app, env, "/limited", headers));
+
+    expect((await post(app, env, "/self", headers)).status).toBe(429);
+  });
+
+  it("throws when a route spends a budget it was not given", async () => {
+    const app = buildApp();
+    const response = await post(app, createBindings(), "/unknown", client());
+
+    expect(response.status).toBe(500);
   });
 
   // A periodic probe pays for the verdict alone; the breakdown is for a deploy.
