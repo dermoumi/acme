@@ -6,7 +6,7 @@ import { DEFAULT_REDACT_KEYS, SENSITIVE_HEADERS, scrubEvent } from "./scrub";
 
 type DataCollection = NonNullable<Options["dataCollection"]>;
 
-// Withheld at every level: a session token is impersonation material, not data.
+// Withheld always: a session token is impersonation material, not data.
 const CREDENTIALS = {
   cookies: false,
   httpHeaders: { request: { deny: SENSITIVE_HEADERS }, response: false },
