@@ -216,8 +216,8 @@ catalogs:
       specifier: 13.0.3
       version: 13.0.3
     cac:
-      specifier: 7.0.1
-      version: 7.0.1
+      specifier: 7.1.0
+      version: 7.1.0
     hono:
       specifier: 4.13.13
       version: 4.13.13
@@ -415,7 +415,7 @@ importers:
     dependencies:
       cac:
         specifier: 'catalog:'
-        version: 7.0.1
+        version: 7.1.0
       tsx:
         specifier: 'catalog:'
         version: 4.23.13
@@ -495,7 +495,7 @@ importers:
         version: link:../app
       cac:
         specifier: 'catalog:'
-        version: 7.0.1
+        version: 7.1.0
       kysely:
         specifier: 'catalog:'
         version: 0.29.6
@@ -556,7 +556,7 @@ importers:
     dependencies:
       cac:
         specifier: 'catalog:'
-        version: 7.0.1
+        version: 7.1.0
       tsx:
         specifier: 'catalog:'
         version: 4.23.13
@@ -3117,8 +3117,8 @@ packages:
   buffer-from@1.1.2:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
 
-  cac@7.0.1:
-    resolution: {integrity: sha512-86diuUyeeWM8CrqhpGCaDafrzjS1s++7sWy2AbAPoFNz/xKv7ID57CR4pZsMuGCh60PtsnEx4z68b+Vgt07VPw==}
+  cac@7.1.0:
+    resolution: {integrity: sha512-LMDU/U2yA4IPIY8KT0NsNPWEYZvAMkbgyspxJ6btJaYV+WMDOHAZCmB0lsTObiHaRS1V/ztKAl7+TSkTqXyeoA==}
     engines: {node: '>=20.19.0'}
 
   call-bind-apply-helpers@1.0.2:
@@ -6520,7 +6520,7 @@ snapshots:
 
   buffer-from@1.1.2: {}
 
-  cac@7.0.1: {}
+  cac@7.1.0: {}
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
