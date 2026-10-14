@@ -27,10 +27,6 @@ component_management:
       name: "@acme/db"
       paths:
         - packages/db/**
-    - component_id: deploy
-      name: "@acme/deploy"
-      paths:
-        - packages/deploy/**
     - component_id: health
       name: "@acme/health"
       paths:
