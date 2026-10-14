@@ -43,8 +43,8 @@ describe("sentryKit", () => {
   });
 
   it("carries what the app declared, for whoever reads it back", () => {
-    expect(sentryKit({ masking: "light" }).config).toEqual({
-      masking: "light",
+    expect(sentryKit({ redactKeys: ["note"] }).config).toEqual({
+      redactKeys: ["note"],
     });
   });
 

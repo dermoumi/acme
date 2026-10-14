@@ -60,14 +60,6 @@ describe("createErrorHandler", () => {
     expect(body).not.toContain(NOTE);
   });
 
-  it("sends values verbatim under masking none, but never credentials", async () => {
-    const { body } = await capture({ SENTRY_DSN: DSN }, { masking: "none" });
-    expect(body).toContain(PASSWORD);
-    expect(body).toContain(SESSION);
-    expect(body).not.toContain(BEARER);
-    expect(body).not.toContain(COOKIE);
-  });
-
   // Delivery must not depend on waitUntil, which races isolate teardown once
   // the client has its response. No settle() here on purpose.
   it("sends the event before the response resolves", async () => {

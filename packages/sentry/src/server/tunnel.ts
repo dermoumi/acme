@@ -6,9 +6,9 @@ import {
 } from "@sentry/core";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import type { MaskingLevel, SentryConfig } from "./config";
+import type { SentryConfig } from "./config";
 import { readSettings } from "./env";
-import { DEFAULT_REDACT_KEYS, scrubEvent, stripCredentials } from "./scrub";
+import { DEFAULT_REDACT_KEYS, scrubEvent } from "./scrub";
 
 const MAX_ENVELOPE_BYTES = 1024 * 1024;
 
@@ -32,7 +32,6 @@ type LooseItem = [{ type?: string }, unknown];
 function rewriteEnvelope(
   body: Uint8Array,
   dsn: string,
-  masking: MaskingLevel,
   keys: string[],
 ): string | Uint8Array {
   let parsed: Envelope;
@@ -51,13 +50,7 @@ function rewriteEnvelope(
     if (itemHeader.type !== "event" || typeof payload !== "object") {
       return [itemHeader, payload];
     }
-    const event = payload as ErrorEvent;
-    return [
-      itemHeader,
-      masking === "none"
-        ? stripCredentials(event)
-        : scrubEvent(event, keys, masking === "light"),
-    ];
+    return [itemHeader, scrubEvent(payload as ErrorEvent, keys)];
   });
 
   return serializeEnvelope([
@@ -97,7 +90,6 @@ async function readEnvelope(request: Request): Promise<Uint8Array> {
 // one, so the dsn stays out of the bundle and the post stays same-origin.
 export function createTunnel(config: SentryConfig = {}): Hono {
   const tunnel = new Hono();
-  const masking = config.masking ?? "full";
   const keys = [...DEFAULT_REDACT_KEYS, ...(config.redactKeys ?? [])];
 
   return tunnel.post("/", async (ctx) => {
@@ -108,7 +100,6 @@ export function createTunnel(config: SentryConfig = {}): Hono {
     const envelope = rewriteEnvelope(
       await readEnvelope(ctx.req.raw),
       dsn,
-      masking,
       keys,
     );
     const response = await fetch(upstreamUrl(dsn), {

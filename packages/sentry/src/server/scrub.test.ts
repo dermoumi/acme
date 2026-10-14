@@ -146,17 +146,6 @@ describe("scrubEvent", () => {
     expect(scrub(event)).toEqual(event);
   });
 
-  // Unparseable means unmaskable, so the level decides:
-  // light keeps the body for debugging, full withholds it.
-  it("withholds a body it cannot parse, unless masking is light", () => {
-    const event: ErrorEvent = {
-      type: undefined,
-      request: { data: "plain text body" },
-    };
-    expect(scrub(event).request?.data).toBe("[redacted]");
-    expect(scrubEvent(event, [], true).request?.data).toBe("plain text body");
-  });
-
   it("masks a form-encoded body by key", () => {
     const { request } = scrubEvent(
       {
@@ -173,9 +162,7 @@ describe("scrubEvent", () => {
     expect(request?.data).not.toContain("hunter2");
   });
 
-  // A file upload makes the WHOLE form multipart, so this is the shape posy
-  // gets the moment one lands. light ships it, accepting what full withholds.
-  it("multipart survives light masking and is withheld by full", () => {
+  it("keeps a multipart body whole, since it cannot be masked by key", () => {
     const event: ErrorEvent = {
       type: undefined,
       request: {
@@ -184,10 +171,7 @@ describe("scrubEvent", () => {
       },
     };
 
-    expect(scrubEvent(event, ["password"], true).request?.data).toContain(
-      "cat.png",
-    );
-    expect(scrubEvent(event, ["password"]).request?.data).toBe("[redacted]");
+    expect(scrub(event).request?.data).toContain("cat.png");
   });
 
   // redactKeys visibly applies to bodies, query and cookies; headers behaving

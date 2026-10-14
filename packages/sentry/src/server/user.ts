@@ -8,8 +8,6 @@ export type { User };
  *
  * Writes to the per-request scope, so one request's user never reaches another.
  * Pass `null` on logout to clear it.
- *
- * Ignored under `masking: "full"`, where user data is stripped before sending.
  */
 export function setUser(user: User | null): void {
   setSentryUser(user);

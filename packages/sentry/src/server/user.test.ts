@@ -1,6 +1,5 @@
 import { bench } from "#testing/bench";
 import { describe, expect, it } from "vitest";
-import type { MaskingLevel } from "./config";
 import { DSN, loginRequest } from "./testing/contract";
 import { IDENTIFIED } from "./testing/wired-app";
 
@@ -13,8 +12,8 @@ function users(sent: unknown[]): unknown[] {
   );
 }
 
-async function identify(masking: MaskingLevel): Promise<unknown[]> {
-  const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, { masking });
+async function identify(): Promise<unknown[]> {
+  const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, {});
   await invoke(new Request("https://posy.test/identified", { method: "POST" }));
   await bench.settle();
   return users(sent);
@@ -22,24 +21,14 @@ async function identify(masking: MaskingLevel): Promise<unknown[]> {
 
 describe("sentry hono user context", () => {
   it("sends a user set by the app", async () => {
-    expect(await identify("light")).toContainEqual(
-      expect.objectContaining(IDENTIFIED),
-    );
-  });
-
-  // userInfo only gates the inferred ip, so beforeSend has to do this.
-  it("drops a user set by the app when masking is full", async () => {
-    expect(await identify("full")).not.toContainEqual(
+    expect(await identify()).toContainEqual(
       expect.objectContaining(IDENTIFIED),
     );
   });
 
   // Sentry infers this from the request headers; nothing of ours sets it.
   it("tags events with the client ip", async () => {
-    const { invoke, sent } = bench.build(
-      { SENTRY_DSN: DSN },
-      { masking: "light" },
-    );
+    const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, {});
     await invoke(
       new Request(loginRequest(), { headers: { "cf-connecting-ip": IP } }),
     );
@@ -50,10 +39,7 @@ describe("sentry hono user context", () => {
   });
 
   it("does not carry one request's user onto the next", async () => {
-    const { invoke, sent } = bench.build(
-      { SENTRY_DSN: DSN },
-      { masking: "light" },
-    );
+    const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, {});
 
     await invoke(
       new Request("https://posy.test/identified", { method: "POST" }),
