@@ -60,13 +60,8 @@ function contentType(headers: Record<string, string> | undefined): string {
   return found?.[1].toLowerCase() ?? "";
 }
 
-// A body neither parse understands cannot be masked: kept whole or dropped.
-function redactBody(
-  data: unknown,
-  keys: string[],
-  type: string,
-  keepUnparsed: boolean,
-): unknown {
+// A body neither parse understands cannot be masked, so it is kept whole.
+function redactBody(data: unknown, keys: string[], type: string): unknown {
   if (typeof data !== "string") return redactValue(data, keys);
   try {
     return JSON.stringify(redactValue(JSON.parse(data) as unknown, keys));
@@ -74,7 +69,7 @@ function redactBody(
     if (type.includes("application/x-www-form-urlencoded")) {
       return redactQuery(data, keys);
     }
-    return keepUnparsed ? data : REDACTED;
+    return data;
   }
 }
 
@@ -88,7 +83,7 @@ function redactUrl(url: string, keys: string[]): string {
 // Dropped, not masked: redactKeys covers header names as it does body keys.
 function redactHeaders(
   headers: Record<string, string>,
-  keys: string[] = [],
+  keys: string[],
 ): Record<string, string> {
   return Object.fromEntries(
     Object.entries(headers).filter(
@@ -98,23 +93,10 @@ function redactHeaders(
   );
 }
 
-// dataCollection's header denylist only reaches span attributes, not the event.
-export function stripCredentials(event: ErrorEvent): ErrorEvent {
-  const { request } = event;
-  if (!request) return event;
-
-  const { cookies, headers, ...rest } = request;
-  return {
-    ...event,
-    request: { ...rest, ...(headers && { headers: redactHeaders(headers) }) },
-  };
-}
-
 // Bodies and query strings are kept for debugging; sensitive keys are masked.
 export function scrubEvent(
   event: ErrorEvent,
   redactKeys: string[],
-  keepUnparsedBody = false,
 ): ErrorEvent {
   const { request } = event;
   if (!request) return event;
@@ -134,7 +116,7 @@ export function scrubEvent(
             : (redactValue(query_string, keys) as typeof query_string),
       }),
       ...(data !== undefined && {
-        data: redactBody(data, keys, contentType(headers), keepUnparsedBody),
+        data: redactBody(data, keys, contentType(headers)),
       }),
       ...(headers && { headers: redactHeaders(headers, keys) }),
     },

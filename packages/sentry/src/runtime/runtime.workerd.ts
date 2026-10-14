@@ -1,8 +1,7 @@
 import type { ExecutionContext } from "@cloudflare/workers-types";
-import {
-  setAsyncLocalStorageAsyncContextStrategy,
-  wrapRequestHandler,
-} from "@sentry/cloudflare";
+import { setAsyncLocalStorageAsyncContextStrategy } from "@sentry/cloudflare";
+import { wrapRequestHandler } from "@sentry/cloudflare/request";
+import type { Options } from "@sentry/core";
 import { buildSentryOptions } from "../server/options";
 import type { ClientCloser, HandlerWrapper } from "./contract";
 
@@ -10,12 +9,17 @@ import type { ClientCloser, HandlerWrapper } from "./contract";
 // one isolation scope.
 setAsyncLocalStorageAsyncContextStrategy();
 
-// Per request, not per process: the DSN is a binding, and bindings do not exist
-// at the module scope a kit is built in.
+// Built on the first request: the DSN is a binding, absent at module scope.
 export const wrapHandler: HandlerWrapper = (handler, config) => {
+  // null: not built yet; undefined: built, but there is no DSN.
+  let options: Options | undefined | null = null;
+
   return {
     fetch: (request, env, ctx) => {
-      const options = buildSentryOptions(env, config);
+      if (options === null) {
+        options = buildSentryOptions(env, config);
+      }
+
       // A host hands the entry whatever its own runtime has, and on workers
       // that is the execution context this needs to send from.
       const context = ctx as ExecutionContext | undefined;

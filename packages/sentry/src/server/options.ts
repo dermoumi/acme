@@ -1,13 +1,8 @@
-import type { ErrorEvent, Options } from "@sentry/core";
+import type { Options } from "@sentry/core";
 import { readSettings } from "./env";
 import { buildReleaseName } from "@acme/app";
-import type { MaskingLevel, SentryConfig } from "./config";
-import {
-  DEFAULT_REDACT_KEYS,
-  SENSITIVE_HEADERS,
-  scrubEvent,
-  stripCredentials,
-} from "./scrub";
+import type { SentryConfig } from "./config";
+import { DEFAULT_REDACT_KEYS, SENSITIVE_HEADERS, scrubEvent } from "./scrub";
 
 type DataCollection = NonNullable<Options["dataCollection"]>;
 
@@ -20,31 +15,13 @@ const CREDENTIALS = {
 } satisfies Partial<DataCollection>;
 
 // Naming dataCollection flips every unlisted category permissive: list all.
-function dataCollection(masking: MaskingLevel): DataCollection {
-  return {
-    ...CREDENTIALS,
-    httpBodies: ["incomingRequest"],
-    urlQueryParams: true,
-    userInfo: masking !== "full",
-    databaseQueryData: masking !== "full",
-  };
-}
-
-// userInfo only gates the ip Sentry infers, so setUser is dropped here.
-function beforeSend(
-  masking: MaskingLevel,
-  keys: string[],
-): (event: ErrorEvent) => ErrorEvent {
-  const scrub =
-    masking === "none"
-      ? stripCredentials
-      : (event: ErrorEvent) => scrubEvent(event, keys, masking === "light");
-  if (masking !== "full") return scrub;
-  return (event) => {
-    const { user, ...rest } = scrub(event);
-    return rest;
-  };
-}
+const DATA_COLLECTION = {
+  ...CREDENTIALS,
+  httpBodies: ["incomingRequest"],
+  urlQueryParams: true,
+  userInfo: true,
+  databaseQueryData: true,
+} satisfies DataCollection;
 
 // No DSN means no client: monitoring must never fail closed.
 export function buildSentryOptions(
@@ -54,7 +31,6 @@ export function buildSentryOptions(
   const settings = readSettings(env, config);
   if (!settings.dsn) return undefined;
 
-  const masking = config.masking ?? "full";
   const keys = [...DEFAULT_REDACT_KEYS, ...(config.redactKeys ?? [])];
   const release = buildReleaseName(
     settings.appName,
@@ -67,8 +43,8 @@ export function buildSentryOptions(
     environment: settings.appEnv ?? "development",
     release,
     dist: settings.appRevision ?? "dev",
-    dataCollection: dataCollection(masking),
-    beforeSend: beforeSend(masking, keys),
+    dataCollection: DATA_COLLECTION,
+    beforeSend: (event) => scrubEvent(event, keys),
     ...config.options,
   };
 }

@@ -1,4 +1,4 @@
-import { getCurrentScope } from "@sentry/core";
+import { getCurrentScope, getIsolationScope } from "@sentry/core";
 import { flush } from "@sentry/node";
 import type { Bench } from "./contract";
 import { recordingConfig, wireApp } from "./wired-app";
@@ -14,6 +14,8 @@ export const bench: Bench = {
     // init() sets a process-wide client, so a previous test would leave one
     // behind and this bench would not represent a process without a DSN.
     if (!env.SENTRY_DSN) getCurrentScope().setClient(undefined);
+    // The process session outlives init(), and the next client would send it.
+    getIsolationScope().setSession();
     const recorded = recordingConfig(config, sent);
     const handler = wireApp(recorded);
     // Assigning undefined would store the string "undefined", which is truthy.

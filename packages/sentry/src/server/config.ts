@@ -1,19 +1,6 @@
 import type { Options } from "@sentry/core";
 
 /**
- * How much request data is masked before an event is sent.
- *
- * - `none`: body and query values kept verbatim
- * - `light`: values masked when their key looks sensitive
- * - `full`: also withholds database query data, user info (ip, user id), and
- *   bodies neither JSON nor form-encoded, which cannot be masked key by key
- *
- * Cookies and authorization headers are stripped at every level, `none`
- * included.
- */
-export type MaskingLevel = "none" | "light" | "full";
-
-/**
  * What the package reads out of the environment.
  */
 export interface SentrySettings {
@@ -36,14 +23,9 @@ export interface SentryConfig {
    */
   settings?: (env: Record<string, string | undefined>) => SentrySettings;
   /**
-   * Defaults to `"full"`.
-   */
-  masking?: MaskingLevel;
-  /**
    * Extra keys to mask, across body, query string, url and cookies.
    * Case-insensitive substring match, so `"note"` also masks `userNote`.
    * A matching header is dropped rather than masked, as credentials are.
-   * Unused when masking is `"none"`.
    */
   redactKeys?: string[];
   /**
