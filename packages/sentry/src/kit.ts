@@ -2,9 +2,19 @@ import type { Kit } from "@acme/app";
 import type { HealthStatus } from "@acme/health";
 import type { SentryConfig } from "./server/config";
 import { readSettings } from "./server/env";
-import { createErrorHandler } from "./server/error-handler";
+import {
+  createErrorHandler,
+  createErrorReporter,
+  type ReportError,
+} from "./server/error-handler";
 import { createTunnel } from "./server/tunnel";
 import { closeClient, wrapHandler } from "#sentry";
+
+declare module "@acme/app" {
+  interface KitShared {
+    reportError: ReportError;
+  }
+}
 
 // Must match initSentry's own default, which is where the browser posts.
 const TUNNEL_PATH = "/sentry";
@@ -29,9 +39,10 @@ export function sentryKit(config: SentryConfig = {}): Kit {
     config,
     vite: "@acme/sentry/vite",
     requires: ["@acme/health"],
-    init: ({ require }) => {
+    init: ({ register, require }) => {
       const addHealthStatus = require("addHealthStatus");
       addHealthStatus("sentry", sentryStatus, { optional: true });
+      register("reportError", createErrorReporter(config));
 
       return {
         routes: (app) => {

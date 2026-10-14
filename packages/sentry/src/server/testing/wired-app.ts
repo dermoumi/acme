@@ -6,6 +6,7 @@ import { setUser } from "../user";
 import { stubHealthKit } from "@acme/health/testing";
 
 export const BOOM = "route exploded";
+export const CAUGHT = "caught by another kit";
 export const IDENTIFIED = { id: "u_1", username: "tester" };
 
 // An app that throws, wired through BOTH kit slots as `serve` would: neither
@@ -20,8 +21,13 @@ export function wireApp(config: SentryConfig = {}): Handler {
     throw new Error(BOOM);
   });
 
-  const state =
-    sentryKit(config).init?.(stubHealthKit("@acme/sentry").context) ?? {};
+  const { context } = stubHealthKit("@acme/sentry");
+  const state = sentryKit(config).init?.(context) ?? {};
+  const reportError = context.require("reportError");
+  app.post("/caught", (ctx) => {
+    reportError(ctx, new Error(CAUGHT));
+    return ctx.text("answered by the kit", 500);
+  });
   state.routes?.(app);
 
   return state.handler?.(app) ?? app;

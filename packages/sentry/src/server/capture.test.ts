@@ -11,7 +11,7 @@ import {
   PASSWORD,
   SESSION,
 } from "./testing/contract";
-import { BOOM } from "./testing/wired-app";
+import { BOOM, CAUGHT } from "./testing/wired-app";
 
 async function capture(
   env: BenchEnv,
@@ -113,5 +113,31 @@ describe("createErrorHandler", () => {
     );
     await invoke(loginRequest());
     expect(JSON.stringify(sent)).toContain(BOOM);
+  });
+});
+
+describe("createErrorReporter", () => {
+  const createCaughtRequest = () => {
+    return new Request("https://posy.test/caught", { method: "POST" });
+  };
+
+  it("captures an error another kit caught, leaving it the response", async () => {
+    const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, {});
+    const res = await invoke(createCaughtRequest());
+    await bench.settle();
+
+    expect(await res.text()).toBe("answered by the kit");
+    expect(JSON.stringify(sent)).toContain(CAUGHT);
+  });
+
+  it("skips capture for a caller ignoreUserAgent matches", async () => {
+    const config = { ignoreUserAgent: "acme-ci-health-probe" };
+    const { invoke, sent } = bench.build({ SENTRY_DSN: DSN }, config);
+    const request = createCaughtRequest();
+    request.headers.set("user-agent", "acme-ci-health-probe");
+    await invoke(request);
+    await bench.settle();
+
+    expect(sent).toEqual([]);
   });
 });
