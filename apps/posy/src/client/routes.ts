@@ -7,6 +7,7 @@ import {
 
 export default [
   route("login", "routes/login.tsx"),
+  route("offline", "routes/offline.tsx"),
   layout("routes/tabs.tsx", [
     index("routes/pull.tsx"),
     route("collection", "routes/collection.tsx"),

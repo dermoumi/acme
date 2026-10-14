@@ -1,10 +1,17 @@
-import { ErrorBoundary } from "@acme/sentry/react";
+import { ErrorBoundary as SentryBoundary } from "@acme/sentry/react";
 import type { ReactNode } from "react";
-import { Links, Meta, Outlet, Scripts } from "react-router";
+import { Links, Meta, Outlet, Scripts, useMatches } from "react-router";
+import type { Route } from "./+types/root";
 import { UpdatePrompt } from "./components";
+import { OFFLINE, RetryScreen } from "./routes/offline";
 import "./index.css";
 
+const SERVER_ERROR = "Something went wrong. Try again in a moment.";
+
 export function Layout({ children }: { children: ReactNode }) {
+  // The service worker serves this shell at any URL, which its scripts would route.
+  const isShell = useMatches().some((match) => match.id === "routes/offline");
+
   return (
     <html lang="en">
       <head>
@@ -23,7 +30,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
-        <Scripts />
+        {isShell ? null : <Scripts />}
       </body>
     </html>
   );
@@ -31,9 +38,16 @@ export function Layout({ children }: { children: ReactNode }) {
 
 export default function Root() {
   return (
-    <ErrorBoundary>
+    <SentryBoundary>
       <Outlet />
       <UpdatePrompt />
-    </ErrorBoundary>
+    </SentryBoundary>
   );
+}
+
+// A navigation's data fetch fails with a TypeError when the network is down.
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const message = error instanceof TypeError ? OFFLINE : SERVER_ERROR;
+
+  return <RetryScreen message={message} />;
 }

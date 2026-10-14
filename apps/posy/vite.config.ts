@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { acmeVite } from "@acme/app/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { cloudflareTest } from "@cloudflare/vitest-plugin";
@@ -38,8 +39,26 @@ const pwa: Partial<VitePWAOptions> = {
     // Generated after Sentry has swept the build, so these would ship unused.
     sourcemap: false,
     globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
-    // Server-rendered pages leave no static shell; the default names one.
+    // The default fallback answers every navigation, online or not.
     navigateFallback: null,
+    runtimeCaching: [
+      {
+        urlPattern: ({ request }) => request.mode === "navigate",
+        handler: "NetworkOnly",
+        options: { precacheFallback: { fallbackURL: "/offline" } },
+      },
+    ],
+    // The server renders /offline, so its revision follows the assets it links.
+    manifestTransforms: [
+      (manifest) => {
+        const entries = JSON.stringify(manifest);
+        const revision = createHash("sha256").update(entries).digest("hex");
+
+        return {
+          manifest: [...manifest, { url: "/offline", revision, size: 0 }],
+        };
+      },
+    ],
   },
 };
 
