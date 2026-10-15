@@ -174,8 +174,8 @@ catalogs:
       specifier: 5.20261013.1
       version: 5.20261013.1
     '@hono/node-server':
-      specifier: 2.1.4
-      version: 2.1.4
+      specifier: 2.1.5
+      version: 2.1.5
     '@sentry/cloudflare':
       specifier: 11.7.0
       version: 11.7.0
@@ -324,7 +324,7 @@ importers:
         version: link:../../packages/sentry
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.4(hono@4.13.13)
+        version: 2.1.5(hono@4.13.13)
       '@sentry/cloudflare':
         specifier: 'catalog:'
         version: 11.7.0(@cloudflare/workers-types@5.20261013.1)(wrangler@4.149.0(@cloudflare/workers-types@5.20261013.1)(@types/node@24.19.2))
@@ -431,7 +431,7 @@ importers:
         version: 5.20261013.1
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.4(hono@4.13.13)
+        version: 2.1.5(hono@4.13.13)
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.2
@@ -468,7 +468,7 @@ importers:
         version: 5.20261013.1
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.4(hono@4.13.13)
+        version: 2.1.5(hono@4.13.13)
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.2
@@ -593,7 +593,7 @@ importers:
         version: link:../app
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.4(hono@4.13.13)
+        version: 2.1.5(hono@4.13.13)
       hono-rate-limiter:
         specifier: 'catalog:'
         version: 0.5.4(hono@4.13.13)
@@ -652,7 +652,7 @@ importers:
         version: 5.20261013.1
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.1.4(hono@4.13.13)
+        version: 2.1.5(hono@4.13.13)
       '@sentry/cloudflare':
         specifier: 'catalog:'
         version: 11.7.0(@cloudflare/workers-types@5.20261013.1)(wrangler@4.149.0(@cloudflare/workers-types@5.20261013.1)(@types/node@24.19.2))
@@ -1435,8 +1435,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@hono/node-server@2.1.4':
-    resolution: {integrity: sha512-2g1qeHl4BduwDn6L8nkAvDrPUWPMlkQ//a5NhP/zIyaXKMjZNRV+cG9Csu+BiJFf6+68pqzjf4Hi5sJGKHuS1g==}
+  '@hono/node-server@2.1.5':
+    resolution: {integrity: sha512-MgP/I06GdvsilDspMk/qmRzpk8LOUStP6jFAbSRi40W09DhoyUn+Mj7eyKICPqeYKybOjVFLVIAQzvu1bfIa7Q==}
     engines: {node: '>=20'}
     peerDependencies:
       hono: ^4 || ^5.0.0-0
@@ -5050,7 +5050,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@hono/node-server@2.1.4(hono@4.13.13)':
+  '@hono/node-server@2.1.5(hono@4.13.13)':
     dependencies:
       hono: 4.13.13
 
