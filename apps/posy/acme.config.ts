@@ -31,14 +31,13 @@ export default defineConfig({
     rateLimiterKit<AppBindings>({
       // Mirror wrangler.jsonc, which no runtime reads back.
       budgets: [
+        // Caps no route: the login action spends it through consumeRateLimit.
         { binding: "RATE_LIMIT_LOGIN", limit: 10, periodSeconds: 60 },
         { binding: "RATE_LIMIT_SENTRY", limit: 60, periodSeconds: 60 },
       ],
       // POST only keeps the per-load GET uncapped; /sentry exact, /* would
       // double. The tunnel itself is the sentry kit's, mounted behind this.
       routes: [
-        // Shared with the login action, which spends it through consumeRateLimit.
-        { method: "POST", path: "/session", binding: "RATE_LIMIT_LOGIN" },
         { method: "POST", path: "/sentry", binding: "RATE_LIMIT_SENTRY" },
       ],
     }),

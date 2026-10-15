@@ -4,12 +4,11 @@ import type { Kysely } from "kysely";
 import type { AppBindings } from "../bindings";
 import type { Database } from "../db";
 import migrations from "../db/migrator";
-import { hashPassword } from "./password";
 import { DbSessionStore } from "./session-db";
 
-// Opened through the same accessor the routes reach, so the test and the
+// Opened through the same accessor the app reaches, so the test and the
 // handler share one database. Reset between cases.
-export async function migratedEnv(): Promise<AppBindings> {
+async function migratedEnv(): Promise<AppBindings> {
   // The one cast: @acme/db cannot know posy's binding types.
   const database = (await emptyDbEnv("DATABASE")) as Partial<AppBindings>;
   const env = createBindings(database);
@@ -19,20 +18,10 @@ export async function migratedEnv(): Promise<AppBindings> {
   return env;
 }
 
-export async function seedUser(
-  db: Kysely<Database>,
-  id: string,
-  name = "Tester",
-  password?: string,
-): Promise<void> {
+async function seedUser(db: Kysely<Database>, id: string): Promise<void> {
   await db
     .insertInto("users")
-    .values({
-      id,
-      name,
-      password_hash: password ? await hashPassword(password) : null,
-      created_at: 1000,
-    })
+    .values({ id, name: "Tester", password_hash: null, created_at: 1000 })
     .execute();
 }
 

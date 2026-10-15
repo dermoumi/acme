@@ -1,6 +1,5 @@
 export { getSessionUser, signIn, signOut } from "./account";
 export { hashPassword, verifyPassword } from "./password";
-export { authRoutes } from "./routes";
 export {
   createSession,
   resolveSession,

@@ -1,7 +1,10 @@
+import { composeApp } from "@acme/app/testing";
 import { resetDb, unboundDbEnv } from "@acme/db/testing";
 import { createBindings } from "#testing/runtime";
+import { Hono } from "hono";
 import { beforeEach, describe, expect, it } from "vitest";
-import { testApp } from "../testing/app";
+import type { AppEnv } from "../bindings";
+import { getSessionUser } from "./account";
 import {
   createSession,
   generateToken,
@@ -13,6 +16,16 @@ import {
 import { seeded } from "./test-utils";
 
 const HOUR_MS = 60 * 60 * 1000;
+
+function createAuthApp(): Hono<AppEnv> {
+  const app = new Hono<AppEnv>();
+  app.get("/auth", async (ctx) => {
+    const user = await getSessionUser(ctx);
+    return ctx.json({ user });
+  });
+
+  return composeApp(app);
+}
 
 describe("createSession", () => {
   beforeEach(() => resetDb());
@@ -66,13 +79,13 @@ describe("resolveSession", () => {
   });
 });
 
-describe("GET /session", () => {
+describe("getSessionUser", () => {
   beforeEach(() => resetDb());
 
   it("never touches the db without a cookie", async () => {
-    const app = testApp();
+    const app = createAuthApp();
     const env = createBindings(unboundDbEnv("DATABASE"));
-    const res = await app.request("/session", {}, env);
+    const res = await app.request("/auth", {}, env);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ user: null });
   });
@@ -80,17 +93,17 @@ describe("GET /session", () => {
   it("resolves the cookie to a user", async () => {
     const { env, store } = await seeded();
     const token = await createSession(store, "u1", null, Date.now());
-    const app = testApp();
+    const app = createAuthApp();
 
     const authed = await app.request(
-      "/session",
+      "/auth",
       { headers: { Cookie: `${SESSION_COOKIE}=${token}` } },
       env,
     );
     expect(await authed.json()).toEqual({ user: { id: "u1", name: "Tester" } });
 
     const bogus = await app.request(
-      "/session",
+      "/auth",
       { headers: { Cookie: `${SESSION_COOKIE}=forged` } },
       env,
     );
