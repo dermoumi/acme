@@ -10,6 +10,7 @@ import {
   generateToken,
   hashToken,
   resolveSession,
+  revokeSession,
   SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
 } from "./session";
@@ -76,6 +77,20 @@ describe("resolveSession", () => {
     const token = await createSession(store, "u1", null, 1000);
     const expired = 1000 + SESSION_MAX_AGE_SECONDS * 1000 + 1;
     expect(await resolveSession(store, token, expired)).toBeNull();
+  });
+});
+
+describe("revokeSession", () => {
+  beforeEach(() => resetDb());
+
+  it("signs out one device and leaves the others signed in", async () => {
+    const { store } = await seeded();
+    const phone = await createSession(store, "u1", null, 1000);
+    const tablet = await createSession(store, "u1", null, 1000);
+
+    await revokeSession(store, phone);
+    expect(await resolveSession(store, phone, 2000)).toBeNull();
+    expect(await resolveSession(store, tablet, 2000)).toBe("u1");
   });
 });
 

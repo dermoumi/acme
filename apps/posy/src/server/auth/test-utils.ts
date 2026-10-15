@@ -4,6 +4,7 @@ import type { Kysely } from "kysely";
 import type { AppBindings } from "../bindings";
 import type { Database } from "../db";
 import migrations from "../db/migrator";
+import { hashPassword } from "./password";
 import { DbSessionStore } from "./session-db";
 
 // Opened through the same accessor the app reaches, so the test and the
@@ -18,20 +19,30 @@ async function migratedEnv(): Promise<AppBindings> {
   return env;
 }
 
-async function seedUser(db: Kysely<Database>, id: string): Promise<void> {
+async function seedUser(
+  db: Kysely<Database>,
+  id: string,
+  password?: string,
+): Promise<void> {
+  const passwordHash = password ? await hashPassword(password) : null;
   await db
     .insertInto("users")
-    .values({ id, name: "Tester", password_hash: null, created_at: 1000 })
+    .values({
+      id,
+      name: "Tester",
+      password_hash: passwordHash,
+      created_at: 1000,
+    })
     .execute();
 }
 
-export async function seeded(): Promise<{
+export async function seeded(password?: string): Promise<{
   db: Kysely<Database>;
   env: AppBindings;
   store: DbSessionStore;
 }> {
   const env = await migratedEnv();
   const db = await getTestDb("DATABASE", { env });
-  await seedUser(db, "u1");
+  await seedUser(db, "u1", password);
   return { db, env, store: new DbSessionStore(db) };
 }
