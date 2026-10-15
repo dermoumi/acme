@@ -45,8 +45,6 @@ export default defineConfig({
     // Ahead of the assets kit: the tunnel is a route, and a catch-all declared
     // before it would answer in its place.
     sentryKit({
-      // Auth is the only sensitive thing posy handles.
-      masking: "light",
       // The deploy check probes every deploy; CI already reports its failures.
       ignoreUserAgent: "acme-ci-health-probe",
     }),

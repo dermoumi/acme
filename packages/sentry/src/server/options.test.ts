@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { MaskingLevel, SentryConfig } from "./config";
+import type { SentryConfig } from "./config";
 import { buildSentryOptions } from "./options";
 
 const DSN = "https://dummy@dummy.ingest.sentry.io/1";
@@ -94,7 +94,7 @@ describe("buildSentryOptions", () => {
     expect(options?.dist).toBe("dev");
   });
 
-  // Last, so a caller can override anything the env and the masking produced.
+  // Last, so a caller can override anything the env and the defaults produced.
   it("merges the config's own options over the rest", () => {
     const env = { SENTRY_DSN: DSN, APP_ENV: "production" };
     const config = { options: { environment: "canary", sampleRate: 0.5 } };
@@ -116,9 +116,9 @@ describe("buildSentryOptions", () => {
   });
 
   // Guards the trap: any category left unlisted silently reverts to permissive.
-  it("every data collection category is named, defaulting to full masking", () => {
+  it("names every data collection category", () => {
     expect(buildSentryOptions({ SENTRY_DSN: DSN })?.dataCollection).toEqual({
-      userInfo: false,
+      userInfo: true,
       cookies: false,
       httpHeaders: {
         request: {
@@ -133,36 +133,9 @@ describe("buildSentryOptions", () => {
       },
       httpBodies: ["incomingRequest"],
       urlQueryParams: true,
-      databaseQueryData: false,
+      databaseQueryData: true,
       genAI: { inputs: false, outputs: false },
       graphQL: { document: false, variables: false },
     });
-  });
-
-  it("only full withholds database query data", () => {
-    const dbData = (masking: MaskingLevel) =>
-      buildSentryOptions({ SENTRY_DSN: DSN }, { masking })?.dataCollection
-        ?.databaseQueryData;
-    expect(dbData("none")).toBe(true);
-    expect(dbData("light")).toBe(true);
-    expect(dbData("full")).toBe(false);
-  });
-
-  it("none keeps values but still strips credentials", () => {
-    const beforeSend = buildSentryOptions(
-      { SENTRY_DSN: DSN },
-      { masking: "none" },
-    )?.beforeSend;
-    const event = {
-      type: undefined,
-      request: {
-        headers: { Authorization: "Bearer LEAK", "User-Agent": "probe" },
-        data: JSON.stringify({ password: "PLAINPASS" }),
-      },
-    };
-    const sent = JSON.stringify(beforeSend?.(event, {}));
-    expect(sent).not.toContain("LEAK");
-    expect(sent).toContain("probe");
-    expect(sent).toContain("PLAINPASS");
   });
 });

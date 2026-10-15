@@ -169,26 +169,14 @@ describe("createTunnel", () => {
   }
 
   it("masks client event bodies on their way through", async () => {
-    const sent = await forwardedBody(
-      createTunnel({ masking: "light" }),
-      eventEnvelope(),
-    );
+    const sent = await forwardedBody(createTunnel(), eventEnvelope());
     expect(sent).toContain("her");
     expect(sent).not.toContain("PLAINPASS");
     expect(sent).not.toContain("LEAK");
   });
 
-  it("masking none keeps values but still drops credentials", async () => {
-    const sent = await forwardedBody(
-      createTunnel({ masking: "none" }),
-      eventEnvelope(),
-    );
-    expect(sent).toContain("PLAINPASS");
-    expect(sent).not.toContain("LEAK");
-  });
-
   it("redactKeys reaches client events too", async () => {
-    const tunnel = createTunnel({ masking: "light", redactKeys: ["username"] });
+    const tunnel = createTunnel({ redactKeys: ["username"] });
     const sent = await forwardedBody(tunnel, eventEnvelope());
     expect(sent).not.toContain("her");
   });
@@ -207,7 +195,7 @@ describe("createTunnel", () => {
         },
       }),
     ].join("\n");
-    const sent = await forwardedBody(createTunnel({ masking: "full" }), body);
+    const sent = await forwardedBody(createTunnel(), body);
     expect(sent).toContain("PLAINPASS");
     expect(sent).toContain("LEAK");
     expect(sent).toContain('"sid":"abc"');

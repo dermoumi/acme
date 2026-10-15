@@ -15,7 +15,6 @@ COPY apps/posy/package.json apps/posy/
 COPY packages/app/package.json packages/app/
 COPY packages/assets/package.json packages/assets/
 COPY packages/db/package.json packages/db/
-COPY packages/deploy/package.json packages/deploy/
 COPY packages/health/package.json packages/health/
 COPY packages/rate-limiter/package.json packages/rate-limiter/
 COPY packages/router/package.json packages/router/
@@ -51,12 +50,6 @@ RUN set -eu; \
       find "$dir/prebuilds" -name '*.node' ! -name "$keep.node" -delete; \
       test -f "$dir/prebuilds/$keep.node"; \
     done
-
-# Optional peers of @sentry/cloudflare and valibot: no Worker or tsc runs here.
-# By path: the workspace root has no package's bin on PATH.
-RUN node packages/deploy/src/cli/bin/acme-deploy.js prune --root=/deploy \
-      wrangler miniflare workerd '@cloudflare/workerd-*' \
-      typescript '@typescript/*'
 
 FROM node:24.21.0-trixie-slim
 WORKDIR /app

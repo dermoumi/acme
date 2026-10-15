@@ -22,6 +22,11 @@ const TUNNEL_PATH = "/sentry";
 /**
  * The Sentry kit: error reporting for the server and the browser both.
  *
+ * Sends the client IP, the user set by `setUser`, and database query data.
+ * Masks sensitive keys in JSON and form bodies and in query strings.
+ * Sends any other body verbatim; on Workers, only text bodies are captured.
+ * Never sends cookie or authorization headers.
+ *
  * A sub-app setting its own `onError` is not covered.
  *
  * Reports itself to `@acme/health`, so an app declares that one too, in any
