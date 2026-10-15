@@ -8,8 +8,8 @@ minimumReleaseAge: 2880
 catalog:
   "@cloudflare/vite-plugin": "1.63.1"
   "@hono/node-server": "2.1.4"
-  "@cloudflare/vitest-plugin": "1.4.0"
-  "@cloudflare/workers-types": "5.20261012.1"
+  "@cloudflare/vitest-plugin": "1.4.1"
+  "@cloudflare/workers-types": "5.20261013.1"
   "@react-router/dev": "8.4.0"
   "@sentry/cloudflare": "11.7.0"
   "@sentry/core": "11.7.0"
