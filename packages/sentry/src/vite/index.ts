@@ -33,9 +33,15 @@ export interface SentryViteOptions {
 // Nothing to upload to means nothing to emit: hidden maps otherwise ship an
 // unreferenced .map next to every chunk.
 function sourcemapPlugin(enabled: boolean): Plugin {
+  const sourcemap = enabled ? "hidden" : false;
+
   return {
     name: "@acme/sentry/sourcemap",
-    config: () => ({ build: { sourcemap: enabled ? "hidden" : false } }),
+    // The Cloudflare plugin reads the worker environment's value, not the root.
+    config: () => ({
+      build: { sourcemap },
+      environments: { ssr: { build: { sourcemap } } },
+    }),
   };
 }
 
