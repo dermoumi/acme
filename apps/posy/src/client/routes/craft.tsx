@@ -1,4 +1,4 @@
-export function CraftScreen() {
+export default function CraftScreen() {
   return (
     <main>
       <h1>Craft</h1>

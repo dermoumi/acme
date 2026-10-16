@@ -1,7 +1,7 @@
+import { createHash } from "node:crypto";
 import { acmeVite } from "@acme/app/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { cloudflareTest } from "@cloudflare/vitest-plugin";
-import react from "@vitejs/plugin-react";
 import type { PluginOption, UserConfig } from "vite";
 import { defineConfig } from "vitest/config";
 import { VitePWA, type VitePWAOptions } from "vite-plugin-pwa";
@@ -9,8 +9,11 @@ import { VitePWA, type VitePWAOptions } from "vite-plugin-pwa";
 // The Cloudflare plugin does not run in vitest.
 // Vitest sets this env var before reading this file.
 const isTest = process.env.VITEST === "true";
+// Not vite's mode: the router's prerender reloads this file without it.
+const isNode = process.env.BUILD_TARGET === "node";
 
 const pwa: Partial<VitePWAOptions> = {
+  outDir: "dist/client",
   registerType: "prompt",
   includeAssets: ["favicon.svg", "apple-touch-icon.png"],
   manifest: {
@@ -36,13 +39,25 @@ const pwa: Partial<VitePWAOptions> = {
     // Generated after Sentry has swept the build, so these would ship unused.
     sourcemap: false,
     globPatterns: ["**/*.{js,css,html,svg,png,woff2,webmanifest}"],
-    navigateFallback: "/index.html",
-    navigateFallbackDenylist: [
-      /^\/api\//u,
-      /^\/health$/u,
-      /^\/session$/u,
-      /^\/sentry$/u,
-      /^\/debug\//u,
+    // The default fallback answers every navigation, online or not.
+    navigateFallback: null,
+    runtimeCaching: [
+      {
+        urlPattern: ({ request }) => request.mode === "navigate",
+        handler: "NetworkOnly",
+        options: { precacheFallback: { fallbackURL: "/offline" } },
+      },
+    ],
+    // The server renders /offline, so its revision follows the assets it links.
+    manifestTransforms: [
+      (manifest) => {
+        const entries = JSON.stringify(manifest);
+        const revision = createHash("sha256").update(entries).digest("hex");
+
+        return {
+          manifest: [...manifest, { url: "/offline", revision, size: 0 }],
+        };
+      },
     ],
   },
 };
@@ -78,39 +93,22 @@ const test: UserConfig["test"] = {
   ],
 };
 
-function nodeBuild(isSsrBuild: boolean) {
-  if (!isSsrBuild) {
-    return { outDir: "dist/client" };
-  }
-
-  return {
-    outDir: "dist/server",
-    // Keep stack traces readable; size is not a concern here.
-    minify: false,
-    // public/ already ships in dist/client.
-    copyPublicDir: false,
-    rolldownOptions: {
-      input: { index: "src/server/index.ts" },
-      // /app has no package.json, so .js there would be read as CommonJS.
-      output: { entryFileNames: "[name].mjs" },
-    },
-  };
-}
-
-function buildPlugins(mode: string, isSsrBuild: boolean): PluginOption[] {
+function buildPlugins(): PluginOption[] {
   return [
+    // Ahead of the router plugin, which acmeVite() loads from the router kit.
+    ...(isNode ? [] : [cloudflare({ viteEnvironment: { name: "ssr" } })]),
     acmeVite(),
-    react(),
-    ...(mode === "node" ? [] : [cloudflare()]),
-    ...(isSsrBuild ? [] : [VitePWA(pwa)]),
+    VitePWA(pwa),
   ];
 }
 
-export default defineConfig(({ mode, isSsrBuild = false }) => ({
-  build: mode === "node" ? nodeBuild(isSsrBuild) : undefined,
+export default defineConfig({
   // One copy for both the bundle and `acme migrate`; better-sqlite3 is native.
-  ssr: { noExternal: true, external: ["better-sqlite3", "pg"] },
-  plugins: isTest ? [] : buildPlugins(mode, isSsrBuild),
+  // Node only: on workers this is the worker's environment, which rejects these.
+  ssr: isNode
+    ? { noExternal: true, external: ["better-sqlite3", "pg"] }
+    : undefined,
+  plugins: isTest ? [] : buildPlugins(),
   server: { host: "0.0.0.0" },
   test,
-}));
+});

@@ -1,4 +1,4 @@
-export function PullScreen() {
+export default function PullScreen() {
   return (
     <main>
       <h1>Daily pull</h1>

@@ -12,6 +12,9 @@ coverage/
 .wrangler/
 worker-configuration.d.ts
 
+# react-router typegen
+.react-router/
+
 # env
 .env
 .env.*.local

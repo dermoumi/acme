@@ -1,35 +1,47 @@
+import { honoContext } from "@acme/router";
 import { useState } from "react";
-import { useAuth } from "../lib/auth";
+import {
+  Form,
+  redirect,
+  useNavigation,
+  useRouteLoaderData,
+} from "react-router";
+import { signOut } from "../../server/auth";
+import type { Route } from "./+types/settings";
+import type { loader as tabsLoader } from "./tabs";
 import styles from "./settings.module.css";
 
-function ConfirmLogout({
-  busy,
-  onCancel,
-  onConfirm,
-}: {
-  busy: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
+export async function action({ context }: Route.ActionArgs) {
+  const cookie = await signOut(context.get(honoContext));
+
+  return redirect("/login", { headers: { "Set-Cookie": cookie } });
+}
+
+function ConfirmLogout({ onCancel }: { onCancel: () => void }) {
+  const busy = useNavigation().state !== "idle";
+
   return (
     <div className={styles.confirm}>
       <p>Log out? You can sign back in with your password.</p>
-      <div className={styles.actions}>
-        <button disabled={busy} onClick={onConfirm} type="button">
+      <Form
+        // oxlint-disable-next-line react/forbid-component-props -- forwarded to the rendered <form>
+        className={styles.actions}
+        method="post"
+      >
+        <button disabled={busy} type="submit">
           Log out
         </button>
         <button onClick={onCancel} type="button">
           Cancel
         </button>
-      </div>
+      </Form>
     </div>
   );
 }
 
-export function SettingsScreen() {
-  const { user, logout } = useAuth();
+export default function SettingsScreen() {
+  const user = useRouteLoaderData<typeof tabsLoader>("routes/tabs")?.user;
   const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
 
   return (
     <main>
@@ -45,13 +57,8 @@ export function SettingsScreen() {
         {user ? <p>Signed in as {user.name}</p> : null}
         {confirming ? (
           <ConfirmLogout
-            busy={busy}
             onCancel={() => {
               setConfirming(false);
-            }}
-            onConfirm={() => {
-              setBusy(true);
-              void logout();
             }}
           />
         ) : (

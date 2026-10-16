@@ -18,6 +18,7 @@ jobs:
   run:
     name: docker run (${{ inputs.app }}, ${{ matrix.platform }}, ${{ matrix.database }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     strategy:

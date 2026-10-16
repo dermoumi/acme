@@ -1,3 +1,10 @@
+import type { AppEnv } from "../server/bindings";
+
+declare module "@acme/router" {
+  // oxlint-disable-next-line no-empty-object-type
+  interface RouterEnv extends AppEnv {}
+}
+
 declare global {
   interface ImportMetaEnv {
     // Injected in vite.config.ts from the package.json name, scope stripped.
@@ -10,5 +17,3 @@ declare global {
     readonly VITE_APP_REVISION: string;
   }
 }
-
-export {};

@@ -17,6 +17,7 @@ COPY packages/assets/package.json packages/assets/
 COPY packages/db/package.json packages/db/
 COPY packages/health/package.json packages/health/
 COPY packages/rate-limiter/package.json packages/rate-limiter/
+COPY packages/router/package.json packages/router/
 COPY packages/sentry/package.json packages/sentry/
 COPY packages/tsconfig/package.json packages/tsconfig/
 RUN pnpm install --frozen-lockfile

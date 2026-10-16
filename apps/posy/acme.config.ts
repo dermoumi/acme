@@ -3,6 +3,7 @@ import { assetsKit } from "@acme/assets";
 import { databaseKit } from "@acme/db";
 import { healthKit } from "@acme/health";
 import { rateLimiterKit } from "@acme/rate-limiter";
+import { routerKit } from "@acme/router";
 import { sentryKit } from "@acme/sentry";
 import type { AppBindings } from "./src/server/bindings";
 
@@ -30,13 +31,13 @@ export default defineConfig({
     rateLimiterKit<AppBindings>({
       // Mirror wrangler.jsonc, which no runtime reads back.
       budgets: [
+        // Caps no route: the login action spends it through consumeRateLimit.
         { binding: "RATE_LIMIT_LOGIN", limit: 10, periodSeconds: 60 },
         { binding: "RATE_LIMIT_SENTRY", limit: 60, periodSeconds: 60 },
       ],
       // POST only keeps the per-load GET uncapped; /sentry exact, /* would
       // double. The tunnel itself is the sentry kit's, mounted behind this.
       routes: [
-        { method: "POST", path: "/session", binding: "RATE_LIMIT_LOGIN" },
         { method: "POST", path: "/sentry", binding: "RATE_LIMIT_SENTRY" },
       ],
     }),
@@ -48,5 +49,6 @@ export default defineConfig({
     }),
     // Last: it mounts the catch-all every unclaimed path falls through to.
     assetsKit(),
+    routerKit(),
   ],
 });

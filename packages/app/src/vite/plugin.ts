@@ -89,10 +89,16 @@ function stampIdentity(root: string): AppIdentity {
 }
 
 // tsx: node resolves neither the barrel nor the extensionless imports here.
+// Not tsImport: its namespace loads a second copy of every package a plugin uses.
 async function importWithTsx(url: string): Promise<unknown> {
-  const { tsImport } = await import("tsx/esm/api");
+  const { register } = await import("tsx/esm/api");
+  const unregister = register();
 
-  return tsImport(url, import.meta.url);
+  try {
+    return (await import(url)) as unknown;
+  } finally {
+    await unregister();
+  }
 }
 
 async function loadKitPlugins(

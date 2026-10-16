@@ -1,5 +1,6 @@
 import {
   breadcrumbsIntegration,
+  browserSessionIntegration,
   dedupeIntegration,
   functionToStringIntegration,
   globalHandlersIntegration,
@@ -51,7 +52,8 @@ export interface ClientSentryConfig {
  * Events post to the tunnel route, which adds the real DSN and applies masking,
  * so neither the DSN nor any scrubbing code is in the bundle.
  *
- * Captures errors only; tracing and replay are not enabled.
+ * Captures errors and one release-health session per page load; tracing and
+ * replay are not enabled.
  *
  * Safe to call when the server has no DSN: the tunnel answers 404 and the
  * transport then stops sending, costing one request per session.
@@ -66,6 +68,7 @@ export function initSentryClient(config: ClientSentryConfig = {}): void {
     transport: stopWhenUnconfigured(makeFetchTransport),
     integrations: [
       breadcrumbsIntegration(),
+      browserSessionIntegration({ lifecycle: "page" }),
       dedupeIntegration(),
       functionToStringIntegration(),
       globalHandlersIntegration(),

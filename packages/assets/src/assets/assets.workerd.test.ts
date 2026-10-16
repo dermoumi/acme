@@ -19,12 +19,12 @@ describe("the assets a worker serves", () => {
     await expect(response.text()).resolves.toContain("fixture asset");
   });
 
-  // The binding's own not_found_handling, which this arm never second-guesses.
-  it("serves the shell for a path with no file", async () => {
+  // The binding's own not_found_handling, which this arm never second-guesses:
+  // "none" here, so the kit's fallback can answer the 404.
+  it("passes the platform's 404 through for a path with no file", async () => {
     const response = await get("/deep/unknown/route");
 
-    expect(response.status).toBe(200);
-    await expect(response.text()).resolves.toContain("fixture shell");
+    expect(response.status).toBe(404);
   });
 
   // What middleware wrapping this kit has to know: posy's gate rewraps the
