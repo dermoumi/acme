@@ -3,7 +3,7 @@ import type { HealthStatus } from "@acme/health";
 import type { SentryConfig } from "./server/config";
 import { readSettings } from "./server/env";
 import {
-  createErrorHandler,
+  createErrorCapture,
   createErrorReporter,
   type ReportError,
 } from "./server/error-handler";
@@ -48,11 +48,11 @@ export function sentryKit(config: SentryConfig = {}): Kit {
       const addHealthStatus = require("addHealthStatus");
       addHealthStatus("sentry", sentryStatus, { optional: true });
       register("reportError", createErrorReporter(config));
+      register("captureError", createErrorCapture(config));
 
       return {
         routes: (app) => {
           app.route(TUNNEL_PATH, createTunnel(config));
-          app.onError(createErrorHandler(config));
         },
         handler: (served) => {
           return wrapHandler(served, config);

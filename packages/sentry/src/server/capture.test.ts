@@ -23,7 +23,7 @@ async function capture(
   return { res, body: JSON.stringify(sent) };
 }
 
-describe("createErrorHandler", () => {
+describe("createErrorCapture", () => {
   it("captures an error thrown inside a route handler", async () => {
     const { res, body } = await capture({ SENTRY_DSN: DSN });
     expect(res.status).toBe(500);

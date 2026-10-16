@@ -1,6 +1,6 @@
 import { captureException, flush, getClient } from "@sentry/core";
-import type { Context, ErrorHandler } from "hono";
-import { HTTPException } from "hono/http-exception";
+import type { CaptureError } from "@acme/app";
+import type { Context } from "hono";
 import type { SentryConfig } from "./config";
 
 // A ceiling, not a wait: low so a slow Sentry cannot delay error responses.
@@ -29,25 +29,14 @@ export function createErrorReporter(config: SentryConfig = {}): ReportError {
 
 // Hono answers route errors itself, so the wrapper never sees them: this is
 // their only capture path.
-export function createErrorHandler(config: SentryConfig = {}): ErrorHandler {
-  return async (error, ctx) => {
-    const isExpected = error instanceof HTTPException && error.status < 500;
+export function createErrorCapture(config: SentryConfig = {}): CaptureError {
+  return async (ctx, error) => {
+    if (isIgnoredCaller(ctx, config)) return;
 
-    let eventId: string | undefined;
-    if (!isExpected && !isIgnoredCaller(ctx, config)) {
-      console.error(error);
-      const id = captureException(error);
-      // Without a client nothing was sent, and a dead id is worse than none.
-      eventId = getClient() ? id : undefined;
-      // Answering can end the runtime's work, so deliver before answering.
-      await flush(FLUSH_MS).catch(() => false);
-    }
-
-    if (error instanceof HTTPException) return error.getResponse();
-    // The id lets someone quote the exact event when reporting a failure.
-    return ctx.json(
-      { error: "Internal Server Error", sentryEventId: eventId ?? null },
-      500,
-    );
+    const id = captureException(error);
+    // Answering can end the runtime's work, so deliver before answering.
+    await flush(FLUSH_MS).catch(() => false);
+    // Without a client nothing was sent, and a dead id is worse than none.
+    return getClient() ? id : undefined;
   };
 }

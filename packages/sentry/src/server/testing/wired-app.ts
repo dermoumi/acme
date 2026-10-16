@@ -1,4 +1,5 @@
 import type { Handler } from "@acme/app";
+import { createErrorHandler } from "@acme/app/testing";
 import { Hono } from "hono";
 import { sentryKit } from "../../kit";
 import type { SentryConfig } from "../config";
@@ -9,8 +10,8 @@ export const BOOM = "route exploded";
 export const CAUGHT = "caught by another kit";
 export const IDENTIFIED = { id: "u_1", username: "tester" };
 
-// An app that throws, wired through BOTH kit slots as `serve` would: neither
-// captures alone, since one establishes the client the other reports onto.
+// An app that throws, wired through both kit slots and onError as `serve` would:
+// no slot captures alone, since one establishes the client the others report onto.
 export function wireApp(config: SentryConfig = {}): Handler {
   const app = new Hono();
   app.post("/session", () => {
@@ -29,6 +30,7 @@ export function wireApp(config: SentryConfig = {}): Handler {
     return ctx.text("answered by the kit", 500);
   });
   state.routes?.(app);
+  app.onError(createErrorHandler(() => context.require("captureError")));
 
   return state.handler?.(app) ?? app;
 }

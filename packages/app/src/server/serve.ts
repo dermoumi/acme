@@ -8,7 +8,10 @@ import {
   getKitState,
   orderKits,
 } from "../internal/config";
+import { getKitRegistry } from "../internal/config/registry";
+import type { KitShared } from "../internal/shared";
 import type { Handler } from "./contract";
+import { createErrorHandler } from "./error-page";
 import { setupKitVars } from "./kit-vars";
 
 export function setupKitRoutes<AppEnv extends Env>(
@@ -17,6 +20,15 @@ export function setupKitRoutes<AppEnv extends Env>(
 ): void {
   for (const kit of orderKits(config.kits ?? [])) {
     getKitState(kit).routes?.(app);
+  }
+}
+
+// An app declaring no kit that captures still answers, without an event id.
+function findCaptureError(): KitShared["captureError"] | undefined {
+  try {
+    return getKitRegistry("@acme/app").require("captureError");
+  } catch {
+    return undefined;
   }
 }
 
@@ -67,6 +79,7 @@ export function composeApp<AppEnv extends Env>(
   checkKitRequires(config.kits ?? []);
 
   const outer = new Hono<AppEnv>();
+  outer.onError(createErrorHandler(findCaptureError));
   setupKitVars(outer, config);
   // Ahead of the app's routes: a cap mounted behind one would never run.
   setupKitMiddleware(outer, config);

@@ -1,7 +1,10 @@
+import type { CaptureError } from "../server/error-page";
+
 /**
  * What kits hand each other, keyed by name.
  *
- * Empty here: a kit that shares something extends it by declaration merging.
+ * `@acme/app` reads `captureError` itself; a kit that shares anything else
+ * extends this by declaration merging.
  *
  * ```ts
  * declare module "@acme/app" {
@@ -11,5 +14,9 @@
  * }
  * ```
  */
-// oxlint-disable-next-line no-empty-object-type
-export interface KitShared {}
+export interface KitShared {
+  /**
+   * Where `onError` reports what it caught. See {@link CaptureError}.
+   */
+  captureError: CaptureError;
+}

@@ -181,6 +181,34 @@ describe("composeApp", () => {
 
     await expect(ask(composed, "/nothing")).resolves.toBe("kit");
   });
+
+  // No kit here registers captureError, so this is an app without Sentry.
+  it("answers a browser with a page when no kit captures errors", async () => {
+    const app = new Hono().get("/boom", () => {
+      throw new Error("route exploded");
+    });
+    const request = new Request("http://app.test/boom", {
+      headers: { accept: "text/html" },
+    });
+    const composed = composeApp(app, defineConfig({}));
+    const res = await composed.fetch(request, {});
+
+    expect(res.status).toBe(500);
+    await expect(res.text()).resolves.toContain("Something went wrong");
+  });
+
+  it("answers a sub-app's failure the same way", async () => {
+    const mounted = new Hono().get("/boom", () => {
+      throw new Error("sub-app exploded");
+    });
+    const app = new Hono().route("/mounted", mounted);
+    const request = new Request("http://app.test/mounted/boom");
+    const composed = composeApp(app, defineConfig({}));
+    const res = await composed.fetch(request, {});
+
+    expect(res.status).toBe(500);
+    await expect(res.json()).resolves.toMatchObject({ sentryEventId: null });
+  });
 });
 
 describe("setupKitRoutes", () => {
