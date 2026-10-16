@@ -1,6 +1,5 @@
 /// <reference types="hono" />
-import type { Kit } from "@acme/app";
-import type { HealthStatus } from "@acme/health";
+import type { HealthStatus, Kit } from "@acme/app";
 import { type Kysely, sql } from "kysely";
 import { contextFor } from "./context";
 import { type Accessors, buildGetDb, type GetDb } from "../db";

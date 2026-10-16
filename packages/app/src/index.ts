@@ -10,6 +10,12 @@ export {
   type KitState,
   type KitVars,
 } from "./internal/config";
+export {
+  type AddHealthStatus,
+  healthKit,
+  type HealthStatus,
+  type HealthStatusOptions,
+} from "./kits/health";
 export { buildReleaseName } from "./internal/release";
 export type { Handler } from "./server/contract";
 export type { KitShared } from "./internal/shared";

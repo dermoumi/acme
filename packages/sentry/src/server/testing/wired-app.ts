@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { sentryKit } from "../../kit";
 import type { SentryConfig } from "../config";
 import { setUser } from "../user";
-import { stubHealthKit } from "@acme/health/testing";
+import { stubHealthKit } from "@acme/app/testing";
 
 export const BOOM = "route exploded";
 export const CAUGHT = "caught by another kit";

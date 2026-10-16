@@ -1,5 +1,4 @@
-import { defineConfig } from "@acme/app";
-import { healthKit } from "@acme/health";
+import { defineConfig, healthKit } from "@acme/app";
 import { Kysely } from "kysely";
 import { describe, expect, it } from "vitest";
 import { databaseKit } from "../internal/kit/kit";

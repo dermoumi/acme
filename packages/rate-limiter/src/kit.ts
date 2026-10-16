@@ -1,6 +1,5 @@
-import type { Kit } from "@acme/app";
+import type { HealthStatus, Kit } from "@acme/app";
 import type { Context } from "hono";
-import type { HealthStatus } from "@acme/health";
 import { createRateLimiter, type RateLimiterConfig } from "./rate-limiter";
 
 /**

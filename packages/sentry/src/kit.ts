@@ -1,5 +1,4 @@
-import type { Kit } from "@acme/app";
-import type { HealthStatus } from "@acme/health";
+import type { HealthStatus, Kit } from "@acme/app";
 import type { SentryConfig } from "./server/config";
 import { readSettings } from "./server/env";
 import {

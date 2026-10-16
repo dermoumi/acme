@@ -316,9 +316,6 @@ importers:
       '@acme/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@acme/health':
-        specifier: workspace:*
-        version: link:../../packages/health
       '@acme/rate-limiter':
         specifier: workspace:*
         version: link:../../packages/rate-limiter
@@ -515,9 +512,6 @@ importers:
         specifier: 'catalog:'
         version: 1.5.0(typescript@7.0.2)
     devDependencies:
-      '@acme/health':
-        specifier: workspace:*
-        version: link:../health
       '@acme/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
@@ -561,40 +555,6 @@ importers:
         specifier: 'catalog:'
         version: 4.151.0(@cloudflare/workers-types@5.20261014.1)(@types/node@24.19.2)
 
-  packages/health:
-    dependencies:
-      '@acme/app':
-        specifier: workspace:*
-        version: link:../app
-    devDependencies:
-      '@acme/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
-      '@cloudflare/vitest-plugin':
-        specifier: 'catalog:'
-        version: 1.4.2(@cloudflare/workers-types@5.20261014.1)(@types/node@24.19.2)(vitest@4.1.11)
-      '@cloudflare/workers-types':
-        specifier: 'catalog:'
-        version: 5.20261014.1
-      '@types/node':
-        specifier: 'catalog:'
-        version: 24.19.2
-      '@vitest/coverage-istanbul':
-        specifier: 'catalog:'
-        version: 4.1.11(supports-color@10.2.2)(vitest@4.1.11)
-      hono:
-        specifier: 'catalog:'
-        version: 4.13.13
-      typescript:
-        specifier: 'catalog:'
-        version: 7.0.2
-      vite:
-        specifier: 'catalog:'
-        version: 8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(terser@5.49.0)(tsx@4.23.15)
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(@vitest/coverage-istanbul@4.1.11)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(terser@5.49.0)(tsx@4.23.15))
-
   packages/rate-limiter:
     dependencies:
       '@acme/app':
@@ -607,9 +567,6 @@ importers:
         specifier: 'catalog:'
         version: 0.5.4(hono@4.13.13)
     devDependencies:
-      '@acme/health':
-        specifier: workspace:*
-        version: link:../health
       '@acme/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
@@ -696,9 +653,6 @@ importers:
         specifier: 'catalog:'
         version: 11.7.0
     devDependencies:
-      '@acme/health':
-        specifier: workspace:*
-        version: link:../health
       '@acme/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig

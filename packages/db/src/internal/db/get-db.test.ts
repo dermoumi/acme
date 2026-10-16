@@ -1,5 +1,5 @@
 import type { Kit } from "@acme/app";
-import { stubHealthKit } from "@acme/health/testing";
+import { stubHealthKit } from "@acme/app/testing";
 import { Kysely } from "kysely";
 import { describe, expect, it } from "vitest";
 import { emptyDbEnv, unboundDbEnv } from "../../testing";

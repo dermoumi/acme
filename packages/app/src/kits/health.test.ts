@@ -1,8 +1,8 @@
-import { composeApp, createKitRegistry, orderKits } from "@acme/app/testing";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import appConfig from "./fixtures/acme.config";
-import { healthKit } from "./kit";
+import { defineConfig, type Kit, orderKits } from "../internal/config";
+import { composeApp } from "../server/serve";
+import { healthKit } from "./health";
 
 const IDENTITY = {
   APP_NAME: "shop",
@@ -10,9 +10,27 @@ const IDENTITY = {
   APP_REVISION: "abc1234",
 };
 
-// The fixture config declares this kit and one contributor behind it.
+// Ahead of the health kit it requires: the sort is what puts these in order.
+const contributor: Kit = {
+  name: "@fixture/contributor",
+  requires: ["@acme/health"],
+  init: ({ require }) => {
+    const addHealthStatus = require("addHealthStatus");
+    addHealthStatus("verdict", () => "up");
+    addHealthStatus("detail", () => "why", { optional: true });
+    addHealthStatus("thrower", () => {
+      throw new Error("this contributor is broken");
+    });
+
+    return {};
+  },
+};
+
+const appConfig = defineConfig({ kits: [contributor, healthKit()] });
+
 const ask = async (path: string, env: object = IDENTITY) => {
-  const response = await composeApp(new Hono()).request(path, {}, env);
+  const app = composeApp(new Hono(), appConfig);
+  const response = await app.request(path, {}, env);
 
   return response.json();
 };
@@ -49,17 +67,6 @@ describe("healthKit", () => {
     await expect(ask("/health", { APP_NAME: "shop" })).resolves.toMatchObject({
       release: "shop@dev+dev",
     });
-  });
-
-  it("answers where the app said, for an app that serves it elsewhere", async () => {
-    // By hand, on its own context: a second app is what no process has.
-    const app = new Hono();
-    const context = createKitRegistry("@acme/health");
-    healthKit({ path: "/-/live" }).init?.(context).routes?.(app);
-
-    const response = await app.request("/-/live", {}, IDENTITY);
-
-    await expect(response.json()).resolves.toMatchObject({ status: "ok" });
   });
 });
 

@@ -1,6 +1,6 @@
-import type { KitRegistry } from "@acme/app";
-import { createKitRegistry } from "@acme/app/testing";
-import type { HealthStatus } from "../kit";
+import type { KitRegistry } from "../internal/config";
+import { createKitRegistry } from "../internal/config/registry";
+import type { HealthStatus } from "../kits/health";
 
 /**
  * The health kit stood in for, and what the kit under test offered it.

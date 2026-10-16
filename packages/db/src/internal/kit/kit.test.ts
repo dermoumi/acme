@@ -1,6 +1,5 @@
-import type { Kit } from "@acme/app";
-import type { HealthStatus } from "@acme/health";
-import { stubHealthKit } from "@acme/health/testing";
+import type { HealthStatus, Kit } from "@acme/app";
+import { stubHealthKit } from "@acme/app/testing";
 import type { Context } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { emptyDbEnv } from "../../testing";

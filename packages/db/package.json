@@ -32,7 +32,6 @@
     "valibot": "catalog:"
   },
   "devDependencies": {
-    "@acme/health": "workspace:*",
     "@acme/tsconfig": "workspace:*",
     "@cloudflare/vitest-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",

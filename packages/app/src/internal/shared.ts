@@ -1,7 +1,10 @@
+import type { AddHealthStatus } from "../kits/health";
+
 /**
  * What kits hand each other, keyed by name.
  *
- * Empty here: a kit that shares something extends it by declaration merging.
+ * Holds what the built-in kits share; another kit that shares something
+ * extends it by declaration merging.
  *
  * ```ts
  * declare module "@acme/app" {
@@ -11,5 +14,6 @@
  * }
  * ```
  */
-// oxlint-disable-next-line no-empty-object-type
-export interface KitShared {}
+export interface KitShared {
+  addHealthStatus: AddHealthStatus;
+}

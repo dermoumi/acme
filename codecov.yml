@@ -27,10 +27,6 @@ component_management:
       name: "@acme/db"
       paths:
         - packages/db/**
-    - component_id: health
-      name: "@acme/health"
-      paths:
-        - packages/health/**
     - component_id: rate-limiter
       name: "@acme/rate-limiter"
       paths:

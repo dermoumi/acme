@@ -1,6 +1,5 @@
-import { createKitRegistry } from "@acme/app/testing";
-import type { HealthStatusOptions } from "@acme/health";
-import { stubHealthKit } from "@acme/health/testing";
+import type { HealthStatusOptions } from "@acme/app";
+import { createKitRegistry, stubHealthKit } from "@acme/app/testing";
 import { createBindings } from "#testing/runtime";
 import { type Context, Hono } from "hono";
 import { describe, expect, it } from "vitest";

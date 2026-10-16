@@ -1,7 +1,6 @@
-import { defineConfig, type Kit } from "@acme/app";
+import { defineConfig, healthKit, type Kit } from "@acme/app";
 import { assetsKit } from "@acme/assets";
 import { databaseKit } from "@acme/db";
-import { healthKit } from "@acme/health";
 import { rateLimiterKit } from "@acme/rate-limiter";
 import { routerKit } from "@acme/router";
 import { sentryKit } from "@acme/sentry";

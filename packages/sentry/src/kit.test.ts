@@ -1,5 +1,5 @@
-import type { HealthStatus } from "@acme/health";
-import { stubHealthKit } from "@acme/health/testing";
+import type { HealthStatus } from "@acme/app";
+import { stubHealthKit } from "@acme/app/testing";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";

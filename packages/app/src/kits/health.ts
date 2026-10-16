@@ -1,13 +1,8 @@
-import { buildReleaseName, type Kit } from "@acme/app";
 import type { Context } from "hono";
+import type { Kit } from "../internal/config";
+import { buildReleaseName } from "../internal/release";
 
-declare module "@acme/app" {
-  interface KitShared {
-    addHealthStatus: AddHealthStatus;
-  }
-}
-
-const DEFAULT_PATH = "/health";
+const PATH = "/health";
 // Presence is the flag: `?full` carries no value, and any value means this.
 const FULL = "full";
 
@@ -41,16 +36,6 @@ export type AddHealthStatus = (
   status: HealthStatus,
   options?: HealthStatusOptions,
 ) => void;
-
-/**
- * What the health kit takes.
- */
-export interface HealthConfig {
-  /**
-   * Where the endpoint answers. Defaults to `/health`.
-   */
-  path?: string;
-}
 
 interface Contribution {
   key: string;
@@ -121,16 +106,15 @@ async function buildHealthBody(
  * Declare it before its contributors, and before any kit mounting a catch-all,
  * which would answer instead.
  */
-export function healthKit(config: HealthConfig = {}): Kit {
+export function healthKit(): Kit {
   return {
     name: "@acme/health",
-    config,
     init: ({ register }) => {
       register("addHealthStatus", addHealthStatus);
 
       return {
         routes: (app) => {
-          app.get(config.path ?? DEFAULT_PATH, async (ctx) => {
+          app.get(PATH, async (ctx) => {
             return ctx.json(
               await buildHealthBody(ctx, ctx.req.query(FULL) !== undefined),
             );
