@@ -40,9 +40,9 @@ const recordingCapture = (caught: unknown[]): CaptureError => {
   };
 };
 
-const projectPage: RenderErrorPage = (_ctx, reference) => {
+const projectPage: RenderErrorPage = (_ctx, { status, reference }) => {
   return Promise.resolve(
-    new Response(`project page ${reference}`, { status: 500 }),
+    new Response(`project page ${status} ${reference}`, { status }),
   );
 };
 
@@ -104,12 +104,12 @@ describe("createErrorHandler", () => {
     await expect(res.text()).resolves.toContain("&lt;script&gt;x");
   });
 
-  it("answers a browser with the project's page, given the reference", async () => {
+  it("answers a browser with the project's page, given status and reference", async () => {
     const app = buildApp(recordingCapture([]), projectPage);
     const res = await fetchFrom(app, "/boom", BROWSER_ACCEPT);
 
     expect(res.status).toBe(500);
-    await expect(res.text()).resolves.toBe(`project page ${EVENT_ID}`);
+    await expect(res.text()).resolves.toBe(`project page 500 ${EVENT_ID}`);
   });
 
   it("answers JSON, not the project's page, to a client asking for JSON", async () => {
@@ -174,7 +174,7 @@ describe("composeApp", () => {
     const composed = composeApp(buildThrowingApp(), config);
     const res = await fetchFrom(composed, "/boom", BROWSER_ACCEPT);
 
-    await expect(res.text()).resolves.toBe(`project page ${EVENT_ID}`);
+    await expect(res.text()).resolves.toBe(`project page 500 ${EVENT_ID}`);
     expect(caught).toHaveLength(1);
   });
 });

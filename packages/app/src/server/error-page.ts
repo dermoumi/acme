@@ -14,13 +14,27 @@ export type CaptureError = (
 ) => Promise<string | undefined>;
 
 /**
- * Renders the project's own page for a server error.
+ * What an error page is rendered for.
+ */
+export interface ErrorPageDetails {
+  /**
+   * The status the page answers with.
+   */
+  status: number;
+  /**
+   * The reported event's id, when a kit reported one.
+   */
+  reference?: string;
+}
+
+/**
+ * Renders the project's own page for an error.
  *
  * A throw falls back to the plain page `@acme/app` renders itself.
  */
 export type RenderErrorPage = (
   ctx: Context,
-  reference: string | undefined,
+  details: ErrorPageDetails,
 ) => Promise<Response>;
 
 interface ErrorHandlerLookups {
@@ -65,7 +79,7 @@ async function renderHtml(
 ): Promise<Response> {
   if (renderProjectPage) {
     try {
-      return await renderProjectPage(ctx, reference);
+      return await renderProjectPage(ctx, { status: 500, reference });
     } catch (error) {
       console.error(error);
     }
