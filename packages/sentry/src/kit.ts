@@ -6,7 +6,7 @@ import {
   createErrorCapture,
   createErrorReporter,
   type ReportError,
-} from "./server/error-handler";
+} from "./server/capture";
 import { createTunnel } from "./server/tunnel";
 import { closeClient, wrapHandler } from "#sentry";
 
