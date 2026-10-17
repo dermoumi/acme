@@ -14,6 +14,6 @@ export default [
     route("craft", "routes/craft.tsx"),
     route("settings", "routes/settings.tsx"),
     route("debug", "routes/debug.tsx"),
-    route("*", "routes/unknown.ts"),
+    route("*", "routes/unknown.tsx"),
   ]),
 ] satisfies RouteConfig;
