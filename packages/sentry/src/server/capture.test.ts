@@ -71,8 +71,8 @@ describe("createErrorCapture", () => {
   it("puts the event id in the 500 body, so a user can quote it", async () => {
     const { invoke } = bench.build({ SENTRY_DSN: DSN }, {});
     const res = await invoke(loginRequest());
-    const body = (await res.json()) as { sentryEventId: string | null };
-    expect(body.sentryEventId).toMatch(/^[a-f0-9]{32}$/u);
+    const body = (await res.json()) as { reference: string | null };
+    expect(body.reference).toMatch(/^[a-f0-9]{32}$/u);
   });
 
   it("reports a null event id, rather than none, with no DSN", async () => {
@@ -80,7 +80,7 @@ describe("createErrorCapture", () => {
     const res = await invoke(loginRequest());
     expect(await res.json()).toEqual({
       error: "Internal Server Error",
-      sentryEventId: null,
+      reference: null,
     });
   });
 

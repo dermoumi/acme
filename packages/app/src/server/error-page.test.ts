@@ -58,7 +58,7 @@ describe("createErrorHandler", () => {
     expect(res.status).toBe(500);
     await expect(res.json()).resolves.toEqual({
       error: "Internal Server Error",
-      sentryEventId: EVENT_ID,
+      reference: EVENT_ID,
     });
   });
 
@@ -81,8 +81,16 @@ describe("createErrorHandler", () => {
 
     await expect(res.json()).resolves.toEqual({
       error: "Internal Server Error",
-      sentryEventId: null,
+      reference: null,
     });
+  });
+
+  it("escapes a reference before putting it in the page", async () => {
+    const capture: CaptureError = () => Promise.resolve("<script>x</script>");
+    const app = buildApp(capture);
+    const res = await fetchFrom(app, "/boom", BROWSER_ACCEPT);
+
+    await expect(res.text()).resolves.toContain("&lt;script&gt;x");
   });
 
   it("hands the thrown error to the capture", async () => {

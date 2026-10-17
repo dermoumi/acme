@@ -207,7 +207,7 @@ describe("composeApp", () => {
     const res = await composed.fetch(request, {});
 
     expect(res.status).toBe(500);
-    await expect(res.json()).resolves.toMatchObject({ sentryEventId: null });
+    await expect(res.json()).resolves.toMatchObject({ reference: null });
   });
 });
 
