@@ -4,7 +4,7 @@
 # live outside this directory.
 #   docker build -f apps/posy/Dockerfile .
 
-FROM node:24.21.0-trixie AS build
+FROM node:24.22.0-trixie AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /app
 RUN corepack enable
@@ -51,7 +51,7 @@ RUN set -eu; \
       test -f "$dir/prebuilds/$keep.node"; \
     done
 
-FROM node:24.21.0-trixie-slim
+FROM node:24.22.0-trixie-slim
 WORKDIR /app
 
 # An unset APP_ENV reads as development, which serves /debug/*.
