@@ -1,7 +1,12 @@
-import type { Context, ErrorHandler } from "hono";
+import type { Context, ErrorHandler, NotFoundHandler } from "hono";
 import { html } from "hono/html";
 import { HTTPException } from "hono/http-exception";
 import type { HtmlEscapedString } from "hono/utils/html";
+import type {
+  ClientErrorStatusCode,
+  ContentfulStatusCode,
+  ServerErrorStatusCode,
+} from "hono/utils/http-status";
 
 /**
  * Reports an error `onError` caught, answering the event id or `undefined`.
@@ -14,13 +19,18 @@ export type CaptureError = (
 ) => Promise<string | undefined>;
 
 /**
+ * The statuses an error page answers with.
+ */
+export type ErrorPageStatus = ClientErrorStatusCode | ServerErrorStatusCode;
+
+/**
  * What an error page is rendered for.
  */
 export interface ErrorPageDetails {
   /**
    * The status the page answers with.
    */
-  status: number;
+  status: ErrorPageStatus;
   /**
    * The reported event's id, when a kit reported one.
    */
@@ -47,10 +57,43 @@ function wantsHtml(ctx: Context): boolean {
   return ctx.req.header("accept")?.includes("text/html") ?? false;
 }
 
+interface PageText {
+  title: string;
+  message: string;
+}
+
+const PAGE_TEXT: Partial<Record<ErrorPageStatus, PageText>> = {
+  401: { title: "Sign in required", message: "Sign in to view this page." },
+  403: { title: "No access", message: "You do not have access to this page." },
+  404: {
+    title: "Page not found",
+    message: "There is no page at this address.",
+  },
+  429: {
+    title: "Too many requests",
+    message: "Wait a moment, then try again.",
+  },
+};
+const CLIENT_ERROR_TEXT: PageText = {
+  title: "Request not completed",
+  message: "The server could not complete this request.",
+};
+const SERVER_ERROR_TEXT: PageText = {
+  title: "Something went wrong",
+  message: "The server could not answer this request. Try again in a moment.",
+};
+
+function getPageText(status: ErrorPageStatus): PageText {
+  const fallback = status < 500 ? CLIENT_ERROR_TEXT : SERVER_ERROR_TEXT;
+  return PAGE_TEXT[status] ?? fallback;
+}
+
 // html escapes what it interpolates: a kit's CaptureError can answer anything.
-function renderPage(
-  reference: string | undefined,
-): HtmlEscapedString | Promise<HtmlEscapedString> {
+function renderPage({
+  status,
+  reference,
+}: ErrorPageDetails): HtmlEscapedString | Promise<HtmlEscapedString> {
+  const { title, message } = getPageText(status);
   const referenceLine = reference
     ? html`<p>Reference: <code>${reference}</code></p>`
     : "";
@@ -60,13 +103,13 @@ function renderPage(
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Something went wrong</title>
+        <title>${title}</title>
       </head>
       <body
         style="font-family: system-ui, sans-serif; max-width: 40rem; margin: 4rem auto; padding: 0 1rem"
       >
-        <h1>Something went wrong</h1>
-        <p>The server could not answer this request. Try again in a moment.</p>
+        <h1>${title}</h1>
+        <p>${message}</p>
         ${referenceLine}
       </body>
     </html> `;
@@ -74,23 +117,46 @@ function renderPage(
 
 async function renderHtml(
   ctx: Context,
-  reference: string | undefined,
+  details: ErrorPageDetails,
   renderProjectPage: RenderErrorPage | undefined,
 ): Promise<Response> {
   if (renderProjectPage) {
     try {
-      return await renderProjectPage(ctx, { status: 500, reference });
+      return await renderProjectPage(ctx, details);
     } catch (error) {
       console.error(error);
     }
   }
 
-  const page = renderPage(reference);
-  return ctx.html(page, 500);
+  const page = renderPage(details);
+  return ctx.html(page, details.status);
+}
+
+function isErrorPageStatus(
+  status: ContentfulStatusCode,
+): status is ErrorPageStatus {
+  return status >= 400;
+}
+
+// The page replaces the body only: a 401's WWW-Authenticate or a 429's
+// Retry-After must still reach the client.
+function copyHeaders(page: Response, source: Response | undefined): Response {
+  if (source === undefined) return page;
+
+  const headers = new Headers(page.headers);
+  for (const [name, value] of source.headers) {
+    if (name === "content-type" || name === "content-length") continue;
+    if (name === "set-cookie") headers.append(name, value);
+    else headers.set(name, value);
+  }
+
+  return new Response(page.body, { status: page.status, headers });
 }
 
 /**
  * Answers an error a route threw: a page for a browser, JSON otherwise.
+ *
+ * An `HTTPException` reaches anything but a browser as thrown.
  */
 export function createErrorHandler({
   findCapture,
@@ -105,13 +171,37 @@ export function createErrorHandler({
       reference = await findCapture?.()?.(ctx, error);
     }
 
-    if (error instanceof HTTPException) return error.getResponse();
-    if (wantsHtml(ctx)) return renderHtml(ctx, reference, findPage?.());
+    if (error instanceof HTTPException) {
+      const { status } = error;
+      if (!isErrorPageStatus(status) || !wantsHtml(ctx)) {
+        return error.getResponse();
+      }
+
+      const details = { status, reference };
+      const page = await renderHtml(ctx, details, findPage?.());
+      return copyHeaders(page, error.res);
+    }
+    if (wantsHtml(ctx)) {
+      return renderHtml(ctx, { status: 500, reference }, findPage?.());
+    }
     // The id lets someone quote the exact event when reporting a failure.
     const body = {
       error: "Internal Server Error",
       reference: reference ?? null,
     };
     return ctx.json(body, 500);
+  };
+}
+
+/**
+ * Answers a path no route claimed: a page for a browser, Hono's text otherwise.
+ */
+export function createNotFoundHandler({
+  findPage,
+}: ErrorHandlerLookups = {}): NotFoundHandler {
+  return async (ctx) => {
+    if (!wantsHtml(ctx)) return ctx.text("404 Not Found", 404);
+
+    return renderHtml(ctx, { status: 404 }, findPage?.());
   };
 }

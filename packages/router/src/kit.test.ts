@@ -140,6 +140,21 @@ describe("routerKit", () => {
     );
   });
 
+  it("renders the boundary with the status it is asked for", async () => {
+    const { context } = initRouter();
+    const app = new Hono();
+    app.get("/page", async (ctx) => {
+      const renderErrorPage = context.require("renderErrorPage");
+      return renderErrorPage(ctx, { status: 404 });
+    });
+    const response = await app.request("/page");
+
+    expect(response.status).toBe(404);
+    await expect(response.text()).resolves.toBe(
+      "rendered /page for nobody failing 404 {}",
+    );
+  });
+
   it("leaves the error page's own failure unreported", async () => {
     const reported: unknown[] = [];
     const app = buildErrorPageApp((_ctx, error) => {

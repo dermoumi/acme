@@ -15,6 +15,7 @@ export type { Handler } from "./server/contract";
 export type {
   CaptureError,
   ErrorPageDetails,
+  ErrorPageStatus,
   RenderErrorPage,
 } from "./server/error-page";
 export type { KitShared } from "./internal/shared";

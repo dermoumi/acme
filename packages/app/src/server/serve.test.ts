@@ -197,6 +197,19 @@ describe("composeApp", () => {
     await expect(res.text()).resolves.toContain("Something went wrong");
   });
 
+  it("answers a browser at an unclaimed path with a page", async () => {
+    const request = new Request("http://app.test/nowhere", {
+      headers: { accept: "text/html" },
+    });
+    const config = defineConfig({});
+    const app = new Hono();
+    const composedApp = composeApp(app, config);
+    const res = await composedApp.fetch(request, {});
+
+    expect(res.status).toBe(404);
+    await expect(res.text()).resolves.toContain("Page not found");
+  });
+
   it("answers a sub-app's failure the same way", async () => {
     const mounted = new Hono().get("/boom", () => {
       throw new Error("sub-app exploded");

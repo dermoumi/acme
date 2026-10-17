@@ -11,7 +11,7 @@ import {
 import { getKitRegistry } from "../internal/config/registry";
 import type { KitShared } from "../internal/shared";
 import type { Handler } from "./contract";
-import { createErrorHandler } from "./error-page";
+import { createErrorHandler, createNotFoundHandler } from "./error-page";
 import { setupKitVars } from "./kit-vars";
 
 export function setupKitRoutes<AppEnv extends Env>(
@@ -87,6 +87,8 @@ export function composeApp<AppEnv extends Env>(
   };
   const handleError = createErrorHandler(lookups);
   outer.onError(handleError);
+  const handleNotFound = createNotFoundHandler(lookups);
+  outer.notFound(handleNotFound);
   setupKitVars(outer, config);
   // Ahead of the app's routes: a cap mounted behind one would never run.
   setupKitMiddleware(outer, config);
