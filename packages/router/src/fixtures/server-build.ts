@@ -8,7 +8,7 @@ declare module "../kit" {
 }
 
 // One root route, rendered as its path, the viewer and any root error;
-// /broken and /missing make its loader fail.
+// /broken and /missing make its loader fail, /bad-boundary its error render.
 const root = {
   id: "root",
   path: "*",
@@ -56,6 +56,9 @@ export const entry: ServerBuild["entry"] = {
       const ctx = loadContext.get(honoContext);
       const viewer = ctx.var.viewer ?? "nobody";
       const error: unknown = routerContext.staticHandlerContext.errors?.root;
+      if (pathname === "/bad-boundary" && error) {
+        throw new Error("boundary exploded");
+      }
       const errorSuffix = isRouteErrorResponse(error)
         ? ` failing ${error.status} ${JSON.stringify(error.data)}`
         : "";

@@ -165,6 +165,21 @@ describe("routerKit", () => {
     expect(reported).toEqual([]);
   });
 
+  it("reports a boundary that fails while rendering the error page", async () => {
+    const reported: unknown[] = [];
+    const { context } = initRouter((_ctx, error) => {
+      reported.push(error);
+    });
+    const app = new Hono();
+    app.get("/bad-boundary", async (ctx) => {
+      const renderErrorPage = context.require("renderErrorPage");
+      return renderErrorPage(ctx, { status: 500 });
+    });
+    await app.request("/bad-boundary");
+
+    expect(reported).toContainEqual(new Error("boundary exploded"));
+  });
+
   it("fails to compose without the assets kit it renders behind", () => {
     const context = createKitRegistry("@acme/router");
 

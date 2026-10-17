@@ -65,8 +65,9 @@ function createReportingBuild(
   const appHandleError = build.entry.module.handleError;
   const handleError: HandleErrorFunction = (error, args) => {
     if (args.request.signal.aborted) return;
-    // Hono's onError reported this one already.
-    if (args.context.get(errorPageContext) !== null) return;
+    // Hono's onError reported what the page is for; a broken boundary still counts.
+    const isErrorPage = args.context.get(errorPageContext) !== null;
+    if (isErrorPage && isRouteErrorResponse(error)) return;
 
     if (appHandleError) {
       appHandleError(error, args);
