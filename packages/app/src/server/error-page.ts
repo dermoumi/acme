@@ -7,6 +7,7 @@ import type {
   ContentfulStatusCode,
   ServerErrorStatusCode,
 } from "hono/utils/http-status";
+import { getErrorText } from "../internal/error-text";
 
 /**
  * Reports an error `onError` caught, answering the event id or `undefined`.
@@ -57,43 +58,12 @@ function wantsHtml(ctx: Context): boolean {
   return ctx.req.header("accept")?.includes("text/html") ?? false;
 }
 
-interface PageText {
-  title: string;
-  message: string;
-}
-
-const PAGE_TEXT: Partial<Record<ErrorPageStatus, PageText>> = {
-  401: { title: "Sign in required", message: "Sign in to view this page." },
-  403: { title: "No access", message: "You do not have access to this page." },
-  404: {
-    title: "Page not found",
-    message: "There is no page at this address.",
-  },
-  429: {
-    title: "Too many requests",
-    message: "Wait a moment, then try again.",
-  },
-};
-const CLIENT_ERROR_TEXT: PageText = {
-  title: "Request not completed",
-  message: "The server could not complete this request.",
-};
-const SERVER_ERROR_TEXT: PageText = {
-  title: "Something went wrong",
-  message: "The server could not answer this request. Try again in a moment.",
-};
-
-function getPageText(status: ErrorPageStatus): PageText {
-  const fallback = status < 500 ? CLIENT_ERROR_TEXT : SERVER_ERROR_TEXT;
-  return PAGE_TEXT[status] ?? fallback;
-}
-
 // html escapes what it interpolates: a kit's CaptureError can answer anything.
 function renderPage({
   status,
   reference,
 }: ErrorPageDetails): HtmlEscapedString | Promise<HtmlEscapedString> {
-  const { title, message } = getPageText(status);
+  const { title, message } = getErrorText(status);
   const referenceLine = reference
     ? html`<p>Reference: <code>${reference}</code></p>`
     : "";

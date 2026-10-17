@@ -1,3 +1,4 @@
+import { getErrorText } from "@acme/app";
 import { ErrorBoundary as SentryBoundary } from "@acme/sentry/react";
 import type { ReactNode } from "react";
 import {
@@ -12,8 +13,6 @@ import type { Route } from "./+types/root";
 import { UpdatePrompt } from "./components";
 import { OFFLINE, RetryScreen } from "./routes/offline";
 import "./index.css";
-
-const SERVER_ERROR = "Something went wrong. Try again in a moment.";
 
 export function Layout({ children }: { children: ReactNode }) {
   // The service worker serves this shell at any URL, which its scripts would route.
@@ -64,9 +63,16 @@ function getReference(error: unknown): string | undefined {
   return typeof data.reference === "string" ? data.reference : undefined;
 }
 
-// A navigation's data fetch fails with a TypeError when the network is down.
+function getMessage(error: unknown): string {
+  // A navigation's data fetch fails with a TypeError when the network is down.
+  if (error instanceof TypeError) return OFFLINE;
+
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  return getErrorText(status).message;
+}
+
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const message = error instanceof TypeError ? OFFLINE : SERVER_ERROR;
+  const message = getMessage(error);
   const reference = getReference(error);
 
   return <RetryScreen message={message} reference={reference} />;

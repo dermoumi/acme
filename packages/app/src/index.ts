@@ -10,6 +10,7 @@ export {
   type KitState,
   type KitVars,
 } from "./internal/config";
+export { type ErrorText, getErrorText } from "./internal/error-text";
 export { buildReleaseName } from "./internal/release";
 export type { Handler } from "./server/contract";
 export type {
