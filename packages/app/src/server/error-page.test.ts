@@ -28,7 +28,8 @@ const buildThrowingApp = () => {
 const buildApp = (capture?: CaptureError, page?: RenderErrorPage) => {
   const app = buildThrowingApp();
   const lookups = { findCapture: () => capture, findPage: () => page };
-  app.onError(createErrorHandler(lookups));
+  const handleError = createErrorHandler(lookups);
+  app.onError(handleError);
 
   return app;
 };
@@ -41,15 +42,16 @@ const recordingCapture = (caught: unknown[]): CaptureError => {
 };
 
 const projectPage: RenderErrorPage = (_ctx, { status, reference }) => {
-  return Promise.resolve(
-    new Response(`project page ${status} ${reference}`, { status }),
-  );
+  const body = `project page ${status} ${reference}`;
+  const response = new Response(body, { status });
+  return Promise.resolve(response);
 };
 
 const fetchFrom = async (app: Hono, path: string, accept?: string) => {
   const headers = accept === undefined ? undefined : { accept };
 
-  return app.fetch(new Request(`http://app.test${path}`, { headers }), {});
+  const request = new Request(`http://app.test${path}`, { headers });
+  return app.fetch(request, {});
 };
 
 describe("createErrorHandler", () => {
@@ -97,7 +99,9 @@ describe("createErrorHandler", () => {
   });
 
   it("escapes a reference before putting it in the page", async () => {
-    const capture: CaptureError = () => Promise.resolve("<script>x</script>");
+    const capture: CaptureError = () => {
+      return Promise.resolve("<script>x</script>");
+    };
     const app = buildApp(capture);
     const res = await fetchFrom(app, "/boom", BROWSER_ACCEPT);
 
@@ -171,8 +175,9 @@ describe("composeApp", () => {
       },
     };
     const config = defineConfig({ kits: [capturingKit] });
-    const composed = composeApp(buildThrowingApp(), config);
-    const res = await fetchFrom(composed, "/boom", BROWSER_ACCEPT);
+    const app = buildThrowingApp();
+    const composedApp = composeApp(app, config);
+    const res = await fetchFrom(composedApp, "/boom", BROWSER_ACCEPT);
 
     await expect(res.text()).resolves.toBe(`project page 500 ${EVENT_ID}`);
     expect(caught).toHaveLength(1);

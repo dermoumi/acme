@@ -85,7 +85,8 @@ export function composeApp<AppEnv extends Env>(
     findCapture: () => findShared("captureError"),
     findPage: () => findShared("renderErrorPage"),
   };
-  outer.onError(createErrorHandler(lookups));
+  const handleError = createErrorHandler(lookups);
+  outer.onError(handleError);
   setupKitVars(outer, config);
   // Ahead of the app's routes: a cap mounted behind one would never run.
   setupKitMiddleware(outer, config);

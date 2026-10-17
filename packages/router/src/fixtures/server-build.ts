@@ -7,9 +7,8 @@ declare module "../kit" {
   }
 }
 
-// Stands in for an app's router build: one root route, rendered as its path
-// the viewer the Hono context carries, and any root error. Two paths make its
-// loader fail.
+// One root route, rendered as its path, the viewer and any root error;
+// /broken and /missing make its loader fail.
 const root = {
   id: "root",
   path: "*",
@@ -57,10 +56,10 @@ export const entry: ServerBuild["entry"] = {
       const ctx = loadContext.get(honoContext);
       const viewer = ctx.var.viewer ?? "nobody";
       const error: unknown = routerContext.staticHandlerContext.errors?.root;
-      const failing = isRouteErrorResponse(error)
+      const errorSuffix = isRouteErrorResponse(error)
         ? ` failing ${error.status} ${JSON.stringify(error.data)}`
         : "";
-      const body = `rendered ${pathname} for ${viewer}${failing}`;
+      const body = `rendered ${pathname} for ${viewer}${errorSuffix}`;
       headers.set("Content-Type", "text/html");
 
       return new Response(body, { status, headers });

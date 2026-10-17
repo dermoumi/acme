@@ -142,8 +142,8 @@ export function routerKit(): Kit {
       const handleRequest = createRequestHandler(
         async () => {
           const build = await import("virtual:react-router/server-build");
-          const reporting = createReportingBuild(build, findReportError);
-          return createErrorPageBuild(reporting);
+          const reportingBuild = createReportingBuild(build, findReportError);
+          return createErrorPageBuild(reportingBuild);
         },
         import.meta.env.MODE,
       );

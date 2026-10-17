@@ -85,7 +85,8 @@ async function renderHtml(
     }
   }
 
-  return ctx.html(renderPage(reference), 500);
+  const page = renderPage(reference);
+  return ctx.html(page, 500);
 }
 
 /**

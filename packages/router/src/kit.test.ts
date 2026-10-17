@@ -42,8 +42,11 @@ const buildErrorPageApp = (reportError?: KitShared["reportError"]) => {
   app.post("/broken", () => {
     throw new Error("form post exploded");
   });
-  const findPage = () => context.require("renderErrorPage");
-  app.onError(createErrorHandler({ findPage }));
+  const findPage = () => {
+    return context.require("renderErrorPage");
+  };
+  const handleError = createErrorHandler({ findPage });
+  app.onError(handleError);
   app.all("*", answer);
 
   return app;
@@ -114,7 +117,8 @@ describe("routerKit", () => {
 
   // The fixture's loader throws at /broken, so a loader run would fail instead.
   it("renders the root route's boundary as the error page, running no loader", async () => {
-    const response = await postFromBrowser(buildErrorPageApp(), "/broken");
+    const app = buildErrorPageApp();
+    const response = await postFromBrowser(app, "/broken");
 
     expect(response.status).toBe(500);
     await expect(response.text()).resolves.toBe(

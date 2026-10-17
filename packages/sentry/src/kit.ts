@@ -48,7 +48,8 @@ export function sentryKit(config: SentryConfig = {}): Kit {
       const addHealthStatus = require("addHealthStatus");
       addHealthStatus("sentry", sentryStatus, { optional: true });
       register("reportError", createErrorReporter(config));
-      register("captureError", createErrorCapture(config));
+      const captureError = createErrorCapture(config);
+      register("captureError", captureError);
 
       return {
         routes: (app) => {
