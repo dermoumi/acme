@@ -1,6 +1,7 @@
 import { SELF_PROVISIONED } from "#runtime";
 import { createBindings } from "#testing/runtime";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { describe, expect, it } from "vitest";
 import { createRateLimiter } from "./rate-limiter";
 import {
@@ -64,6 +65,21 @@ describe("mount", () => {
     expect(refused.status).toBe(429);
     expect(refused.headers.get("Retry-After")).toBe(String(TEST_PERIOD));
     expect(await refused.json()).toEqual({ error: "rate_limited" });
+  });
+
+  it("hands the refusal to the app's error handler", async () => {
+    const app = limitedApp();
+    app.onError((error, ctx) => {
+      const status = error instanceof HTTPException ? error.status : 500;
+      return ctx.text(`handled ${status}`, status);
+    });
+    const env = createBindings();
+    const headers = client();
+
+    await sequence(TEST_LIMIT, () => post(app, env, "/limited", headers));
+    const refused = await post(app, env, "/limited", headers);
+
+    await expect(refused.text()).resolves.toBe("handled 429");
   });
 
   it("leaves methods it was not mounted on uncapped", async () => {

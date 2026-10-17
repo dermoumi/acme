@@ -1,12 +1,18 @@
+import { getErrorText } from "@acme/app";
 import { ErrorBoundary as SentryBoundary } from "@acme/sentry/react";
 import type { ReactNode } from "react";
-import { Links, Meta, Outlet, Scripts, useMatches } from "react-router";
+import {
+  isRouteErrorResponse,
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  useMatches,
+} from "react-router";
 import type { Route } from "./+types/root";
 import { UpdatePrompt } from "./components";
 import { OFFLINE, RetryScreen } from "./routes/offline";
 import "./index.css";
-
-const SERVER_ERROR = "Something went wrong. Try again in a moment.";
 
 export function Layout({ children }: { children: ReactNode }) {
   // The service worker serves this shell at any URL, which its scripts would route.
@@ -45,9 +51,29 @@ export default function Root() {
   );
 }
 
-// A navigation's data fetch fails with a TypeError when the network is down.
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const message = error instanceof TypeError ? OFFLINE : SERVER_ERROR;
+// What @acme/router hands the boundary for an error Hono caught.
+function getReference(error: unknown): string | undefined {
+  if (!isRouteErrorResponse(error)) return undefined;
 
-  return <RetryScreen message={message} />;
+  const data: unknown = error.data;
+  if (typeof data !== "object" || data === null || !("reference" in data)) {
+    return undefined;
+  }
+
+  return typeof data.reference === "string" ? data.reference : undefined;
+}
+
+function getMessage(error: unknown): string {
+  // A navigation's data fetch fails with a TypeError when the network is down.
+  if (error instanceof TypeError) return OFFLINE;
+
+  const status = isRouteErrorResponse(error) ? error.status : 500;
+  return getErrorText(status).message;
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  const message = getMessage(error);
+  const reference = getReference(error);
+
+  return <RetryScreen message={message} reference={reference} />;
 }
