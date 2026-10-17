@@ -30,7 +30,8 @@ export function wireApp(config: SentryConfig = {}): Handler {
     return ctx.text("answered by the kit", 500);
   });
   state.routes?.(app);
-  app.onError(createErrorHandler(() => context.require("captureError")));
+  const findCapture = () => context.require("captureError");
+  app.onError(createErrorHandler({ findCapture }));
 
   return state.handler?.(app) ?? app;
 }

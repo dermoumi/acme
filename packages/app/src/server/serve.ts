@@ -23,10 +23,12 @@ export function setupKitRoutes<AppEnv extends Env>(
   }
 }
 
-// An app declaring no kit that captures still answers, without an event id.
-function findCaptureError(): KitShared["captureError"] | undefined {
+// A key no declared kit registers is fine: the error handler goes without it.
+function findShared<Key extends keyof KitShared>(
+  key: Key,
+): KitShared[Key] | undefined {
   try {
-    return getKitRegistry("@acme/app").require("captureError");
+    return getKitRegistry("@acme/app").require(key);
   } catch {
     return undefined;
   }
@@ -79,7 +81,11 @@ export function composeApp<AppEnv extends Env>(
   checkKitRequires(config.kits ?? []);
 
   const outer = new Hono<AppEnv>();
-  outer.onError(createErrorHandler(findCaptureError));
+  const lookups = {
+    findCapture: () => findShared("captureError"),
+    findPage: () => findShared("renderErrorPage"),
+  };
+  outer.onError(createErrorHandler(lookups));
   setupKitVars(outer, config);
   // Ahead of the app's routes: a cap mounted behind one would never run.
   setupKitMiddleware(outer, config);

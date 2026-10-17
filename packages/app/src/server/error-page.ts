@@ -13,6 +13,21 @@ export type CaptureError = (
   error: unknown,
 ) => Promise<string | undefined>;
 
+/**
+ * Renders the project's own page for a server error.
+ *
+ * A throw falls back to the plain page `@acme/app` renders itself.
+ */
+export type RenderErrorPage = (
+  ctx: Context,
+  reference: string | undefined,
+) => Promise<Response>;
+
+interface ErrorHandlerLookups {
+  findCapture?: () => CaptureError | undefined;
+  findPage?: () => RenderErrorPage | undefined;
+}
+
 // A placeholder until content negotiation exists; JSON stays the default.
 function wantsHtml(ctx: Context): boolean {
   return ctx.req.header("accept")?.includes("text/html") ?? false;
@@ -43,25 +58,40 @@ function renderPage(
     </html> `;
 }
 
+async function renderHtml(
+  ctx: Context,
+  reference: string | undefined,
+  renderProjectPage: RenderErrorPage | undefined,
+): Promise<Response> {
+  if (renderProjectPage) {
+    try {
+      return await renderProjectPage(ctx, reference);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  return ctx.html(renderPage(reference), 500);
+}
+
 /**
  * Answers an error a route threw: a page for a browser, JSON otherwise.
- *
- * @param findCapture Looked up per error, so an app without one still answers.
  */
-export function createErrorHandler(
-  findCapture: () => CaptureError | undefined,
-): ErrorHandler {
+export function createErrorHandler({
+  findCapture,
+  findPage,
+}: ErrorHandlerLookups = {}): ErrorHandler {
   return async (error, ctx) => {
     const isExpected = error instanceof HTTPException && error.status < 500;
 
     let reference: string | undefined;
     if (!isExpected) {
       console.error(error);
-      reference = await findCapture()?.(ctx, error);
+      reference = await findCapture?.()?.(ctx, error);
     }
 
     if (error instanceof HTTPException) return error.getResponse();
-    if (wantsHtml(ctx)) return ctx.html(renderPage(reference), 500);
+    if (wantsHtml(ctx)) return renderHtml(ctx, reference, findPage?.());
     // The id lets someone quote the exact event when reporting a failure.
     const body = {
       error: "Internal Server Error",
