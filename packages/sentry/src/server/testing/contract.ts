@@ -1,3 +1,4 @@
+import type { Handler } from "@acme/app";
 import type { SentryConfig } from "../config";
 
 export const DSN = "https://dummy@dummy.ingest.sentry.io/1";
@@ -17,9 +18,11 @@ export interface Capture {
   sent: unknown[];
 }
 
+export type Wire = (config: SentryConfig) => Handler;
+
 // Both runtimes bind this, so the test never learns which one it runs on.
 export interface Bench {
-  build: (env: BenchEnv, config: SentryConfig) => Capture;
+  build: (env: BenchEnv, config: SentryConfig, wire?: Wire) => Capture;
   settle: () => Promise<void>;
 }
 
