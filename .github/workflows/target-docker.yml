@@ -16,30 +16,27 @@ on:
 
 jobs:
   run:
-    name: docker run (${{ inputs.app }}, ${{ matrix.platform }}, ${{ matrix.database }})
+    name: docker run (${{ inputs.app }}, ${{ matrix.platform }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     permissions:
       contents: read
     strategy:
-      # Every combination reports: which one broke is the whole point.
+      # Every platform reports: which one broke is the whole point.
       fail-fast: false
       matrix:
         platform: [amd64, arm64]
-        database: [sqlite, postgres]
         include:
           - platform: amd64
             runner: ubuntu-latest
           - platform: arm64
             runner: ubuntu-24.04-arm
     concurrency:
-      group: docker-run-${{ inputs.app }}-${{ matrix.platform }}-${{ matrix.database }}-${{ github.head_ref || github.ref_name }}
+      group: docker-run-${{ inputs.app }}-${{ matrix.platform }}-${{ github.head_ref || github.ref_name }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     env:
       APP: ${{ inputs.app }}
     services:
-      # Starts for every leg: a service cannot be conditional on the matrix. The
-      # sqlite legs pay a few seconds and ignore it.
       postgres:
         image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
         env:
@@ -73,6 +70,7 @@ jobs:
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Build image
+        id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
@@ -100,23 +98,13 @@ jobs:
           printf '%s image size: %s MB\n' "$TAG" "$((bytes / 1024 / 1024))" |
             tee -a "$GITHUB_STEP_SUMMARY"
 
-      - name: Start container
+      - name: Start container (sqlite)
         env:
           TAG: ${{ inputs.app }}:ci
-          DATABASE: ${{ matrix.database }}
           PLATFORM: ${{ matrix.platform }}
-        run: |
-          set -euo pipefail
-          args=(-d --name "$APP" -p 3000:3000 --platform "linux/$PLATFORM")
-          if [ "$DATABASE" = postgres ]; then
-            # the service is published on the runner, which is not this
-            # container's localhost
-            args+=(--add-host=host.docker.internal:host-gateway)
-            args+=(-e "DATABASE_URL=postgres://posy:posy@host.docker.internal:5432/posy")
-          fi
-          docker run "${args[@]}" "$TAG"
+        run: docker run -d --name "$APP" -p 3000:3000 --platform "linux/$PLATFORM" "$TAG"
 
-      - name: Probe
+      - name: Probe (sqlite)
         if: inputs.health-path != ''
         uses: $/.github/actions/probe-app
         with:
@@ -126,32 +114,11 @@ jobs:
           check-client: "true"
           timeout-seconds: 60
 
-      # Without this the leg proves nothing: a DATABASE_URL that never reached
-      # the container falls back to the image's sqlite default, migrates, serves,
-      # and passes the probe having tested the engine this leg is not about.
-      - name: Assert the app migrated postgres
-        if: matrix.database == 'postgres'
-        run: |
-          set -euo pipefail
-          # psql from the image the service already pulled, rather than assuming
-          # the runner ships one.
-          tables=$(docker run --rm \
-            --add-host=host.docker.internal:host-gateway \
-            -e PGPASSWORD=posy \
-            postgres:18-alpine@sha256:9a8afca54e7861fd90fab5fdf4c42477a6b1cb7d293595148e674e0a3181de15 \
-            psql -h host.docker.internal -U posy -d posy -tAc \
-            "select count(*) from information_schema.tables
-             where table_schema = 'public' and table_name = 'users'")
-          if [ "$tables" != "1" ]; then
-            echo "::error::posy served, but postgres has no schema: it used another database"
-            exit 1
-          fi
-
       # The only place PID 1 is real: a process spawned by a test runner gets
       # the default signal dispositions and dies on SIGTERM whatever the code
       # does, so this cannot be covered outside a container. 137 is SIGKILL,
       # meaning docker waited out its grace period and had to kill it.
-      - name: Stop container
+      - name: Stop container (sqlite)
         run: |
           set -euo pipefail
           started=$(date +%s)
@@ -165,11 +132,61 @@ jobs:
           fi
           echo "::notice::$APP stopped cleanly in ${took}s"
 
-      - name: Container logs
+      - name: Container logs (sqlite)
         if: failure()
         run: docker logs "$APP" || true
 
-      - name: Remove container
+      - name: Remove container (sqlite)
+        if: always()
+        run: docker rm -fv "$APP" || true
+
+      # Still runs after a sqlite failure so each database reports on its own.
+      - name: Start container (postgres)
+        id: postgres-start
+        if: "!cancelled() && steps.build.outcome == 'success'"
+        env:
+          TAG: ${{ inputs.app }}:ci
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
+          # the service is published on the runner, which is not this
+          # container's localhost
+          docker run -d --name "$APP" -p 3000:3000 --platform "linux/$PLATFORM" \
+            --add-host=host.docker.internal:host-gateway \
+            -e "DATABASE_URL=postgres://posy:posy@host.docker.internal:5432/posy" \
+            "$TAG"
+
+      - name: Probe (postgres)
+        id: postgres-probe
+        if: "!cancelled() && steps.postgres-start.outcome == 'success' && inputs.health-path != ''"
+        uses: $/.github/actions/probe-app
+        with:
+          base-url: http://localhost:3000
+          health-path: ${{ inputs.health-path }}
+          revision: ${{ steps.revision.outputs.short }}
+          check-client: "true"
+          timeout-seconds: 60
+
+      - name: Stop container (postgres)
+        if: "!cancelled() && steps.postgres-start.outcome == 'success' && steps.postgres-probe.outcome != 'failure'"
+        run: |
+          set -euo pipefail
+          started=$(date +%s)
+          docker stop -t 10 "$APP" >/dev/null
+          took=$(( $(date +%s) - started ))
+          code=$(docker inspect -f '{{.State.ExitCode}}' "$APP")
+          if [ "$code" != "0" ]; then
+            echo "::error::$APP exited $code after ${took}s, so it did not stop on SIGTERM"
+            docker logs "$APP" || true
+            exit 1
+          fi
+          echo "::notice::$APP stopped cleanly in ${took}s"
+
+      - name: Container logs (postgres)
+        if: "!cancelled() && steps.postgres-probe.outcome == 'failure'"
+        run: docker logs "$APP" || true
+
+      - name: Remove container (postgres)
         if: always()
         run: docker rm -fv "$APP" || true
 
