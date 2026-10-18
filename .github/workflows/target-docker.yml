@@ -17,7 +17,7 @@ on:
 jobs:
   run:
     name: docker run (${{ inputs.app }}, ${{ matrix.platform }}, ${{ matrix.database }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     permissions:
       contents: read
@@ -27,6 +27,11 @@ jobs:
       matrix:
         platform: [amd64, arm64]
         database: [sqlite, postgres]
+        include:
+          - platform: amd64
+            runner: ubuntu-latest
+          - platform: arm64
+            runner: ubuntu-24.04-arm
     concurrency:
       group: docker-run-${{ inputs.app }}-${{ matrix.platform }}-${{ matrix.database }}-${{ github.head_ref || github.ref_name }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -63,10 +68,6 @@ jobs:
         run: |
           echo "short=${COMMIT_SHA::7}" >> "$GITHUB_OUTPUT"
           echo "version=$(jq -r '.version // "dev"' package.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Set up QEMU
-        if: matrix.platform != 'amd64'
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
 
       - name: Set up buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -123,8 +124,7 @@ jobs:
           health-path: ${{ inputs.health-path }}
           revision: ${{ steps.revision.outputs.short }}
           check-client: "true"
-          # emulated, so it starts an order of magnitude slower than native
-          timeout-seconds: ${{ matrix.platform == 'amd64' && '60' || '300' }}
+          timeout-seconds: 60
 
       # Without this the leg proves nothing: a DATABASE_URL that never reached
       # the container falls back to the image's sqlite default, migrates, serves,
