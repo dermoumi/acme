@@ -13,7 +13,7 @@ let latest: ExecutionContext | undefined;
 const CACHED_CLIENT = "__SENTRY_CLOUDFLARE_CLIENT__";
 
 export const bench: Bench = {
-  build: (env, config) => {
+  build: (env, config, wire = wireApp) => {
     const sent: unknown[] = [];
     // Requests share the current scope, so a prior test's client would linger.
     if (!env.SENTRY_DSN) getCurrentScope().setClient(undefined);
@@ -21,7 +21,7 @@ export const bench: Bench = {
     const cached = Reflect.get(globalThis, CACHED_CLIENT) as Client | undefined;
     void cached?.close(0);
     const recorded = recordingConfig(config, sent);
-    const handler = wireApp(recorded);
+    const handler = wire(recorded);
 
     return {
       invoke: async (request) => {

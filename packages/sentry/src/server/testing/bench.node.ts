@@ -5,7 +5,7 @@ import { recordingConfig, wireApp } from "./wired-app";
 
 export const bench: Bench = {
   // Node reads its settings from process.env at startup, so drive that here.
-  build: (env, config) => {
+  build: (env, config, wire = wireApp) => {
     const sent: unknown[] = [];
     const previous = process.env.SENTRY_DSN;
     if (env.SENTRY_DSN) process.env.SENTRY_DSN = env.SENTRY_DSN;
@@ -17,7 +17,7 @@ export const bench: Bench = {
     // The process session outlives init(), and the next client would send it.
     getIsolationScope().setSession();
     const recorded = recordingConfig(config, sent);
-    const handler = wireApp(recorded);
+    const handler = wire(recorded);
     // Assigning undefined would store the string "undefined", which is truthy.
     if (previous === undefined) delete process.env.SENTRY_DSN;
     else process.env.SENTRY_DSN = previous;
