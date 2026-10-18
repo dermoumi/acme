@@ -331,15 +331,9 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 2.1.5(hono@4.13.13)
-      '@sentry/cloudflare':
-        specifier: 'catalog:'
-        version: 11.8.0(@cloudflare/workers-types@5.20261016.1)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(terser@5.49.0)(tsx@4.23.15))(wrangler@4.151.0(@cloudflare/workers-types@5.20261016.1)(@types/node@24.19.2))
       '@sentry/node':
         specifier: 'catalog:'
         version: 11.8.0(@babel/core@7.29.7(supports-color@10.2.2))(rollup@4.62.2)
-      '@sentry/react':
-        specifier: 'catalog:'
-        version: 11.8.0(react-router@8.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
       better-sqlite3:
         specifier: 'catalog:'
         version: 13.0.3
@@ -364,9 +358,6 @@ importers:
       react-router:
         specifier: 'catalog:'
         version: 8.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      workbox-window:
-        specifier: 'catalog:'
-        version: 7.4.1
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
@@ -383,6 +374,12 @@ importers:
       '@react-router/dev':
         specifier: 'catalog:'
         version: 8.4.0(react-router@8.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(terser@5.49.0)(tsx@4.23.15))(wrangler@4.151.0(@cloudflare/workers-types@5.20261016.1)(@types/node@24.19.2))
+      '@sentry/cloudflare':
+        specifier: 'catalog:'
+        version: 11.8.0(@cloudflare/workers-types@5.20261016.1)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(terser@5.49.0)(tsx@4.23.15))(wrangler@4.151.0(@cloudflare/workers-types@5.20261016.1)(@types/node@24.19.2))
+      '@sentry/react':
+        specifier: 'catalog:'
+        version: 11.8.0(react-router@8.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
       '@sentry/vite-plugin':
         specifier: 'catalog:'
         version: 11.8.0(@babel/core@7.29.7(supports-color@10.2.2))(rollup@4.62.2)
@@ -416,6 +413,9 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@24.19.2)(@vitest/coverage-istanbul@5.0.5)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(terser@5.49.0)(tsx@4.23.15))
+      workbox-window:
+        specifier: 'catalog:'
+        version: 7.4.1
       wrangler:
         specifier: 'catalog:'
         version: 4.151.0(@cloudflare/workers-types@5.20261016.1)(@types/node@24.19.2)

@@ -32,9 +32,7 @@
     "@acme/router": "workspace:*",
     "@acme/sentry": "workspace:*",
     "@hono/node-server": "catalog:",
-    "@sentry/cloudflare": "catalog:",
     "@sentry/node": "catalog:",
-    "@sentry/react": "catalog:",
     "better-sqlite3": "catalog:",
     "hono": "catalog:",
     "isbot": "catalog:",
@@ -42,8 +40,7 @@
     "pg": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "react-router": "catalog:",
-    "workbox-window": "catalog:"
+    "react-router": "catalog:"
   },
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",
@@ -51,6 +48,8 @@
     "@cloudflare/vitest-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@react-router/dev": "catalog:",
+    "@sentry/cloudflare": "catalog:",
+    "@sentry/react": "catalog:",
     "@sentry/vite-plugin": "catalog:",
     "@types/better-sqlite3": "catalog:",
     "@types/node": "catalog:",
@@ -62,6 +61,7 @@
     "vite": "catalog:",
     "vite-plugin-pwa": "catalog:",
     "vitest": "catalog:",
+    "workbox-window": "catalog:",
     "wrangler": "catalog:"
   }
 }
