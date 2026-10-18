@@ -5,6 +5,7 @@ import {
   SELF_PROVISIONED,
 } from "#runtime";
 import type { Context, Hono, MiddlewareHandler } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { rateLimiter } from "hono-rate-limiter";
 import { bound } from "./bindings";
 import type { Limiter } from "./runtime/contract";
@@ -107,10 +108,12 @@ function buildCounter<Bindings extends object>(
   const cap = rateLimiter<{ Bindings: Bindings }>({
     binding: getLimiter,
     keyGenerator: keyOf,
-    handler: (ctx) => {
-      ctx.res = ctx.json({ error: "rate_limited" }, 429, {
-        "Retry-After": String(periodSeconds),
-      });
+    // Thrown, so the app's onError can answer a browser with a page instead.
+    handler: () => {
+      const body = { error: "rate_limited" };
+      const headers = { "Retry-After": String(periodSeconds) };
+      const res = Response.json(body, { status: 429, headers });
+      throw new HTTPException(429, { res });
     },
   });
 

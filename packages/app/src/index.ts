@@ -10,7 +10,14 @@ export {
   type KitState,
   type KitVars,
 } from "./internal/config";
+export { type ErrorText, getErrorText } from "./internal/error-text";
 export { buildReleaseName } from "./internal/release";
 export type { Handler } from "./server/contract";
+export type {
+  CaptureError,
+  ErrorPageDetails,
+  ErrorPageStatus,
+  RenderErrorPage,
+} from "./server/error-page";
 export type { KitShared } from "./internal/shared";
 export { type Runtime, type RuntimeName, runtime } from "./internal/runtime";

@@ -8,7 +8,10 @@ import {
   getKitState,
   orderKits,
 } from "../internal/config";
+import { getKitRegistry } from "../internal/config/registry";
+import type { KitShared } from "../internal/shared";
 import type { Handler } from "./contract";
+import { createErrorHandler, createNotFoundHandler } from "./error-page";
 import { setupKitVars } from "./kit-vars";
 
 export function setupKitRoutes<AppEnv extends Env>(
@@ -17,6 +20,17 @@ export function setupKitRoutes<AppEnv extends Env>(
 ): void {
   for (const kit of orderKits(config.kits ?? [])) {
     getKitState(kit).routes?.(app);
+  }
+}
+
+// A key no declared kit registers is fine: the error handler goes without it.
+function findShared<Key extends keyof KitShared>(
+  key: Key,
+): KitShared[Key] | undefined {
+  try {
+    return getKitRegistry("@acme/app").require(key);
+  } catch {
+    return undefined;
   }
 }
 
@@ -67,6 +81,14 @@ export function composeApp<AppEnv extends Env>(
   checkKitRequires(config.kits ?? []);
 
   const outer = new Hono<AppEnv>();
+  const lookups = {
+    findCapture: () => findShared("captureError"),
+    findPage: () => findShared("renderErrorPage"),
+  };
+  const handleError = createErrorHandler(lookups);
+  outer.onError(handleError);
+  const handleNotFound = createNotFoundHandler(lookups);
+  outer.notFound(handleNotFound);
   setupKitVars(outer, config);
   // Ahead of the app's routes: a cap mounted behind one would never run.
   setupKitMiddleware(outer, config);

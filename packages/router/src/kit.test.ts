@@ -1,12 +1,12 @@
 import type { AssetsFallback } from "@acme/assets";
 import type { KitShared } from "@acme/app";
-import { createKitRegistry } from "@acme/app/testing";
-import { Hono } from "hono";
+import { createErrorHandler, createKitRegistry } from "@acme/app/testing";
+import { type Context, Hono } from "hono";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { routerKit } from "./kit";
 
 // Stands in for the assets kit, whose catch-all calls what the router hands it.
-const buildApp = (viewer?: string, reportError?: KitShared["reportError"]) => {
+const initRouter = (reportError?: KitShared["reportError"]) => {
   let fallback: AssetsFallback | undefined;
   const context = createKitRegistry("@acme/router");
   context.register("setAssetsFallback", (next) => {
@@ -16,14 +16,46 @@ const buildApp = (viewer?: string, reportError?: KitShared["reportError"]) => {
   // After init, as a reporting kit declared after this one would.
   if (reportError) context.register("reportError", reportError);
 
+  const answer = async (ctx: Context) => {
+    return fallback?.(ctx) ?? ctx.notFound();
+  };
+
+  return { context, answer };
+};
+
+const buildApp = (viewer?: string, reportError?: KitShared["reportError"]) => {
+  const { answer } = initRouter(reportError);
   const app = new Hono<{ Variables: { viewer: string } }>();
   app.use(async (ctx, next) => {
     if (viewer) ctx.set("viewer", viewer);
     await next();
   });
-  app.all("*", async (ctx) => fallback?.(ctx) ?? ctx.notFound());
+  app.all("*", answer);
 
   return app;
+};
+
+// A form post that throws, answered through onError as composeApp would.
+const buildErrorPageApp = (reportError?: KitShared["reportError"]) => {
+  const { context, answer } = initRouter(reportError);
+  const app = new Hono();
+  app.post("/broken", () => {
+    throw new Error("form post exploded");
+  });
+  const findPage = () => {
+    return context.require("renderErrorPage");
+  };
+  const handleError = createErrorHandler({ findPage });
+  app.onError(handleError);
+  app.all("*", answer);
+
+  return app;
+};
+
+const postFromBrowser = (app: Hono, path: string) => {
+  const headers = { accept: "text/html", "content-type": "text/plain" };
+
+  return app.request(path, { method: "POST", headers, body: "posted" });
 };
 
 const buildReportingApp = () => {
@@ -81,6 +113,71 @@ describe("routerKit", () => {
     const response = await buildApp().request("/broken");
 
     expect(response.status).toBe(500);
+  });
+
+  // The fixture's loader throws at /broken, so a loader run would fail instead.
+  it("renders the root route's boundary as the error page, running no loader", async () => {
+    const app = buildErrorPageApp();
+    const response = await postFromBrowser(app, "/broken");
+
+    expect(response.status).toBe(500);
+    await expect(response.text()).resolves.toBe(
+      "rendered /broken for nobody failing 500 {}",
+    );
+  });
+
+  it("hands the error page the reference it was given", async () => {
+    const { context } = initRouter();
+    const app = new Hono();
+    app.get("/page", async (ctx) => {
+      const renderErrorPage = context.require("renderErrorPage");
+      return renderErrorPage(ctx, { status: 500, reference: "abc123" });
+    });
+    const response = await app.request("/page");
+
+    await expect(response.text()).resolves.toBe(
+      'rendered /page for nobody failing 500 {"reference":"abc123"}',
+    );
+  });
+
+  it("renders the boundary with the status it is asked for", async () => {
+    const { context } = initRouter();
+    const app = new Hono();
+    app.get("/page", async (ctx) => {
+      const renderErrorPage = context.require("renderErrorPage");
+      return renderErrorPage(ctx, { status: 404 });
+    });
+    const response = await app.request("/page");
+
+    expect(response.status).toBe(404);
+    await expect(response.text()).resolves.toBe(
+      "rendered /page for nobody failing 404 {}",
+    );
+  });
+
+  it("leaves the error page's own failure unreported", async () => {
+    const reported: unknown[] = [];
+    const app = buildErrorPageApp((_ctx, error) => {
+      reported.push(error);
+    });
+    await postFromBrowser(app, "/broken");
+
+    expect(reported).toEqual([]);
+  });
+
+  it("reports a boundary that fails while rendering the error page", async () => {
+    const reported: unknown[] = [];
+    const { context } = initRouter((_ctx, error) => {
+      reported.push(error);
+    });
+    const app = new Hono();
+    app.get("/bad-boundary", async (ctx) => {
+      const renderErrorPage = context.require("renderErrorPage");
+      return renderErrorPage(ctx, { status: 500 });
+    });
+    await app.request("/bad-boundary");
+
+    expect(reported).toContainEqual(new Error("boundary exploded"));
   });
 
   it("fails to compose without the assets kit it renders behind", () => {
