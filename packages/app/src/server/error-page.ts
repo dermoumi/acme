@@ -28,9 +28,6 @@ export type ErrorPageStatus = ClientErrorStatusCode | ServerErrorStatusCode;
  * What an error page is rendered for.
  */
 export interface ErrorPageDetails {
-  /**
-   * The status the page answers with.
-   */
   status: ErrorPageStatus;
   /**
    * The reported event's id, when a kit reported one.

@@ -20,7 +20,7 @@ export interface KitShared {
    */
   captureError: CaptureError;
   /**
-   * The project's page for a server error. See {@link RenderErrorPage}.
+   * The project's page for an error status. See {@link RenderErrorPage}.
    */
   renderErrorPage: RenderErrorPage;
 }
