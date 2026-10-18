@@ -1,4 +1,4 @@
-import { data, type ServerBuild } from "react-router";
+import { data, isRouteErrorResponse, type ServerBuild } from "react-router";
 import { honoContext } from "../kit";
 
 declare module "../kit" {
@@ -7,8 +7,8 @@ declare module "../kit" {
   }
 }
 
-// Stands in for an app's router build: one root route, rendered as its path
-// and the viewer the Hono context carries. Two paths make its loader fail.
+// One root route, rendered as its path, the viewer and any root error;
+// /broken and /missing make its loader fail, /bad-boundary its error render.
 const root = {
   id: "root",
   path: "*",
@@ -51,11 +51,19 @@ export const assetsBuildDirectory = "dist/client";
 export const basename = "/";
 export const entry: ServerBuild["entry"] = {
   module: {
-    default: (request, status, headers, _routerContext, loadContext) => {
+    default: (request, status, headers, routerContext, loadContext) => {
       const { pathname } = new URL(request.url);
       const ctx = loadContext.get(honoContext);
       const viewer = ctx.var.viewer ?? "nobody";
-      const body = `rendered ${pathname} for ${viewer}`;
+      const error: unknown = routerContext.staticHandlerContext.errors?.root;
+      if (pathname === "/bad-boundary" && error) {
+        throw new Error("boundary exploded");
+      }
+      const errorSuffix = isRouteErrorResponse(error)
+        ? ` failing ${error.status} ${JSON.stringify(error.data)}`
+        : "";
+      const body = `rendered ${pathname} for ${viewer}${errorSuffix}`;
+      headers.set("Content-Type", "text/html");
 
       return new Response(body, { status, headers });
     },
