@@ -111,6 +111,7 @@ jobs:
           name: digest-${{ inputs.app }}-${{ matrix.platform }}
           path: ${{ runner.temp }}/digests/${{ matrix.platform }}
           if-no-files-found: error
+          overwrite: true
           retention-days: 1
 
   merge:
