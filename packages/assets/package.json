@@ -23,13 +23,13 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
-    "@acme/app": "workspace:*"
+    "@acme/app": "workspace:*",
+    "@hono/node-server": "catalog:"
   },
   "devDependencies": {
     "@acme/tsconfig": "workspace:*",
     "@cloudflare/vitest-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",
-    "@hono/node-server": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "hono": "catalog:",
@@ -38,12 +38,6 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "@hono/node-server": "catalog:",
     "hono": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "@hono/node-server": {
-      "optional": true
-    }
   }
 }

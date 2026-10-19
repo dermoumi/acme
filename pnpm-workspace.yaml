@@ -54,3 +54,7 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+
+overrides:
+  # only @sentry/cloudflare/vite needs it, and it would pull workerd into production trees
+  "@sentry/cloudflare>wrangler": "-"

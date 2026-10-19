@@ -33,6 +33,7 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@hono/node-server": "catalog:",
     "cac": "catalog:",
     "tsx": "catalog:"
   },
@@ -40,7 +41,6 @@
     "@acme/tsconfig": "workspace:*",
     "@cloudflare/vitest-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",
-    "@hono/node-server": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-istanbul": "catalog:",
     "hono": "catalog:",
@@ -49,12 +49,6 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "@hono/node-server": "catalog:",
     "hono": "catalog:"
-  },
-  "peerDependenciesMeta": {
-    "@hono/node-server": {
-      "optional": true
-    }
   }
 }
