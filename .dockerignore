@@ -2,6 +2,8 @@
 # root as its context too, and `*` + re-includes would exclude it.
 .git
 .github
+.pnpm-store
+.w
 
 **/node_modules
 **/dist
