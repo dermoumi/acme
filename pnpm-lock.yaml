@@ -422,6 +422,9 @@ importers:
 
   packages/app:
     dependencies:
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 2.1.5(hono@4.13.13)
       cac:
         specifier: 'catalog:'
         version: 7.1.0
@@ -438,9 +441,6 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20261016.1
-      '@hono/node-server':
-        specifier: 'catalog:'
-        version: 2.1.5(hono@4.13.13)
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.2
@@ -465,6 +465,9 @@ importers:
       '@acme/app':
         specifier: workspace:*
         version: link:../app
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 2.1.5(hono@4.13.13)
     devDependencies:
       '@acme/tsconfig':
         specifier: workspace:*
@@ -475,9 +478,6 @@ importers:
       '@cloudflare/workers-types':
         specifier: 'catalog:'
         version: 5.20261016.1
-      '@hono/node-server':
-        specifier: 'catalog:'
-        version: 2.1.5(hono@4.13.13)
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.2
@@ -692,9 +692,21 @@ importers:
       '@acme/app':
         specifier: workspace:*
         version: link:../app
+      '@sentry/cloudflare':
+        specifier: 'catalog:'
+        version: 11.8.0(@cloudflare/workers-types@5.20261016.1)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(terser@5.49.0)(tsx@4.23.15))(wrangler@4.151.1(@cloudflare/workers-types@5.20261016.1)(@types/node@24.19.2))
       '@sentry/core':
         specifier: 'catalog:'
         version: 11.8.0
+      '@sentry/node':
+        specifier: 'catalog:'
+        version: 11.8.0(@babel/core@7.29.7(supports-color@10.2.2))(rollup@4.62.2)
+      '@sentry/react':
+        specifier: 'catalog:'
+        version: 11.8.0(react-router@8.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
+      '@sentry/vite-plugin':
+        specifier: 'catalog:'
+        version: 11.8.0(@babel/core@7.29.7(supports-color@10.2.2))(rollup@4.62.2)
     devDependencies:
       '@acme/health':
         specifier: workspace:*
@@ -711,18 +723,6 @@ importers:
       '@hono/node-server':
         specifier: 'catalog:'
         version: 2.1.5(hono@4.13.13)
-      '@sentry/cloudflare':
-        specifier: 'catalog:'
-        version: 11.8.0(@cloudflare/workers-types@5.20261016.1)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(terser@5.49.0)(tsx@4.23.15))(wrangler@4.151.1(@cloudflare/workers-types@5.20261016.1)(@types/node@24.19.2))
-      '@sentry/node':
-        specifier: 'catalog:'
-        version: 11.8.0(@babel/core@7.29.7(supports-color@10.2.2))(rollup@4.62.2)
-      '@sentry/react':
-        specifier: 'catalog:'
-        version: 11.8.0(react-router@8.4.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
-      '@sentry/vite-plugin':
-        specifier: 'catalog:'
-        version: 11.8.0(@babel/core@7.29.7(supports-color@10.2.2))(rollup@4.62.2)
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.2

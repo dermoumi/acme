@@ -27,7 +27,6 @@
   "dependencies": {
     "@acme/app": "workspace:*",
     "cac": "catalog:",
-    "kysely": "catalog:",
     "kysely-d1": "catalog:",
     "valibot": "catalog:"
   },
