@@ -30,7 +30,7 @@ catalog:
   isbot: "5.2.2"
   kysely: "0.29.7"
   kysely-d1: "0.4.0"
-  oxfmt: "0.73.0"
+  oxfmt: "0.74.0"
   oxlint: "1.88.0"
   oxlint-tsgolint: "7.0.2004"
   pg: "8.23.1"
