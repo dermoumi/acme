@@ -51,7 +51,7 @@ RUN set -eu; \
       test -f "$dir/prebuilds/$keep.node"; \
     done
 
-FROM node:24.22.0-trixie-slim
+FROM node:24.22.1-trixie-slim
 WORKDIR /app
 
 # An unset APP_ENV reads as development, which serves /debug/*.
