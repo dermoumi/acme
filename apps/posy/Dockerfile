@@ -4,7 +4,7 @@
 # live outside this directory.
 #   docker build -f apps/posy/Dockerfile .
 
-FROM node:24.22.0-trixie AS build
+FROM node:24.22.1-trixie AS build
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /app
 RUN corepack enable
