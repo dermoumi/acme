@@ -45,7 +45,7 @@ catalog:
   vite-plugin-pwa: "2.0.0"
   vitest: "5.0.5"
   workbox-window: "7.4.1"
-  wrangler: "4.151.3"
+  wrangler: "4.152.0"
 
 allowBuilds:
   # downloads the sentry-cli binary, which @sentry/vite-plugin shells out to
