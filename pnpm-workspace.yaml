@@ -6,7 +6,7 @@ packages:
 minimumReleaseAge: 2880
 
 catalog:
-  "@cloudflare/vite-plugin": "1.64.0"
+  "@cloudflare/vite-plugin": "1.65.0"
   "@hono/node-server": "2.1.5"
   "@cloudflare/vitest-plugin": "1.4.7"
   "@cloudflare/workers-types": "5.20261023.1"
