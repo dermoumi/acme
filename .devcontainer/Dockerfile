@@ -1,4 +1,4 @@
-FROM node:24.22.0-trixie
+FROM node:24.22.1-trixie
 
 # Enable corepack for pnpm
 RUN corepack enable
